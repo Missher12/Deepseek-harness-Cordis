@@ -205,6 +205,8 @@ pnpm run package:desktop:win:x64
 
 macOS arm64 命令要求 Apple Silicon。macOS x64 命令可以在 Intel macOS 或带 Rosetta 的 Apple Silicon 上运行。Windows x64 命令要求 Windows x64。Linux 不是受支持的 Desktop 发布目标。
 
+在没有 Apple 开发者凭据的 Intel Mac 上构建时，将 `.env.macos.example` 复制为 `.env.macos`，按上文配置应用 ID 和强制更新策略，然后在仓库根目录执行 `pnpm run package:desktop:mac:x64:unsigned`。无需签名、公证、上传凭据或自动更新源。添加 `--dir` 可仅生成应用目录。该命令先检查组装后的 x64 运行时，再将 DMG 和 ZIP 写入 `.desktop-build/targets/mac-x64/unsigned-artifacts/`；文件名包含 `-unsigned`。这些安装包未经 Apple 签名和公证，不包含自动更新源，也不生成发布完成记录。macOS 可能阻止打开下载的副本，直到用户在“隐私与安全性”中允许打开。正式签名发布命令仍要求凭据和公证。
+
 每个目标都在 `apps/desktop/.desktop-build/targets/<target>/` 下持有自己的打包输入、已准备运行时、包集合、dsh 依赖树、pnpm 准备状态、未打包应用、更新元数据和最终产物。Electron 归档缓存继续由 `.desktop-build/downloads` 共享，因为每个归档文件名都包含版本、平台和架构，并且在解包前经过验证。目标构建绝不读取其他目标的可变准备状态。
 
 ### 运行时文件筛选

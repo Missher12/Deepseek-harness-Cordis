@@ -122,7 +122,27 @@ describe('desktop macOS release signature', () => {
     })
   })
 
-  it('rejects unsigned macOS builds and malformed signing modes', async () => {
+  it('builds unsigned Intel packages without Apple credentials or updater publication', async () => {
+    const { createElectronBuilderConfig } = await import('../scripts/electron-builder-config.mjs')
+    const config = createElectronBuilderConfig({
+      DSH_DESKTOP_APP_ID: 'com.example.intel',
+      DSH_DESKTOP_AUTO_UPDATE_ENV: 'production',
+      DSH_DESKTOP_MANDATORY_UPDATE_PROD_ORIGIN: 'https://policy.example.com',
+      DSH_DESKTOP_UNSIGNED: '1',
+    }, 'darwin', 'x64')
+    expect(config).toMatchObject({
+      mac: { identity: null, forceCodeSigning: false, hardenedRuntime: false, notarize: false },
+      dmg: { sign: false }, publish: null,
+    })
+    expect(config.artifactName).toContain('-unsigned')
+    expect(portablePath(config.directories.output)).toContain('/mac-x64/unsigned-artifacts')
+    // Unsigned hooks must return before reading a packager or touching the application.
+    const context = { electronPlatformName: 'darwin' } as Parameters<typeof config.afterSign>[0]
+    await expect(config.afterSign(context)).resolves.toBeUndefined()
+    expect(config.artifactBuildCompleted({ file: '/fixture/intel.dmg' })).toBeUndefined()
+  })
+
+  it('rejects unsigned Apple Silicon builds and malformed signing modes', async () => {
     const { createElectronBuilderConfig } = await import('../electron-builder.config.mjs')
     expect(() => createElectronBuilderConfig({ ...RELEASE_ENVIRONMENT, DSH_DESKTOP_UNSIGNED: '1' }))
       .toThrow(/unsigned builds require Windows/u)

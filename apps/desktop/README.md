@@ -203,6 +203,8 @@ pnpm run package:desktop:win:x64
 
 The macOS arm64 command requires Apple Silicon. The macOS x64 command runs on Intel macOS or Apple Silicon with Rosetta. The Windows x64 command requires Windows x64. Linux is not a supported Desktop release target.
 
+For an Intel Mac build without Apple Developer credentials, copy `.env.macos.example` to `.env.macos`, configure the application ID and mandatory-update policy as above, then run `pnpm run package:desktop:mac:x64:unsigned` from the repository root. Signing, notarization, upload credentials, and an automatic-update feed are not required. Add `--dir` to stop at the application directory. This command checks the assembled x64 runtime before producing DMG and ZIP files under `.desktop-build/targets/mac-x64/unsigned-artifacts/`; filenames include `-unsigned`. These packages are not signed or notarized by Apple and have no automatic-update feed or release completion record. macOS may block a downloaded copy until the user permits it in Privacy & Security. The signed release commands retain their credential and notarization requirements.
+
 Each target owns its packed package inputs, prepared runtime, package set, dsh tree, pnpm preparation state, unpacked application, update metadata, and final artifacts under `apps/desktop/.desktop-build/targets/<target>/`. The Electron archive cache remains shared under `.desktop-build/downloads` because every archive name includes its version, platform, and architecture and is verified before extraction. A target build never consumes another target's mutable preparation state.
 
 ### Runtime file selection

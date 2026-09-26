@@ -168,3 +168,45 @@ it('does not write a release completion record when Apple proxy cleanup fails', 
     .rejects.toThrow('proxy restoration failed')
   expect(writeFileSync).not.toHaveBeenCalled()
 })
+
+it.each([false, true])('builds unsigned Intel artifacts without Apple operations or release records (directory=%s)', async (directory) => {
+  const { run, stages } = supervisor()
+  await packageTarget(parseDesktopPackageInvocation(['mac-x64', '--unsigned', ...(directory ? ['--dir'] : [])], 'darwin', 'x64'), {
+    ...environment, APPLE_API_KEY: '/private/key.p8', DSH_DESKTOP_MACOS_SIGNING_IDENTITY: 'Example',
+  }, run)
+  const smoke = 'exec tsx scripts/smoke-packaged-runtime.ts --unsigned'
+  expect(stages).toContain(smoke)
+  expect(withMacOSNotarizationProxy).not.toHaveBeenCalled()
+  expect(packageMacOSArtifacts).not.toHaveBeenCalled()
+  expect(writeFileSync).not.toHaveBeenCalled()
+  for (const call of run.run.mock.calls) {
+    expect(call[3].env).not.toHaveProperty('APPLE_API_KEY')
+    expect(call[3].env).not.toHaveProperty('DSH_DESKTOP_MACOS_SIGNING_IDENTITY')
+    expect(call[3].env.DSH_DESKTOP_UNSIGNED).toBe('1')
+  }
+  const artifacts = stages.filter(stage => stage.includes('--prepackaged'))
+  expect(artifacts).toHaveLength(directory ? 0 : 2)
+  for (const stage of artifacts) {
+    expect(stage).toContain('unsigned-artifacts')
+    expect(stage).toContain('--x64 --publish never')
+    expect(stages.indexOf(stage)).toBeGreaterThan(stages.indexOf(smoke))
+  }
+})
+
+it('stops unsigned Intel artifact creation when the assembled runtime fails', async () => {
+  const { run, stages } = supervisor('exec tsx scripts/smoke-packaged-runtime.ts --unsigned')
+  await expect(packageTarget(parseDesktopPackageInvocation(['mac-x64', '--unsigned'], 'darwin', 'x64'), environment, run))
+    .rejects.toThrow('stage refused')
+  expect(stages.some(stage => stage.includes('--prepackaged'))).toBe(false)
+  expect(writeFileSync).not.toHaveBeenCalled()
+})
+
+it('keeps signed macOS preparation signed even when unsigned mode is inherited', async () => {
+  const { run } = supervisor()
+  await packageTarget(parseDesktopPackageInvocation(['mac-x64', '--dir'], 'darwin', 'x64'), {
+    ...environment, DSH_DESKTOP_UNSIGNED: '1', APPLE_KEYCHAIN_PROFILE: 'fixture',
+  }, run)
+  const preparation = run.run.mock.calls.find(call => call[0] === 'run prepare:dsh')
+  expect(preparation?.[3].env.DSH_DESKTOP_UNSIGNED).toBe('0')
+  expect(withMacOSNotarizationProxy).toHaveBeenCalledOnce()
+})

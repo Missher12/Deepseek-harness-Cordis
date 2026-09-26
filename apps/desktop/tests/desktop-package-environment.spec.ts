@@ -202,3 +202,11 @@ it('owns macOS tuning in the local file and validates it before signing credenti
     expect(() =>{  validateDesktopPackageEnvironment({ ...RELEASE, DSH_DESKTOP_MACOS_NOTARIZATION_PROXY: 'socks5://localhost:8080' }, MACOS) }).toThrow('NOTARIZATION_PROXY')
   })
 })
+
+it('preflights unsigned Intel packaging without signing, notarization, or feed credentials', () => {
+  expect(() => validateDesktopPackageEnvironment({
+    DSH_DESKTOP_APP_ID: 'com.example.intel',
+    DSH_DESKTOP_AUTO_UPDATE_ENV: 'production',
+    DSH_DESKTOP_MANDATORY_UPDATE_PROD_ORIGIN: 'https://policy.example.com',
+  }, { platform: 'darwin', arch: 'x64' }, { unsigned: true })).not.toThrow()
+})
