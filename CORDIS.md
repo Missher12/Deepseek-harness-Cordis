@@ -42,4 +42,4 @@
 
 2026-09-28 的整合验证已在新目录完成宿主与 Client 类型检查、构建、本机原生依赖和 Web 构建。四个插件分别通过类型检查、构建及现有测试，共 149 项。使用统计的源码测试复用根 `vitest.shared.ts` 的装饰器转换器；先构建宿主原生依赖，才能运行需要真实会话文件锁的 Loader 测试。
 
-`Cordis repository inventory` 工作流检查公开包清单和私有目录排除，不代表完整平台 CI。需要真实供应商凭据的 E2E 在本仓库仅允许手动触发，并要求 `CORDIS_RUN_LIVE_E2E=true`；保留原凭据预检，不将跳过的线上测试声称为通过。本轮未配置供应商密钥或执行付费模型请求。
+`Cordis repository inventory` 工作流检查公开包清单和私有目录排除，支持推送和手动触发，不代表完整平台 CI。真实 DeepSeek API 的 E2E 在本仓库仅允许手动触发，并要求 `CORDIS_RUN_LIVE_E2E=true`；Azure OpenAI/Anthropic E2E 沿用原来的手动入口。保留各自的凭据预检，不将跳过的线上测试声称为通过。本轮未配置供应商密钥或执行付费模型请求。
