@@ -1,68 +1,59 @@
-# DeepSeek Harness
+# Deepseek-harness-Cordis
 
 English | [中文](README.zh.md)
 
-DeepSeek Harness (`dsh`) is an open-source agent harness developed by [DeepSeek AI](https://deepseek.com).
+Missher’s unified source repository for the DSH desktop application and four independently installable plugins. Start with the [plugin directory](plugins/README.md), [installation guide](docs/cookbook/install-cordis-plugins.md), or [plugin development guide](docs/cookbook/build-cordis-plugins.md).
 
-It is built on an **everything-is-a-plugin** architecture and powered by [Cordis](https://github.com/cordiverse/cordis), whose design is described in [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512).
+This project builds on [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness), developed by [DeepSeek AI](https://deepseek.com), and the **everything-is-a-plugin** architecture powered by [Cordis](https://github.com/cordiverse/cordis). Upstream authorship, history, and licenses are retained. See [repository ownership](CORDIS.md) for the relationship between this repository and the original projects.
 
-Documentation: [https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
+## Quick access
 
-## Cordis workspace
+| I want to… | Open |
+| --- | --- |
+| Inspect or compress the current session’s context | [Context Manager](plugins/dsh-context-manager/README.md) |
+| Read usage across sessions | [Usage Statistics](plugins/dsh-usage-statistics/README.md) |
+| Change assistant output, reasoning, or tool layouts | [Output Renderer](plugins/dsh-output-renderer/README.md) |
+| Find session IDs, send between sessions, or use scratch workspaces | [Session Bridge](plugins/dsh-session-bridge/README.md) |
+| Install, update, or remove a plugin | [Installation](docs/cookbook/install-cordis-plugins.md) |
+| Build, test, or package a plugin | [Development](docs/cookbook/build-cordis-plugins.md) |
+| Find private plugins or MSE Learning | [Independent projects](CORDIS.md#独立项目) |
 
-This is Missher’s unified DSH source repository. The desktop and public Harness packages remain at the repository root; four independently installable Bundles live under [plugins/](plugins/README.md). See [CORDIS.md](CORDIS.md) for repository ownership, private projects, and verification scope. Media@Missher and the customized reasoning-effort plugin remain in separate private repositories; MSE Learning remains an independent public product.
+Each plugin remains optional and removable. Cloning this repository does not install or enable plugins in DSH. The [plugin directory](plugins/README.md) maps plugin features to their source and user entry points.
 
-## Developer preview
+<a id="run"></a>
 
-DeepSeek Harness is in _developer preview_ and iterating rapidly. **THERE WILL BE COMPATIBILITY-BREAKING CHANGES.**
+<a id="run-from-source"></a>
 
-Review the [safety notice](SAFETY.md) before running the project.
+## Run this source tree
 
-## Run
-
-### Run from `npm`
-
-Install `Node.js`, then run:
-
-```sh
-npx @deepseek-ai/dsh web
-```
-
-The command starts the Web UI at `http://127.0.0.1:3080` by default and opens it in the default browser for a local launch. An SSH launch only prints the host URL because the SSH client or editor owns the local forwarded address. Pass `--no-open` to run the server without opening a browser. See [Web UI guide](docs/user/guide/index.md).
-
-### Run from source
-
-To run from a repository checkout:
+Use Node.js `^22.19.0 || >=24.0.0` and pnpm `11.7.0`, as declared in [package.json](package.json). Review the [safety notice](SAFETY.md); Harness remains a developer preview with APIs that can change incompatibly.
 
 ```sh
 git clone https://github.com/Missher12/Deepseek-harness-Cordis.git
 cd Deepseek-harness-Cordis
-pnpm install
+pnpm install --frozen-lockfile
 pnpm run build
 pnpm dsh web
 ```
 
-`pnpm run build` prepares the repository artifacts. `pnpm dsh web` uses those built artifacts without rebuilding.
+The Web UI normally opens at `http://127.0.0.1:3080`. For development beside an existing installation, use the [isolated profile procedure](docs/cookbook/install-cordis-plugins.md#cli-web). Root builds prepare the host; optional plugins have their [own build and packaging steps](docs/cookbook/build-cordis-plugins.md).
 
-## Community and support
+`npx @deepseek-ai/dsh web` runs the published upstream package. It does not select this checkout or include this repository’s four custom plugins. This repository distributes source; use built plugin directories or locally produced tarballs according to the installation guide.
 
-- Submit feedback or bug reports through [GitHub Discussions](https://github.com/deepseek-ai/deepseek-harness/discussions).
-- Add the [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic to your plugin repository for discoverability.
-- Join <a href="https://discord.gg/Ycq5dCaS4">DeepSeek Harness Discord community</a>.
+## Documentation and contribution
 
-## Contributing
+- [Plugin navigation](plugins/README.md): source, user guides, and in-app entry points.
+- [Development](docs/development.md), [architecture](docs/architecture.md), and [contribution guide](CONTRIBUTING.md): host development and review.
+- [Web UI guide](docs/user/guide/index.md): everyday Harness use.
+- [CORDIS.md](CORDIS.md): repository ownership, private projects, historical repositories, and verification scope.
+- [Issues](https://github.com/Missher12/Deepseek-harness-Cordis/issues): reports about this repository; include the host/plugin versions, reproduction steps, and redacted errors.
+- [Upstream documentation](https://deepseek-harness.github.io/deepseek-harness/) and [upstream discussions](https://github.com/deepseek-ai/deepseek-harness/discussions): official Harness documentation and community.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+Agents follow [AGENTS.md](AGENTS.md) and each plugin’s instructions. Source publication, successful tests, installation, and live model verification are distinct results; the owning validation document states its tested scope.
 
-## Development
+## Upstream citation
 
-Start with the [development guide](docs/development.md) and [architecture documentation](docs/architecture.md).
-
-`pnpm run dev:web` builds, serves, and rebuilds client bundles on source edits in one terminal, and `make help` lists the matching Make targets for Web and Desktop; the guide's application commands section owns the full table.
-
-For agents, follow [AGENTS.md](AGENTS.md).
-
-## Citation
+Cordis’s design is described in [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512). Cite the original Harness project as follows:
 
 ```bibtex
 @misc{deepseek-harness2026,
@@ -76,6 +67,4 @@ For agents, follow [AGENTS.md](AGENTS.md).
 
 ## License
 
-[MIT](LICENSE)
-
-Third-party dependencies and their licenses are disclosed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+[MIT](LICENSE). Third-party dependencies and licenses are disclosed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and the individual plugin license files.

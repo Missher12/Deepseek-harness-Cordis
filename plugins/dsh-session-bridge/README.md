@@ -11,29 +11,15 @@ DSH 会话功能插件。两件事：
 
 开发依赖包含 TypeScript、Node/React 类型、esbuild，以及用于类型检查的 primitives 和 Cordis。它们不会打入客户端 bundle，也不会在宿主入口导入。结构声明仍有版本漂移风险，可用 `node scripts/check-host-contracts.mjs '/path/to/DSH checkout'` 对照已构建 checkout 的正式声明。
 
-## 安装
+## 安装与开发
 
-2026-09-28 只读核验：日常桌面使用 `dist/dsh-session-bridge-0.1.2.tgz` 的 `file:` 安装，不是源码 `link:`。以下构建和链接命令是开发说明；本轮协调审查只在隔离副本回归，不执行日常构建或安装。宿主补丁部署状态与原生验收限制见 [PLUGIN_BOUNDARIES.md](PLUGIN_BOUNDARIES.md)。
+本插件的当前源码位于统一仓库 `plugins/dsh-session-bridge/`。先构建根宿主，再按[开发指南](https://github.com/Missher12/Deepseek-harness-Cordis/blob/main/docs/cookbook/build-cordis-plugins.zh.md)安装本目录依赖、检查、构建和打包。pnpm 11 配置在 `pnpm-workspace.yaml`；本包使用自己的 `packageManager`，不改宿主的版本。
 
-```sh
-cd /Users/missher/Documents/Projects/04-Harness-Plugins/dsh-session-bridge
-pnpm install
-pnpm build          # 宿主编译 + 客户端严格类型检查、打包和加载自检
-```
+Desktop 通过“插件 → 添加插件”安装已构建目录或 `.tgz`；CLI/Web 的独立 profile 按[安装指南](https://github.com/Missher12/Deepseek-harness-Cordis/blob/main/docs/cookbook/install-cordis-plugins.zh.md)操作。Bundle 自带的 [`cordis.patch.yml`](cordis.patch.yml)负责挂载，不需要手写 Bundle 清单。同一 profile 保持一个正式实例，不与旧 `session-bridge-dev` 别名同时启用，否则会重复注册工具。
 
-若选择源码开发方式，在专用开发 profile 中注册（不要与同一 profile 的正式包及开发别名同时启用）：
+宿主模块热更新和客户端 bundle 热更新是两条链路；桌面 `hmr.root: []` 禁止宿主代码监听。新增客户端声明或调整依赖后，需要核对目标宿主的缓存行为；重新启动目标进程可避免沿用旧导出或元数据。源码中的宿主补丁不自动进入另一份已安装的 app.asar，也不包含在本插件包里。
 
-```sh
-dsh plugin add link:/Users/missher/Documents/Projects/04-Harness-Plugins/dsh-session-bridge
-```
-
-或者手写 `~/.dsh/profiles/<name>/package.json` 的 `dsh.profile.bundles` 加一项 `dsh-session-bridge`。插件自带的 [`cordis.patch.yml`](cordis.patch.yml) 负责挂载行。
-
-宿主模块热更新和客户端 bundle 热更新是两条链路。桌面 `hmr.root: []` 禁止宿主代码监听；开发时可显式监听本插件 `lib/`，或在构建后重启应用。已经进入 boot graph 的客户端 bundle 由 `client-hmr` 独立监听。
-
-DSH 0.1.7-rc.2 原版还会跨 Loader 行重载保留 `dsh.client` 正面/负面元数据缓存。新增客户端声明、调整依赖后，重启进程才可靠；本次提供的上游补丁在 Loader 行事件时失效对应缓存，不会自动监听 package.json。补丁只改源码不会影响正在运行的 app.asar。安装正式 tgz 前必须撤销旧的 `session-bridge-dev` 改名配置，正常的 Bundle 依赖和原始行应保留；两行一起启用会重复注册工具。现场已通过 HMR 分两步完成清理（先禁用正式行并移除开发行，待旧实例释放后启用正式行），无需重启；配置备份和实测记录见 HANDOVER.md。具体命令和本次证据见 [REPAIR_REPORT.md](REPAIR_REPORT.md)。
-
-pnpm 11 的设置在 `pnpm-workspace.yaml`，使用 `allowBuilds.esbuild: true`；不再编辑 `node_modules/.modules.yaml`。本项目锁定 pnpm 11.1.3，宿主 checkout 自己的 11.7.0 不变。
+各次现场修复与部署状态保留在 [HANDOVER.md](HANDOVER.md)、[REPAIR_REPORT.md](REPAIR_REPORT.md)和[边界记录](PLUGIN_BOUNDARIES.md)，其中旧路径和阶段状态属于历史证据；当前维护入口见[仓库说明](https://github.com/Missher12/Deepseek-harness-Cordis/blob/main/CORDIS.md)。
 
 ## 配置
 

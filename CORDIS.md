@@ -2,6 +2,8 @@
 
 这里统一维护 Missher 当前使用的 DSH 桌面源码和四个公开插件。宿主保留上游目录结构，插件保留独立包、配置、构建与卸载能力；克隆本仓库即可取得这五部分源码。
 
+快捷访问：[中文首页](README.zh.md) · [插件目录](plugins/README.zh.md) · [安装指南](docs/cookbook/install-cordis-plugins.zh.md) · [开发与打包](docs/cookbook/build-cordis-plugins.zh.md)。
+
 ## 源码入口
 
 | 功能 | 维护位置 |
@@ -12,7 +14,7 @@
 | 助手输出布局、思考和工具展示 | [plugins/dsh-output-renderer](plugins/dsh-output-renderer/) |
 | 跨会话用量、活动图和使用排行 | [plugins/dsh-usage-statistics](plugins/dsh-usage-statistics/) |
 
-克隆与宿主构建沿用根 README 的源代码开发流程，但克隆地址使用本仓库。先在根目录安装依赖并构建宿主，再进入各插件目录安装开发依赖、构建和打包。各插件的 pnpm overrides 将开发 SDK 指向本仓库的匹配源码，不改变 package.json 中的运行依赖声明；`plugins/` 不加入宿主的 pnpm workspace，不会成为宿主的强制安装依赖。没有额外的兼容插件或兼容安装包。
+宿主与插件构建步骤见[开发与打包](docs/cookbook/build-cordis-plugins.zh.md)。`plugins/` 不加入宿主的 pnpm workspace，不会成为宿主的强制安装依赖；各 Bundle 独立交付，没有额外的兼容插件或兼容安装包。
 
 ## 独立项目
 

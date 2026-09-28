@@ -1,10 +1,10 @@
-# 上下文管理 · 0.3.5-local.1 本地候选
+# DSH 上下文管理
 
 面向 **DeepSeek Harness 0.1.7-rc.2** 的独立 Bundle。在会话原有的 **对话 / 轨迹** 后增加 **上下文** 页签；**设置 → 上下文管理** 只放压缩参数。源码参考目标与预设文件摘要见 `COMPATIBILITY.json`。
 
-REQ-03 本地候选保留紧凑的单面板布局：摘要展示 3 个关键指标、占用最多的 3 类内容和最近 2 条压缩记录，其余分类及记录可展开。外层“详细内容与记录”首次进入、重新打开及切换会话时默认展开，正文、逐次变化、本会话累计用量连续显示；本次访问中手动收起后，普通刷新保持收起。正文仍只读取选中条目的当前段落，列表和正文继续分页，不预加载所有历史。仍只有外层“对话 / 轨迹 / 上下文”页签。
+上下文页采用紧凑的单面板布局：摘要展示 3 个关键指标、占用最多的 3 类内容和最近 2 条压缩记录，其余分类及记录可展开。外层“详细内容与记录”首次进入、重新打开及切换会话时默认展开，正文、逐次变化、本会话累计用量连续显示；本次访问中手动收起后，普通刷新保持收起。正文仍只读取选中条目的当前段落，列表和正文继续分页，不预加载所有历史。仍只有外层“对话 / 轨迹 / 上下文”页签。
 
-本轮候选在隔离目录构建和验收，未替换已交付的 0.3.4 或日常安装；本地候选不是已发布版本。当前根目录 lib 保留旧字节，不能当作新源码的构建结果使用，联调使用回执记录的隔离候选。
+当前源码和版本以本目录 `package.json` 为准。首次克隆需先构建宿主，再构建本插件；源码中的 `lib` 不随 Git 分发。统一入口见[插件目录](https://github.com/Missher12/Deepseek-harness-Cordis/blob/main/plugins/README.zh.md)。
 
 “上下文”是只读页面，选中时隐藏该会话视图的发送区；切回对话恢复输入框与未发送草稿。使用宿主控件、主题变量及组件归属标记，不依赖或修改 Session Bridge，不操作会话标识菜单；所有旧版交付保留原字节。
 
@@ -19,7 +19,7 @@ REQ-03 本地候选保留紧凑的单面板布局：摘要展示 3 个关键指�
 
 ## 从旧版升级
 
-在单独安排安装时，通过 DSH 插件页选择对应的独立文件夹或 `.tgz`。安装完成后，等当前任务结束，**完整退出并重新打开 DSH**，再检查插件详情显示 **所选包的版本，3 个组件运行中**。打开一个会话，点击“轨迹”后的“上下文”。只关闭窗口、刷新页面或开关插件不能替代进程重启。本轮本地候选尚未部署到日常 profile。
+在单独安排安装时，通过 DSH 插件页选择对应的独立文件夹或 `.tgz`。安装完成后，等当前任务结束，**完整退出并重新打开 DSH**，再检查插件详情显示 **所选包的版本，3 个组件运行中**。打开一个会话，点击“轨迹”后的“上下文”。只关闭窗口、刷新页面或开关插件不能替代进程重启。安装状态以目标 profile 的插件详情为准。
 
 已在用户安装的 Desktop 0.1.7-rc.2 / Node 24.18.1 运行时复现：0.2.1 卸载后，在同一进程安装并启用 0.3.x，Node 仍使用旧包的 `exports` 缓存，导致新增 `./inspector` 报 `ERR_PACKAGE_PATH_NOT_EXPORTED`，界面只显示 `failed to import`。全新进程读取新的导出表后可以启动。升级不会删除会话记录；不需要卸载 Session Bridge 或更换压缩设置。此插件没有修改宿主的全局模块加载器，也不声称热升级缓存问题已由插件修复。
 
@@ -79,28 +79,12 @@ Bundle 关闭根 Basic 自动控制器，插入一个根 ContextEngine；Standar
 
 ## 开发与安装
 
-离线开发使用已经构建好的对应版本源码：
+统一仓库的依赖已通过本目录 `pnpm-workspace.yaml` 链接到同仓库 SDK。先完成根宿主构建，再按[开发指南](https://github.com/Missher12/Deepseek-harness-Cordis/blob/main/docs/cookbook/build-cordis-plugins.zh.md)构建、检查和打包本插件；不再需要手工指向原独立源码目录。
 
-```sh
-node scripts/link-harness.mjs /path/to/deepseek-harness
-node scripts/build.mjs
-npm run typecheck
-node --test tests/*.test.mjs
-npm pack
-```
-
-通过宿主插件管理页导入 `.tgz`，或对 **CLI/Web profile** 使用：
-
-```sh
-dsh plugin --profile your-profile add /absolute/path/dsh-context-manager-0.3.4.tgz
-dsh --profile your-profile --dump-config
-# 然后重启该 profile
-```
-
-Desktop 的保留 profile 应使用应用自己的插件管理入口，不通过公开 CLI 修改。退回原策略时在同一入口停用/卸载 Bundle；CLI/Web 可执行 `dsh plugin --profile your-profile remove dsh-context-manager` 后重启。保留用户配置与会话日志。
+Desktop 使用应用内“插件 → 添加插件”导入已构建目录或 `.tgz`；CLI/Web 使用自定义 profile。完整流程和卸载方法见[安装指南](https://github.com/Missher12/Deepseek-harness-Cordis/blob/main/docs/cookbook/install-cordis-plugins.zh.md)。安装包名取自当前 `package.json`，不能沿用旧版本示例。安装或卸载后按宿主提示重启目标 profile，保留用户配置与会话日志。
 
 ## 验证范围
 
-结果记录在源码根目录的 `verification/RESULTS-0.3.4.md`：静态检查、真实 AgentLoop + 模拟模型、真实 profile 安装与 Web 设置分别列出。没有在用户日常 profile 中安装，也没有进行真实模型 API 压缩或 Mac/Windows/Ubuntu 原生打包验收。
+[REQ-03 验证记录](verification/RESULTS-REQ03-20260928.json)覆盖详情默认展开相关实现，[0.3.4 验证记录](verification/RESULTS-0.3.4.md)保留此前静态检查、真实 AgentLoop + 模拟模型、隔离 profile 与 Web 设置验证。它们是各次测试的历史证据；当前源码整合范围见[仓库说明](https://github.com/Missher12/Deepseek-harness-Cordis/blob/main/CORDIS.md)，不能将旧报告中的安装状态当作目标应用现状。
 
-语义摘要仍可能遗漏细节。生产发布前需做真实模型的中文、图像、较长推理、历史溢出与连续任务验收，并完成原生 Desktop 安装/卸载回归。当前交付用于审阅方案和隔离验证，不把这些未测项说成已完成。
+语义摘要仍可能遗漏细节。真实模型的中文、图像、较长推理、历史溢出与连续任务效果，以及各平台原生安装/卸载，需按目标运行环境单独验收；源码、构建和模拟模型测试不能代替这些结果。

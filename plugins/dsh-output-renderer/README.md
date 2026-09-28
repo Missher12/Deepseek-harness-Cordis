@@ -26,6 +26,8 @@
 
 ## 安装与移除
 
+公共流程、独立测试 profile 和常见错误见[安装指南](https://github.com/Missher12/Deepseek-harness-Cordis/blob/main/docs/cookbook/install-cordis-plugins.zh.md)。
+
 桌面版：进入 **插件 → 添加插件**，在“包名或地址”中粘贴本地 `missher-dsh-output-renderer-0.1.0.tgz` 的完整路径，然后点“安装”。安装后进入 **设置 → 输出外观**。桌面版的 `desktop` profile 由 Electron 专管，不能通过 CLI 安装。
 
 Web 或自建 profile 也可以用目标 DSH 的官方 CLI：
@@ -41,13 +43,7 @@ dsh plugin --profile <目标配置名称> remove @missher/dsh-output-renderer
 
 ## 开发
 
-```sh
-node scripts/link-dev.mjs /完整路径/已构建的DSH源码
-npm run typecheck
-npm run build
-npm test
-npm run pack:bundle
-```
+本目录在统一仓库中通过 `pnpm-workspace.yaml` 使用同仓库 SDK。按[开发指南](https://github.com/Missher12/Deepseek-harness-Cordis/blob/main/docs/cookbook/build-cordis-plugins.zh.md)先构建宿主，再完成本插件依赖安装、类型检查、构建、测试和打包。不要把原独立目录的运行链接当作新源码入口。
 
 `scripts/launch-isolated.mjs` 使用本目录下的隔离 HOME/DSH_HOME；需设置 `DSH_SOURCE_DIR`。可通过 `DSH_OUTPUT_TEST_FIXTURE=1` 启用仅本地的合成流验证。该测试入口和测试适配器不进入安装包。
 

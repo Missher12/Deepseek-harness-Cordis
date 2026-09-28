@@ -39,18 +39,9 @@ Token 来源为宿主持久化服务返回的供应商用量，非缓存输入�
 
 ## 开发
 
-开发依赖固定在 `package.json`。有一份已经构建过的 0.1.7-rc.2 源码时，可离线链接完全相同版本：
+开发依赖固定在 `package.json`，本目录的 `pnpm-workspace.yaml` 引用统一仓库内的 SDK。先构建宿主，再按[开发指南](https://github.com/Missher12/Deepseek-harness-Cordis/blob/main/docs/cookbook/build-cordis-plugins.zh.md)完成本插件依赖安装、类型检查、测试、构建与打包。真实隔离 profile 验证脚本是 `scripts/verify-profile.mjs`，它要求 `DSH_SOURCE_DIR` 指向已构建的对应宿主，并单独生成合成数据，不以日常 profile 为测试目标。
 
-```sh
-node scripts/link-dev.mjs /path/to/built/Harness-0.1.7-rc.2-source
-npm run typecheck
-npm test
-npm run build
-npm run pack:bundle
-DSH_SOURCE_DIR=/path/to/built/Harness-0.1.7-rc.2-source npm run verify:profile
-```
-
-该链接脚本只写本插件的 `node_modules`，拒绝替换已有不同链接。切换宿主版本前，应将本插件的旧依赖目录另行备份。发布包不包含开发依赖或本机绝对路径。Cordis、Schemastery 和 DSH 服务由宿主提供，作为精确版本的 peer 声明，不下载另一份宿主。`provenance.json` 记录最初拆分来源和原文件校验值。MIT 许可证及上游授权保存在 `LICENSE`、`licenses/`；Client 内包含的 Zod 4.4.3 许可证见 `licenses/zod-MIT.txt`。
+发布包不包含开发依赖或本机绝对路径。Cordis、Schemastery 和 DSH 服务由宿主提供，作为精确版本的 peer 声明，不下载另一份宿主。`provenance.json` 记录最初拆分来源和原文件校验值。MIT 许可证及上游授权保存在 `LICENSE`、`licenses/`；Client 内包含的 Zod 4.4.3 许可证见 `licenses/zod-MIT.txt`。
 
 ## 模型影响与限制
 

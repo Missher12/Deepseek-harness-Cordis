@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for build-cordis-plugins.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/cookbook/build-cordis-plugins.md
+/build-and-package-dsh-plugins:
+  en: 5517adcf74bab473
+  zh: 4d1e54e33ddf2601
+/build-and-package-dsh-plugins/prerequisites:
+  en: e29973af44de8c1f
+  zh: b207b43415ed8dec
+/build-and-package-dsh-plugins/build-one-plugin:
+  en: f2fbb4198d7f4af9
+  zh: 82920df81696bc49
+/build-and-package-dsh-plugins/package-all-four:
+  en: b34c7693d099d7a5
+  zh: 3d592c4f734fc9d4
+/build-and-package-dsh-plugins/maintain-the-right-project:
+  en: 35d84611a04e65f1
+  zh: 77ec875e5e36f6ad
