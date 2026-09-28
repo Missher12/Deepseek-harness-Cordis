@@ -116,7 +116,7 @@ describe('provider capability writes', () => {
     rerender(<ProviderEditor provider="a" displayName="A" namespace={view} settingsPath={['routes', 'a']} schema={settingsSchema} operations={ops} t={t} readOnly={false} onClose={onClose} />)
     change('reasoningMode', 'custom', 'same')
     fireEvent.click(screen.getByText(en.reasoningAdvanced))
-    expect(screen.getByLabelText(`${en.reasoningWire} high same`).value).toBe('base-wire')
+    expect(screen.getByLabelText<HTMLInputElement>(`${en.reasoningWire} high same`).value).toBe('base-wire')
     change('reasoningMode', 'inherit', 'same')
     fireEvent.click(screen.getByRole('button', { name: en.apply }))
     await waitFor(() => { expect(onClose).toHaveBeenCalledWith(true) })
