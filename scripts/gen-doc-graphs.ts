@@ -132,6 +132,22 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Shares profile package operations with the CLI and reports persisted and running state to Web and agent callers.',
   },
   {
+    key: 'pluginInventory',
+    pkg: 'host-plugin-inventory',
+    title: 'Live plugin composition and callable capabilities',
+    mode: 'core',
+    consumers: ['client-ui-reference', 'client-ui-settings-plugin-inventory', 'client-ui-plugin-manager', 'host-plugin-inventory'],
+    note: 'Reads Loader state and Agent-visible tools; listing a plugin never installs, enables, executes, or grants permission to it.',
+  },
+  {
+    key: 'pluginReferenceResolver',
+    pkg: 'host-plugin-inventory',
+    title: 'Selected plugin reference admission',
+    mode: 'core',
+    consumers: ['api-session-controller', 'host-plugin-inventory'],
+    note: 'Checks direct-user references on submission and before each model step, then records guidance from currently available capabilities.',
+  },
+  {
     key: 'profileContext',
     pkg: 'app-boot',
     title: 'Launcher-owned profile data',

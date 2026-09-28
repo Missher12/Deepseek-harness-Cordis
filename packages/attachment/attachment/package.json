@@ -15,6 +15,7 @@
   "types": "lib/types/index.d.ts",
   "exports": {
     ".": { "types": "./lib/types/index.d.ts", "default": "./lib/index.js" },
+    "./image-format": { "types": "./lib/types/image-format.d.ts", "default": "./lib/types/image-format.js" },
     "./types": { "types": "./lib/types/types.d.ts", "default": "./lib/types/types.js" },
     "./src/*": "./src/*",
     "./package.json": "./package.json"

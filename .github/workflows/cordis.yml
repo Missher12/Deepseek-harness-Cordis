@@ -1,0 +1,22 @@
+name: Cordis repository inventory
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - cordis-repositories.json
+      - plugins/**
+      - .github/cordis/**
+      - .github/workflows/cordis.yml
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify public component inventory
+        run: python3 .github/cordis/check-repository.py

@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Clients can call `pluginInventory/list` to display the host’s current plugins in load order, including each entry’s identifier, module specifier, effective enablement, live phase, and available display text. Deployments with an agent-preset roster also report each preset’s metadata, health, and flattened plugin composition; without a roster, preset data is absent. Each response is a point-in-time, read-only snapshot for display and diagnostics: it cannot mutate plugins and provides no history or change subscription.
+Clients can display Host plugin composition and select callable plugins for one session. `pluginInventory/list` reports Loader and preset state; `pluginInventory/candidates` reports plugins owning tools visible to the selected Agent. Canonical references survive draft reloads and copying. The optional resolver checks availability before model admission and records only selected capability guidance. Neither lookup nor selection installs, enables, executes, or grants permission to a plugin.
 
 ## Table of Contents
 
@@ -25,7 +25,22 @@ Clients can call `pluginInventory/list` to display the host’s current plugins 
 <a id="use-this-package"></a>
 ## Use this package
 
-Call `pluginInventory/list` when a client or settings page needs to show what is currently composed in the host — which plugins are loaded, enabled, and alive, and what each agent preset would give a session. The Remote is the only entry point: the service is Remote-only and deliberately declares no same-process Cordis `Context` merge.
+Call `pluginInventory/list` when a client or settings page needs to show what is currently composed in the host — which plugins are loaded, enabled, and alive, and what each agent preset would give a session. Client calls return `RemoteResult`; handle unsuccessful results. Host consumers use `ctx.pluginInventory` and pass the actual Agent to `candidates`.
+
+### Select a callable plugin
+
+The Web bundle mounts the inventory and `@deepseek-ai/dsh-host-plugin-inventory/reference-plugin` separately. The resolver requires the inventory; without the resolver, candidates are empty and remaining references are rejected. An entry must own an active tool registration visible through the Agent's registry, scope restrictions, and same-name shadowing. Pure UI, disabled, failed, and unidentifiable registrations do not become candidates.
+
+Call `pluginInventory/candidates(sessionId, query, signal)` and use the returned `mention` unchanged for insertion, clipboard text, drafts, and submission. The browser-safe `./reference` export formats and parses `@{dsh-plugin:v1:<encoded-identity>}`; `describePluginReference` supplies a historical module/entry label without claiming availability. Identity contains the module, Loader entry, and host or preset source, never the Agent or an in-memory object. Subscribe to `plugin-capabilities/changed` and re-query after preset selection or reconnect; events invalidate data without carrying a replacement catalog.
+
+| Inventory field | Default | Meaning |
+|---|---|---|
+| `candidateLimit` | `50` | Maximum completion rows |
+| `toolLimit` | `64` | Maximum tool summaries per plugin; `capabilityCount` retains the total |
+| `descriptionMaxChars` | `240` | Maximum characters per description |
+| Resolver `maxReferences` | `16` | Maximum marker occurrences in one submitted message |
+
+Submission and queue edits reject malformed, unsupported, or unavailable references. Pre-step revalidates queued references against the live Agent. Original user text retains the exact markers; file, directory, session, and skill references keep their own parsers. The appended instruction message uses `plugin-reference` attribution and durable content, so replay does not need to resolve the catalog again.
 
 ### What a snapshot contains
 
@@ -87,11 +102,19 @@ Read these when the inventory contract is not enough: how the Remote reaches cli
 <a id="model-experience"></a>
 ## Model Experience
 
-None, as the host-side read-only Loader projection registers nothing model-facing.
+### Selected plugin guidance
+
+#### What the model sees
+
+The resolver adds one instruction message after a direct user message containing references. Its fixed heading is `## Referenced plugins`; it identifies canonical markers as plugins, retains normal permissions and approval, and marks the following JSON as catalog data. The JSON contains only selected plugin identities, module names, bounded tool summaries, and tool counts. Reference resolution executes no tool.
+
+#### Token effect
+
+Each submitted reference contributes its selected plugin's bounded capability summary. Unselected plugins contribute no instruction text; `maxReferences`, `toolLimit`, and `descriptionMaxChars` bound this contribution.
 
 #### KV Cache effect
 
-None; this package neither assembles nor sends a provider request.
+Guidance enters ordinary logged message admission once, preserving the existing history prefix. Each new direct reference reads the live catalog; replay preserves the recorded instruction text.
 
 ## Known Limitations and Deferred Work
 
@@ -100,7 +123,7 @@ None; this package neither assembles nor sends a provider request.
 
 These limits define what a point-in-time inventory cannot tell a client. They are current package constraints, not a task backlog.
 
-- **Point-in-time state only** — the result contains no durable failure history or subscription; a missing root Fiber is reported as `null`, regardless of why no live root exists.
+- **Point-in-time state only** — results contain no durable failure history; candidate change events require a fresh query; a missing root Fiber is reported as `null`, regardless of why no live root exists.
 - **No layer attribution or mutation** — the service does not identify which bundle, profile, or override introduced an entry, and it cannot enable, disable, add, or remove plugins in either plane.
 - **Presets appear only with a roster** — a deployment without `dsh-agent-preset-registry` serves Loader entries alone; the `agentPresets` field is absent rather than empty.
 

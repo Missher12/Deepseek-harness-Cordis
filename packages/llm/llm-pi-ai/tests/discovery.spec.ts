@@ -74,6 +74,16 @@ async function harness(): Promise<Context> {
 }
 
 describe('catalog-route model discovery', () => {
+  it('exposes editable catalog reasoning declarations without endpoint guesses', async () => {
+    const ctx = await harness()
+    const models = await ctx.llm.discoverModels('llm-pi-ai', { provider: 'deepseek' })
+    expect(models.find(model => model.id === 'deepseek-v4-flash')?.reasoningEfforts)
+      .toEqual({ off: null, low: 'low', high: 'high', max: 'max' })
+    const server = await listingServer({ body: JSON.stringify({ data: [{ id: 'unknown', reasoningEfforts: { max: 'fake' } }] }) })
+    const discovered = await ctx.llm.discoverModels('llm-pi-ai', { baseURL: server.url })
+    expect(discovered).toEqual([{ id: 'unknown', name: 'unknown' }])
+  })
+
   it('includes the installed model input types for vision models', async () => {
     const ctx = await harness()
     const models = await ctx.llm.discoverModels('llm-pi-ai', { provider: 'openai' })

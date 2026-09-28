@@ -21,6 +21,7 @@ async function expectFailure(operation: Promise<unknown>, code: string): Promise
 function controllerAgents(overrides: object = {}): ApiSessionAgentController {
   return {
     ensureSession: () => Promise.resolve(),
+    own: (handle: AgentHandle) => handle.agent,
     composeAgent: () => Promise.resolve({ setup: () => {} }),
     presetForSession: () => undefined,
     presetForObservation: () => undefined,

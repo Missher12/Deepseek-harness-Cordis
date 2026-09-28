@@ -14,6 +14,24 @@ const kitRepositoryUrl = new RegExp(`\\bgithub\\.com/${organization}/libreoffice
 const commitCandidate = /(?<![a-z0-9])[\da-f]{7,40}(?![a-z0-9])/gi
 const excludedPrefixes = ['vendor/', '.agents/notes/archived/']
 const gitOutputLimit = 64 * 1024 * 1024
+// Imported compatibility and validation records identify their exact historical inputs.
+// This exception permits commit IDs only; organization-URL policy still applies.
+const recordedCommitFiles = new Set([
+  'cordis-repositories.json',
+  'plugins/dsh-context-manager/COMPATIBILITY.json',
+  'plugins/dsh-context-manager/research/GITHUB-CONTEXT-REVIEW-20260927.md',
+  'plugins/dsh-context-manager/verification/RESULTS-0.1.0.md',
+  'plugins/dsh-context-manager/verification/RESULTS-0.1.1.md',
+  'plugins/dsh-context-manager/verification/RESULTS-0.2.0.md',
+  'plugins/dsh-context-manager/verification/RESULTS-0.2.1.md',
+  'plugins/dsh-context-manager/verification/RESULTS-0.3.0.md',
+  'plugins/dsh-context-manager/verification/RESULTS-BOUNDARY-AUDIT-20260928.json',
+  'plugins/dsh-output-renderer/PROJECT_CONTEXT.md',
+  'plugins/dsh-session-bridge/REPAIR_REPORT.md',
+  'plugins/dsh-usage-statistics/PROJECT_CONTEXT.md',
+  'plugins/dsh-usage-statistics/VALIDATION.md',
+  'plugins/dsh-usage-statistics/verification/runtime.json',
+])
 
 /** One prohibited reference in a maintained source file. */
 export interface RepositoryReference {
@@ -47,7 +65,8 @@ export function findRepositoryReferences(
     if (organizationUrl.test(canonicalReferenceText(line).replace(kitRepositoryUrl, ''))) {
       references.push({ file, line: index + 1, kind: 'organization-url' })
     }
-    if ([...line.matchAll(commitCandidate)].some(match => commits.has(match[0].toLowerCase()))) {
+    if (!recordedCommitFiles.has(file)
+      && [...line.matchAll(commitCandidate)].some(match => commits.has(match[0].toLowerCase()))) {
       references.push({ file, line: index + 1, kind: 'commit-hash' })
     }
   }

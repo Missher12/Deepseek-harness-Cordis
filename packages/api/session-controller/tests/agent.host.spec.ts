@@ -485,3 +485,33 @@ describe('ApiSession create or adoption', () => {
       .rejects.toThrow('failed to ensure project directory')
   })
 })
+
+
+describe('archived Session deletion ownership', () => {
+  it('releases only its own handle and blocks activation and forks until deletion settles', async () => {
+    const { ctx, agents } = await harness()
+    const meta = header('owned-deletion')
+    const dispose = vi.fn(async () => {})
+    agents.own({ agent: unpublishedAgent(ctx, meta), dispose })
+    await agents.withSessionDeletion(meta.id, async (release) => {
+      expect(await agents.resolveAgent(meta.id)).toMatchObject({ error: { code: 'session/agent-busy' } })
+      await expect(agents.ensureSession(meta.id, '/workspace', false)).rejects.toThrow('session/delete-busy')
+      await expect(agents.withSessionUse(meta.id, async () => {})).rejects.toThrow('session/delete-busy')
+      await release()
+    })
+    expect(dispose).toHaveBeenCalledOnce()
+    await agents.withSessionDeletion(meta.id, async (release) => { await release() })
+    expect(dispose).toHaveBeenCalledOnce()
+  })
+
+  it('retains a fork source until child publication and clears failed deletion admission', async () => {
+    const { agents } = await harness()
+    const id = SessionId('fork-source')
+    await agents.withSessionUse(id, async () => {
+      await expect(agents.withSessionDeletion(id, async () => {})).rejects.toThrow('session/delete-busy')
+    })
+    await expect(agents.withSessionDeletion(id, async () => { throw new Error('admission failed') }))
+      .rejects.toThrow('admission failed')
+    await expect(agents.withSessionUse(id, async () => 'available')).resolves.toBe('available')
+  })
+})

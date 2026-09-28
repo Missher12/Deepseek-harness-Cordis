@@ -8,6 +8,10 @@ It is built on an **everything-is-a-plugin** architecture and powered by [Cordis
 
 Documentation: [https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
 
+## Cordis workspace
+
+This is Missher’s unified DSH source repository. The desktop and public Harness packages remain at the repository root; four independently installable Bundles live under [plugins/](plugins/README.md). See [CORDIS.md](CORDIS.md) for repository ownership, private projects, and verification scope. Media@Missher and the customized reasoning-effort plugin remain in separate private repositories; MSE Learning remains an independent public product.
+
 ## Developer preview
 
 DeepSeek Harness is in _developer preview_ and iterating rapidly. **THERE WILL BE COMPATIBILITY-BREAKING CHANGES.**
@@ -31,8 +35,8 @@ The command starts the Web UI at `http://127.0.0.1:3080` by default and opens it
 To run from a repository checkout:
 
 ```sh
-git clone https://github.com/deepseek-ai/deepseek-harness.git
-cd deepseek-harness
+git clone https://github.com/Missher12/Deepseek-harness-Cordis.git
+cd Deepseek-harness-Cordis
 pnpm install
 pnpm run build
 pnpm dsh web

@@ -99,13 +99,15 @@ export function ModelSelect(
   const currentChoice = choices[selectedIndex]
   const reasoning = currentChoice?.model.reasoning
   const effectiveEffort = state.current?.reasoningEffort ?? reasoning?.defaultEffort
-  const effortLabel = reasoning === undefined
+  const invalidEffort = currentChoice !== undefined && state.current?.reasoningEffort !== undefined
+    && !reasoning?.efforts.some(level => level.id === state.current?.reasoningEffort)
+  const effortLabel = invalidEffort ? t('effort.invalid', { effort: state.current?.reasoningEffort ?? '' }) : reasoning === undefined
     ? state.retainedEffort
     : effectiveEffort === undefined
       ? t('effort.providerDefault')
       : reasoning.efforts.find(level => level.id === effectiveEffort)?.name ?? effectiveEffort
   const effortChoices = useMemo<readonly EffortChoice[]>(() => reasoning === undefined
-    ? []
+    ? invalidEffort ? [{ key: 'provider-default', effort: undefined, label: t('effort.providerDefault') }] : []
     : [
       ...reasoning.defaultEffort === undefined
         ? [{ key: 'provider-default', effort: undefined, label: t('effort.providerDefault') }]
@@ -115,7 +117,7 @@ export function ModelSelect(
         effort: effort.id,
         label: effort.name,
       })),
-    ], [reasoning, t])
+    ], [reasoning, invalidEffort, t])
   const { pending } = state
   const busy = pending !== null
 
@@ -407,7 +409,7 @@ export function ModelSelect(
                 <span className={css.cellValue}>{modelLabel}</span>
                 <IconChevronRightOutlineRegular className={css.cellChevron} />
               </button>
-              {reasoning !== undefined && (
+              {(reasoning !== undefined || invalidEffort) && (
                 <button ref={itemRef()} type="button" role="menuitem" className={css.cell} onClick={() => { drill('effort') }}>
                   <span className={css.cellLabel}>{t('menu.effort')}</span>
                   <span className={css.cellValue}>{effortLabel}</span>
@@ -483,6 +485,7 @@ export function ModelSelect(
                   <button type="button" className={css.retry} onClick={reload}>{t('action.reload')}</button>
                 </div>
               )}
+              {invalidEffort ? <div role="alert" className={css.empty}>{t('effort.reselect')}</div> : null}
               {effortChoices.length === 0
                 ? <div className={css.empty}>{t('empty.efforts')}</div>
                 : effortChoices.map(level => (

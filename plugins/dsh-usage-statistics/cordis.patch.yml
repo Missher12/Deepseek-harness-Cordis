@@ -1,0 +1,4 @@
+# DSH 0.1.7-rc.2 has no built-in usage page; this removable layer adds it.
+- insert:
+    - id: missher-usage-statistics
+      name: '@missher/dsh-usage-statistics'

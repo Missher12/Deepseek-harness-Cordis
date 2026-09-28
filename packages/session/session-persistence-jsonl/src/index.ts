@@ -419,6 +419,44 @@ class JsonlSessionPersistence extends SessionPersistence {
   }
 
   /**
+   * Delete committed history under the same exclusion as a writer. Historical
+   * generations disappear before the authoritative generation, so a failed
+   * deletion cannot expose an older conversation on the next startup.
+   * @param id - session identity.
+   * @returns false if no history remains, including after an interrupted retry.
+   */
+  override async delete(id: SessionId): Promise<boolean> {
+    this.tracker.claimWrite(id)
+    let lease: SessionWriteLease | undefined
+    try {
+      await this.ensureRootEncoding()
+      const selected = await this.findLog(id)
+      if (selected === undefined) return false
+      const directory = dirname(selected.sourcePath)
+      lease = await this.acquireLease(id, undefined, directory)
+      // Another process may have changed the selection before we got its lock.
+      const current = await this.findLog(id)
+      if (current === undefined) return false
+      if (dirname(current.sourcePath) !== directory) throw new Error('session storage moved during deletion')
+      await this.readGenerationHeader(current, id)
+      const historical = (await readdir(directory)).filter(name =>
+        parseGenerationLogFilename(name, this.compression) !== undefined
+        && join(directory, name) !== current.sourcePath)
+      for (const name of historical) await rm(join(directory, name))
+      if (process.platform !== 'win32') await this.syncDirPosix(directory)
+      await rm(current.sourcePath)
+      if (process.platform !== 'win32') await this.syncDirPosix(directory)
+      this.coldLogMemo.delete(id)
+      this.migrationPreparations.delete(id)
+      // Keep the lock inode and directory: unlinking a held lock permits a
+      // second process to create another inode and bypass mutual exclusion.
+      return true
+    } finally {
+      try { await lease?.release() } finally { this.tracker.releaseClaim(id) }
+    }
+  }
+
+  /**
    * Flush every active write handle in one durability barrier; see the seam
    * contract.
    * @returns resolution once every write handle active at the call has flushed.

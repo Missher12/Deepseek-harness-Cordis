@@ -31,11 +31,11 @@ export type { PreparedImageFile } from './store.ts'
 export { readRequestImageFile, requestImageVariantId } from './request-image.ts'
 
 /** Default maximum encoded bytes for one submitted image; oversized sources are refused, not shrunk. */
-export const DEFAULT_MAX_IMAGE_BYTES = 20 * 1024 * 1024
+export const DEFAULT_MAX_IMAGE_BYTES = 20_000_000
 /** Default maximum images in one prompt. */
-export const DEFAULT_MAX_IMAGES_PER_MESSAGE = 20
+export const DEFAULT_MAX_IMAGES_PER_MESSAGE = 9
 /** Default maximum aggregate image bytes in one prompt. */
-export const DEFAULT_MAX_MESSAGE_IMAGE_BYTES = 200 * 1024 * 1024
+export const DEFAULT_MAX_MESSAGE_IMAGE_BYTES = 180_000_000
 /** Default maximum intrinsic pixels for one submitted image. */
 export const DEFAULT_MAX_IMAGE_PIXELS = 64_000_000
 /** Default per-side pixel cap for one submitted image. */

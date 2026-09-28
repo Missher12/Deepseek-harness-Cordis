@@ -54,6 +54,8 @@ Host 插件提供 `ctx.fileUploads`。它拥有经过认证的流式路由、编
 | [`src/client/runtime.ts`](src/client/runtime.ts) | 专用 Worker 与页面自有载体实现 |
 | [`src/client/index.ts`](src/client/index.ts) | Client 插件注册与 `ctx.fileUpload` 声明 |
 
+编码与流式普通文件上传均先经附件准入，再签发回执。此路径不依赖上传名称，拒绝 PNG、JPEG、GIF 与 WebP 签名；调用方必须按图片提交。空文件及其他普通文件保持既有的逐字节行为。
+
 </details>
 
 **运行时不变式：** 不发布伴生入口。每个上传凭证只属于一个准确的 Session，每个请求只使用一个已选定载体。载体不支持的 stream 会在发送请求体前失败。

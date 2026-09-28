@@ -6,6 +6,10 @@ The tool pipeline of [dsh-tools](../../packages/core/tools). [core.md](core.md) 
 
 Source: [`packages/core/tools/src/index.ts`](../../packages/core/tools/src/index.ts) · [`packages/core/tools/src/schema.ts`](../../packages/core/tools/src/schema.ts) · [`packages/core/tools/src/presentation.ts`](../../packages/core/tools/src/presentation.ts)
 
+## `ToolCatalog` — effective registration owners
+
+`ToolCatalog` contains the selected `ToolPresentationMode` and a detached readonly array of `ToolRegistration` records. Each record pairs a tool definition with its borrowed registering Context. `catalog(scope)` uses the same scope filtering and same-name shadowing as dispatch, excludes synthetic `run_code`, and grants no execution permission. Consumers must not dispose the registering Context.
+
 ## `ToolDefinition` — a registered tool
 
 A `ToolSchema` (the model-facing fields) plus a mandatory canonical output declaration, the `execute` function, host-only scheduler metadata, an optional final-content callback, and optional UI presenters. The registry holds these; the loop dispatches calls through them. The registry's `schemas()` builds the model-facing `ToolSchema[]` by an explicit allowlist — `output`/`execute`/`projectContent`/`finalizeContent`/`timeoutMs`/`isConcurrencySafe`/`presentCall`/`presentResult` must never leak into a model request.
@@ -549,6 +553,15 @@ restrict(filter: ToolRestriction): () => void
  * @returns the exact disposer that unregisters the guard.
  */
 guard(guard: ToolGuard): () => void
+
+/**
+ * Read actual owners after the same restrictions and shadowing used by execution.
+ * The returned array is detached; definitions and contexts remain borrowed.
+ * A catalog entry does not bypass guards or approval at execution time.
+ * @param scope - viewing Agent or standing scope; omitted for the global view.
+ * @returns current presentation and live registrations, without synthetic transports.
+ */
+catalog(scope?: ScopeKey): ToolCatalog
 
 /**
  * Look up a tool as one scope sees it (scoped

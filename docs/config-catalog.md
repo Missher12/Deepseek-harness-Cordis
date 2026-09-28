@@ -1430,6 +1430,27 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-host-open-in-app -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-host-plugin-inventory -->
+<a id="deepseek-aidsh-host-plugin-inventory"></a>
+
+## `@deepseek-ai/dsh-host-plugin-inventory`
+
+- `inject`: `loader`
+- `source`: [`packages/host/plugin-inventory/src/types.ts:52`](../packages/host/plugin-inventory/src/types.ts)
+
+```ts config-catalog
+/** Bounds on completion results and model-facing capability summaries. */
+export interface CapabilityCatalogConfig {
+  /** Maximum plugin candidates returned by one completion query. */
+  candidateLimit?: number
+  /** Maximum tool summaries per plugin; capabilityCount retains the visible total. */
+  toolLimit?: number
+  /** Maximum characters in each plugin or tool description. */
+  descriptionMaxChars?: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-host-plugin-inventory -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-host-product-telemetry-otel -->
 <a id="deepseek-aidsh-host-product-telemetry-otel"></a>
 
@@ -4350,7 +4371,6 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-goal-round-driver` | `agents` · `goals` · `sessions` | [`packages/goal/goal-round-driver/src/index.ts`](../packages/goal/goal-round-driver/src/index.ts) |
 | `@deepseek-ai/dsh-host-directory-picker-auto` | `webServer` · `loader` | [`packages/host/directory-picker-auto/src/index.ts`](../packages/host/directory-picker-auto/src/index.ts) |
 | `@deepseek-ai/dsh-host-directory-picker-native` | — | [`packages/host/directory-picker-native/src/index.ts`](../packages/host/directory-picker-native/src/index.ts) |
-| `@deepseek-ai/dsh-host-plugin-inventory` | `loader` | [`packages/host/plugin-inventory/src/index.ts`](../packages/host/plugin-inventory/src/index.ts) |
 | `@deepseek-ai/dsh-llm` | — | [`packages/llm/llm/src/index.ts`](../packages/llm/llm/src/index.ts) |
 | `@deepseek-ai/dsh-lsp` | — | [`packages/lsp/lsp/src/index.ts`](../packages/lsp/lsp/src/index.ts) |
 | `@deepseek-ai/dsh-mcp-resources` | `tools` | [`packages/mcp/mcp-resources/src/index.ts`](../packages/mcp/mcp-resources/src/index.ts) |

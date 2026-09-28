@@ -257,6 +257,8 @@ export interface InputState {
   readonly draft: string
   /** Ordered runtime-only attachment ids; browser objects stay in ConversationController. */
   readonly attachmentIds: readonly DraftAttachmentId[]
+  /** True while a file batch is being identified; submission waits for its decision. */
+  readonly intakePending?: boolean
   /** Monotonic editor revision (span CAS compares against this). */
   readonly draftRev: number
   readonly phase: 'plain' | 'adjudicating' | 'claimed' | 'submitting'

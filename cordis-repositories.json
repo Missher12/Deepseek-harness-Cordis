@@ -1,0 +1,54 @@
+{
+  "repository": "Missher12/Deepseek-harness-Cordis",
+  "visibility": "public",
+  "host": {
+    "path": ".",
+    "baseRepository": "Missher12/deepseek-harness",
+    "baseCommit": "e3409377ac873963595b76c0eb9afd8a8aa241af",
+    "upstream": "deepseek-ai/deepseek-harness"
+  },
+  "bundles": [
+    {
+      "path": "plugins/dsh-context-manager",
+      "name": "dsh-context-manager",
+      "version": "0.3.5-local.1",
+      "historyRepository": "Missher12/dsh-context-manager",
+      "importedCommit": "c338afdcc41cb909219a8c70995a9d8379764174"
+    },
+    {
+      "path": "plugins/dsh-session-bridge",
+      "name": "dsh-session-bridge",
+      "version": "0.1.2",
+      "historyRepository": "Missher12/dsh-session-bridge",
+      "importedCommit": "c9ee52c3c7ac4ddb2cb3274d1089862a817c63b6"
+    },
+    {
+      "path": "plugins/dsh-output-renderer",
+      "name": "@missher/dsh-output-renderer",
+      "version": "0.1.0",
+      "historyRepository": "Missher12/dsh-output-renderer",
+      "importedCommit": "a27923361e567cab70f70c25bf84ccbc7595101b"
+    },
+    {
+      "path": "plugins/dsh-usage-statistics",
+      "name": "@missher/dsh-usage-statistics",
+      "version": "0.2.0",
+      "historyRepository": "Missher12/dsh-usage-statistics",
+      "importedCommit": "4058457826ca5c7f3a618ab82cff8a872bb74d1a"
+    }
+  ],
+  "external": [
+    {
+      "repository": "Missher12/dsh-reasoning-effort",
+      "visibility": "private"
+    },
+    {
+      "repository": "Missher12/media-missher",
+      "visibility": "private"
+    },
+    {
+      "repository": "Missher12/mse-learning",
+      "visibility": "public"
+    }
+  ]
+}

@@ -10,8 +10,8 @@ import type { ConversationKey } from './locales.ts'
  * @returns the rounded megabyte text.
  */
 export function imageSizeText(bytes: number): string {
-  const mb = bytes / (1024 * 1024)
-  return `${Number.isInteger(mb) ? String(mb) : mb.toFixed(1)}MB`
+  const mb = bytes / 1_000_000
+  return `${Number(mb.toFixed(1))}MB`
 }
 
 /**
@@ -41,6 +41,7 @@ export function attachmentErrorText(
       break
     // Undecodable bytes or a declared type its bytes contradict: solvable by
     // replacing or re-exporting the file, so it reads as a format problem.
+    case 'IMAGE_REQUIRES_IMAGE_UPLOAD':
     case 'INVALID_IMAGE':
     case 'IMAGE_TYPE_MISMATCH':
       return t('image.unsupportedType')

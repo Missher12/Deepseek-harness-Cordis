@@ -7,6 +7,8 @@ import {
 import type { DeepSeekModelDraft } from './DeepSeekModelsEditor.tsx'
 import type { ModelsKey } from './locales.ts'
 import { ModelInputTypes } from './ModelInputTypes.tsx'
+import { ModelReasoningFields } from './ModelReasoningFields.tsx'
+import type { ReasoningDeclaration } from './reasoning.ts'
 import styles from './ModelsSection.module.css'
 
 /** A capacity's editable text and adapter-specific inherited hint. */
@@ -22,6 +24,9 @@ interface ModelRowProps {
   model: DeepSeekModelDraft
   position: number
   inputField: 'inputModalities' | 'input'
+  reasoningEnabled?: boolean
+  reasoningIdentity?: string
+  reasoningFallback?: ReasoningDeclaration
   inputFallback?: readonly string[] | undefined
   inputLoading?: boolean
   expanded: boolean
@@ -102,6 +107,16 @@ export function ModelRow(props: ModelRowProps): ReactNode {
                 />
               </label>
             ))}
+            {props.reasoningEnabled === true ? <ModelReasoningFields key={props.reasoningIdentity}
+              value={model['reasoningEfforts']} inherited={props.reasoningFallback}
+              label={String(position)} disabled={disabled} t={t}
+              onChange={(value) => {
+                const next = { ...model }
+                if (value === undefined) delete next['reasoningEfforts']
+                else next['reasoningEfforts'] = value
+                props.onChange(next)
+              }}
+            /> : null}
             <ModelInputTypes
               model={model} field={props.inputField} position={position}
               fallback={props.inputFallback} disabled={disabled || props.inputLoading === true} t={t} onChange={props.onChange}

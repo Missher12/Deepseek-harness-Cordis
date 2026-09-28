@@ -714,10 +714,25 @@ interface CompiledToolRestriction {
 interface ToolView {
   /** Visible definitions after restrictions, scoped shadowing, and transport insertion. */
   readonly visible: ReadonlyMap<string, ToolDefinition>
+  readonly registrations: ReadonlyMap<string, ToolRegistration>
   /** Pre-restriction capability names used by prompt-order validation. */
   readonly knownNames: ReadonlySet<string>
   /** Current global names that a scoped restriction may name. */
   readonly restrictableNames: ReadonlySet<string>
+}
+
+/** One live registration and the Cordis context that owns its disposal. */
+export interface ToolRegistration {
+  /** Borrowed definition; consumers must not mutate it. */
+  readonly definition: ToolDefinition
+  /** Actual registration context, for same-process Loader ownership inspection. */
+  readonly context: Context
+}
+
+/** Effective presentation and scoped registrations, excluding the synthetic PTC transport. */
+export interface ToolCatalog {
+  readonly mode: ToolPresentationMode
+  readonly registrations: readonly ToolRegistration[]
 }
 
 /**
@@ -732,7 +747,7 @@ export type ToolGuard = (execution: Readonly<ToolExecution>) => string | undefin
 
 /** One scope's complete tool-registry contribution. */
 class ToolLayer implements ScopeLayer {
-  readonly tools: NamedEntries<ToolDefinition>
+  readonly tools: NamedEntries<ToolRegistration>
   readonly restrictions = new AnonymousEntries<CompiledToolRestriction>()
   readonly guards = new AnonymousEntries<ToolGuard>()
   /**
@@ -1082,7 +1097,7 @@ export class ToolRuntime extends Service {
     }
     return this.layers.effect(
       this.ctx,
-      layer => layer.tools.insert(name, definition),
+      layer => layer.tools.insert(name, Object.freeze({ definition, context: this.ctx })),
       { label: 'tools.register()' },
     )
   }
@@ -1184,27 +1199,32 @@ export class ToolRuntime extends Service {
     const own = this.layers.peek(scope)
     // Inherited surface, nearest ancestor last: a nearer scope's same-name
     // entry shadows a farther one, and the global layer is the farthest.
-    const inherited = new Map<string, ToolDefinition>(this.layers.global.tools.entries())
+    const inherited = new Map<string, ToolRegistration>(this.layers.global.tools.entries())
     for (const layer of layers) {
       if (layer === own) continue
       for (const [name, definition] of layer.tools.entries()) inherited.set(name, definition)
     }
     const visible = new Map<string, ToolDefinition>()
+    const registrations = new Map<string, ToolRegistration>()
     const knownNames = new Set<string>()
     const restrictableNames = new Set<string>()
-    for (const [name, definition] of inherited) {
+    for (const [name, registration] of inherited) {
       knownNames.add(name)
       restrictableNames.add(name)
       // Restrictions intersect across the whole chain: any scope on it may
       // mask an inherited name for everything nested inside it.
-      if (layers.every(layer => layer.admits(name))) visible.set(name, definition)
+      if (layers.every(layer => layer.admits(name))) {
+        visible.set(name, registration.definition)
+        registrations.set(name, registration)
+      }
     }
     // The scope's own registrations last, shadowing an inherited name and
     // outside the filter above.
     if (own !== undefined) {
-      for (const [name, definition] of own.tools.entries()) {
+      for (const [name, registration] of own.tools.entries()) {
         knownNames.add(name)
-        visible.set(name, definition)
+        visible.set(name, registration.definition)
+        registrations.set(name, registration)
       }
     }
     // Presentation infrastructure is resolved last and outside capability
@@ -1215,7 +1235,18 @@ export class ToolRuntime extends Service {
     if (this.modeFor(scope) !== 'native') {
       visible.set(RUN_CODE_NAME, this.requirePtcTransport())
     }
-    return { visible, knownNames, restrictableNames }
+    return { visible, registrations, knownNames, restrictableNames }
+  }
+
+  /**
+   * Read actual owners after the same restrictions and shadowing used by execution.
+   * The returned array is detached; definitions and contexts remain borrowed.
+   * A catalog entry does not bypass guards or approval at execution time.
+   * @param scope - viewing Agent or standing scope; omitted for the global view.
+   * @returns current presentation and live registrations, without synthetic transports.
+   */
+  catalog(scope?: ScopeKey): ToolCatalog {
+    return { mode: this.modeFor(scope), registrations: [...this.view(scope).registrations.values()] }
   }
 
   /**

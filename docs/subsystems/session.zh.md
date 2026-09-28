@@ -793,6 +793,12 @@ Host service backing the generated `ctx.remote.session` namespace.
 resolveAgent(sessionId: SessionId): Promise<ApiSessionAgentResult>
 
 /**
+ * Delete one archived conversation through its lifecycle and storage owners.
+ * @param sessionId - archived session identity; workspace files are retained.
+ */
+async deleteArchivedSession(sessionId: SessionId): Promise<void>
+
+/**
  * Inspect one attached or persisted Session without activating its Agent.
  * @param sessionId - durable Session identity.
  * @param signal - optional caller cancellation for persistence reads.

@@ -1,11 +1,16 @@
 /** Read-only projection of the current Cordis Loader plugin entries. */
 
 import type { Context, FiberState } from '@deepseek-ai/cordis'
+import z from '@deepseek-ai/schemastery'
+import type { Agent } from '@deepseek-ai/dsh-agent'
 import type {} from '@deepseek-ai/cordis-plugin-loader'
 // Type-only: the optional agent-preset roster resolved through `ctx.get`.
 import type {} from '@deepseek-ai/dsh-agent-preset-registry'
 import type {} from '@deepseek-ai/dsh-app-boot'
-import { TypertRemoteService, Remote } from '@deepseek-ai/dsh-typert-protocol'
+import { TypertRemoteService, Remote, RemoteError } from '@deepseek-ai/dsh-typert-protocol'
+import { readPluginCapabilities } from './capabilities.ts'
+import { parsePluginReferenceText } from './reference.ts'
+import type {} from './reference-plugin.ts'
 // Typert-generated ./typert and ./remote artifacts import Zod at runtime.
 import type {} from 'zod'
 import type {
@@ -14,9 +19,18 @@ import type {
   PluginFiberPhase,
   PluginInventoryEntry,
   PluginInventorySnapshot,
+  PluginCapabilityCandidate,
+  CapabilityCatalogConfig,
+  PluginInstanceId,
 } from './types.ts'
 
 export type * from './types.ts'
+
+declare module '@deepseek-ai/cordis' {
+  interface Context {
+    pluginInventory: PluginInventoryGateway
+  }
+}
 
 /**
  * Brand an existing Loader-tree entry id at the owning boundary.
@@ -47,12 +61,43 @@ const FIBER_PHASE = {
   [FIBER_STATE.UNLOADING]: 'unloading',
 } as const satisfies Record<FiberState, PluginFiberPhase>
 
-/** Remote-only service exposing the Loader's current non-group entry state. */
+/** Loader inventory and Agent-scoped callable-plugin discovery. */
 export class PluginInventoryGateway extends TypertRemoteService {
   static inject = ['loader']
+  static Config: z<CapabilityCatalogConfig> = z.object({
+    candidateLimit: z.natural().min(1).default(50),
+    toolLimit: z.natural().min(1).default(64),
+    descriptionMaxChars: z.natural().min(1).default(240),
+  })
 
-  constructor(ctx: Context) {
+  private readonly config: Required<CapabilityCatalogConfig>
+
+  constructor(ctx: Context, config: CapabilityCatalogConfig = {}) {
     super(ctx, 'pluginInventory')
+    this.config = {
+      candidateLimit: config.candidateLimit ?? 50,
+      toolLimit: config.toolLimit ?? 64,
+      descriptionMaxChars: config.descriptionMaxChars ?? 240,
+    }
+    ctx.on('tools/change', () => { ctx.emit('plugin-capabilities/changed') })
+    ctx.on('internal/status', (fiber) => {
+      if (fiber.entry !== undefined) ctx.emit('plugin-capabilities/changed')
+    }, { global: true })
+    // The inventory remains mounted when its optional resolver is disabled.
+    // Previously queued canonical references must fail instead of becoming paths.
+    ctx.on('agent/pre-step', async (_request, next) => {
+      const decision = await next()
+      if (decision.kind === 'reject' || ctx.get('pluginReferenceResolver')?.isAvailable()) return decision
+      for (const message of decision.messages) {
+        if (message.source.kind !== 'user') continue
+        for (const block of message.content) {
+          if (block.type === 'text' && parsePluginReferenceText(block.text).references.length > 0) {
+            throw new RemoteError('gateway/bad-request', 'Plugin references are unavailable: their resolver is not active', {})
+          }
+        }
+      }
+      return decision
+    })
   }
 
   /**
@@ -70,6 +115,43 @@ export class PluginInventoryGateway extends TypertRemoteService {
   @Remote('list')
   async list(): Promise<PluginInventorySnapshot> {
     return readPluginInventory(this.ctx)
+  }
+
+  /**
+   * List only currently callable plugin instances for a target Agent.
+   * @param agent - target Agent resolved by the Remote's Session lookup.
+   * @param query - case-insensitive module, title or tool-name substring.
+   * @param signal - caller cancellation, checked before reading the catalog.
+   * @returns bounded candidates with canonical mentions and execution modes.
+   */
+  @Remote('candidates')
+  async candidates(agent: Agent, query: string, signal: AbortSignal): Promise<PluginCapabilityCandidate[]> {
+    signal.throwIfAborted()
+    if (!this.ctx.get('pluginReferenceResolver')?.isAvailable()) return Promise.resolve([])
+    const needle = query.toLocaleLowerCase()
+    return Promise.resolve(readPluginCapabilities(this.ctx, agent, this.config)
+      .filter(row => [row.label, row.moduleName, row.entryId, row.description,
+        ...typeof row.meta?.title === 'object' ? Object.values(row.meta.title) : [],
+      ].some(value => value.toLocaleLowerCase().includes(needle)))
+      .slice(0, this.config.candidateLimit))
+  }
+
+  /**
+   * Resolve selected identities against the current Agent, without candidate pagination.
+   * @param agent - target Agent entering the request.
+   * @param ids - validated stable identities from direct user text.
+   * @returns current summaries, in first-reference order.
+   * @throws RemoteError when any referenced owner has no currently visible tools.
+   */
+  resolveReferences(agent: Agent, ids: readonly PluginInstanceId[]): PluginCapabilityCandidate[] {
+    const rows = new Map(readPluginCapabilities(this.ctx, agent, this.config).map(row => [row.id, row]))
+    return [...new Set(ids)].map((id) => {
+      const row = rows.get(id)
+      if (row === undefined) {
+        throw new RemoteError('gateway/bad-request', `Referenced plugin is unavailable in this session: ${id}`, {})
+      }
+      return row
+    })
   }
 }
 

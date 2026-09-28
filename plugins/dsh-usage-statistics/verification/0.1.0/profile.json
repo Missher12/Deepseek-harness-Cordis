@@ -1,0 +1,13 @@
+{
+  "runtime": "0.1.5-rc.2",
+  "artifactSha256": "d0ba9604ac0731cbf56289789afc676b82d8e9645fda73be3c02e7227e94d7c2",
+  "install": true,
+  "loaderBoot": true,
+  "privateRemoteManifest": true,
+  "syntheticTokens": 30000,
+  "cacheHitRate": 0.76,
+  "uninstallRestoresBase": true,
+  "originalServiceRestored": true,
+  "sessionBytesUnchanged": true,
+  "realModel": false
+}

@@ -2,6 +2,7 @@
 
 import { Buffer } from 'node:buffer'
 import { AttachmentError } from './error.ts'
+import { detectImageMediaType } from './image-format.ts'
 import type { AttachmentStore } from './index.ts'
 import type {
   EncodedFileAttachment,
@@ -9,6 +10,7 @@ import type {
   FileAttachmentRef,
   ImageAttachmentRef,
   SaveImageAttachment,
+  SaveFileStreamAttachment,
 } from './types.ts'
 
 /** Decode one upload payload while rejecting non-canonical base64 forms. */
@@ -55,7 +57,7 @@ export async function admitEncodedImages(
 
 /**
  * Admit one wire file upload: enforce canonical base64 (an empty file is a
- * valid zero-byte payload), then delegate verbatim commit to
+ * valid zero-byte payload), reject supported image signatures, then delegate verbatim commit to
  * {@link AttachmentStore.saveFile}. The shared entry for every RPC endpoint
  * accepting browser file uploads.
  * @param attachments - the deployment attachment store.
@@ -67,8 +69,55 @@ export async function admitEncodedFile(
   attachments: AttachmentStore,
   file: EncodedFileAttachment,
 ): Promise<FileAttachmentRef> {
+  const data = decodeCanonicalBase64(file.data, 'accept', 'INVALID_FILE_BASE64')
+  rejectImageFile(data)
   return attachments.saveFile({
-    data: decodeCanonicalBase64(file.data, 'accept', 'INVALID_FILE_BASE64'),
+    data,
     ...file.name === undefined ? {} : { name: file.name },
   })
+}
+
+function rejectImageFile(bytes: Uint8Array): void {
+  if (detectImageMediaType(bytes) !== undefined) {
+    throw new AttachmentError('Images must use image admission, not a file upload.', 'IMAGE_REQUIRES_IMAGE_UPLOAD')
+  }
+}
+
+/**
+ * Admit a streamed ordinary file after inspecting its bounded signature prefix.
+ * Raw storage remains verbatim; upload admission cannot disguise supported images as files.
+ * @param attachments - the deployment attachment store.
+ * @param input - ordered chunks, optional cancellation, and display name.
+ * @returns the durable reference after signature validation and a successful commit.
+ */
+export function admitFileStream(attachments: AttachmentStore, input: SaveFileStreamAttachment): Promise<FileAttachmentRef> {
+  async function* checked(): AsyncGenerator<Uint8Array> {
+    const prefix = new Uint8Array(12)
+    const buffered: Uint8Array[] = []
+    let used = 0
+    let admitted = false
+    for await (const chunk of input.data) {
+      input.signal?.throwIfAborted()
+      if (admitted) {
+        yield chunk
+        continue
+      }
+      if (chunk.length === 0) continue
+      buffered.push(chunk)
+      const count = Math.min(prefix.length - used, chunk.length)
+      prefix.set(chunk.subarray(0, count), used)
+      used += count
+      if (used < prefix.length) continue
+      rejectImageFile(prefix)
+      admitted = true
+      yield* buffered
+      buffered.length = 0
+    }
+    input.signal?.throwIfAborted()
+    if (!admitted) {
+      rejectImageFile(prefix.subarray(0, used))
+      yield* buffered
+    }
+  }
+  return attachments.saveFileStream({ ...input, data: checked() })
 }

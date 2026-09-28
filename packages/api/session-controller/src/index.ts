@@ -221,6 +221,16 @@ export class SessionController extends TypertRemoteService {
   }
 
   /**
+   * Delete one archived conversation through its lifecycle and storage owners.
+   * @param sessionId - archived session identity; workspace files are retained.
+   */
+  async deleteArchivedSession(sessionId: SessionId): Promise<void> {
+    await this.agents.withSessionDeletion(sessionId, release =>
+      this.ctx.workspaceRegistry.deleteArchivedSession(sessionId, release))
+    this.ctx.emit('api-session/removed', sessionId)
+  }
+
+  /**
    * Inspect one attached or persisted Session without activating its Agent.
    * @param sessionId - durable Session identity.
    * @param signal - optional caller cancellation for persistence reads.
@@ -413,7 +423,7 @@ export class SessionController extends TypertRemoteService {
    */
   @Remote('fork')
   fork(request: SessionForkRequest): Promise<SessionForkValue> {
-    return this.commands.fork(request)
+    return this.agents.withSessionUse(request.sessionId, () => this.commands.fork(request))
   }
 
   /**

@@ -66,6 +66,8 @@ kind: "package-reference"
 
 UI 通过 `activeAtToken` 识别活动 `@` token，用查询文本调用 `list`，再渲染排序后的候选。选中后，`formatFileMention` 发出匹配的提示词写法（`@path`、`@"path with spaces"`，或带引号目录的开放形式 `@"dir/`）。任何环节都不读取文件内容；当指定 agent 拥有 `read` 工具时，提供方还可以安装稳定的 `FILE_REFERENCE_PROMPT` 提示词段。
 
+模型指引区分普通路径 mention 与结构化插件、Session 标记。结构化引用由各自的 resolver 负责，不能作为路径或传入文件系统工具。
+
 </details>
 
 -----

@@ -23,6 +23,9 @@ import type { ReferenceInsert } from './contract/draft-editor.ts'
 import { createConversationStore, readConversationViewPreference } from './stores.ts'
 import { formatFileMention } from '@deepseek-ai/dsh-file-reference/grammar'
 import { relativizeToCwd, workspaceTitleOf } from '@deepseek-ai/dsh-util-workspace-path'
+import type { ImageAttachmentLimits } from '@deepseek-ai/dsh-attachment/types'
+import { classifyFiles, FileIntakeError, imageBatchFailure } from './file-intake.ts'
+import { attachmentErrorText } from './image-labels.ts'
 import { ConversationController, UnsupportedImageMediaTypeError, isImageMediaType } from './service.ts'
 import type { IConversation } from './service.ts'
 import { ComposerBlockRegistry } from './input/blocks.ts'
@@ -456,15 +459,30 @@ export function apply(ctx: Context, config: Config = Config({})): void {
       const bridge = hostPathBridge()
       return {
         keyboard: shell,
-        addFiles: (files, directories = new Set()) => {
-          if (sessions.binding(sessionId) === undefined) return t('file.sessionUnavailable')
+        addFiles: (files, directories = new Set()) => shell.enqueueFileIntake(async () => {
+          const binding = sessions.binding(sessionId)
+          if (binding === undefined) return t('file.sessionUnavailable')
           if (shell.snapshot.phase === 'adjudicating' || shell.snapshot.phase === 'submitting') {
             return t('attachment.dropBlocked')
           }
+          let classified: File[]
+          try {
+            classified = await classifyFiles(files, directories)
+          } catch (error: unknown) {
+            return error instanceof FileIntakeError
+              ? attachmentErrorText(t, error.reason)
+              : t('image.unsupportedType')
+          }
+          if (sessions.binding(sessionId) !== binding) return t('file.sessionUnavailable')
+          const limits = binding.session.projections.faceOf('imageLimits').getSnapshot() as ImageAttachmentLimits | undefined
+          const existing = conversation.resolveDraftAttachments(shell.snapshot.attachmentIds)
+            .filter(attachment => attachment.kind === 'image').map(attachment => attachment.file)
+          const failure = imageBatchFailure(existing, classified.filter(file => isImageMediaType(file.type)), limits)
+          if (failure !== undefined) return attachmentErrorText(t, failure, limits)
           const uploads: File[] = []
           const references: ReferenceInsert[] = []
           const cwd = sessions.list.getSnapshot().byId[sessionId]?.cwd
-          for (const file of files) {
+          for (const file of classified) {
             const directory = directories.has(file)
             if (bridge === undefined && directory) return t('attachment.directoryDesktopOnly')
             const path = bridge?.pathFor(file) ?? ''
@@ -494,7 +512,7 @@ export function apply(ctx: Context, config: Config = Config({})): void {
             if (error instanceof UnsupportedImageMediaTypeError) return t('image.unsupportedType')
             return error instanceof Error ? error.message : String(error)
           }
-        },
+        }, t('file.sessionUnavailable')),
         removeAttachment: (id) => {
           if (shell.removeAttachment(id)) conversation.releaseDraftAttachment(id)
         },

@@ -1270,3 +1270,28 @@ describe('reference activation', () => {
     expect(controller.openReference('skill', { ref: '/review' })).toBe(false)
   })
 })
+
+
+describe('candidate availability invalidation', () => {
+  it('removes disabled plugin candidates, cancels old lookups, and unsubscribes on disposal', async () => {
+    let invalidate: (() => void) | undefined
+    const unsubscribe = vi.fn()
+    const plugin = deferredSource('@', 'plugin-reference', {
+      subscribeCandidates: (_session, listener) => { invalidate = listener; return unsubscribe },
+    })
+    const { controller } = controllerBench([plugin.source])
+    controller.track('@插件', 3, { tier: 'plain' }, 1)
+    plugin.pending[0]!.resolve([{ name: '中文 @ 插件', value: 'old' }])
+    await tick()
+    expect(controller.menu.getSnapshot().groups[0]?.items).toHaveLength(1)
+    invalidate!()
+    expect(plugin.pending[0]!.signal.aborted).toBe(true)
+    expect(controller.menu.getSnapshot().groups.flatMap(group => group.items)).toEqual([])
+    expect(plugin.pending).toHaveLength(2)
+    plugin.pending[1]!.resolve([])
+    await tick()
+    expect(controller.menu.getSnapshot().groups.flatMap(group => group.items)).toEqual([])
+    controller.dispose()
+    expect(unsubscribe).toHaveBeenCalledOnce()
+  })
+})

@@ -1029,6 +1029,34 @@ function emitLoaderEntryChange(context: Context, name: string): void {
   } as unknown as Fiber)
 }
 
+describe('metadata after Loader entry changes', () => {
+  it('discovers a client declaration added after a negative lookup without renaming the row', async () => {
+    const packageName = '@fixture/late-client'
+    writePackage(packageName, {})
+    const { context, service } = constructWithRoute([packageName])
+    expect(service.graph().entries).toEqual([])
+    writeBuiltPackage(packageName, {})
+    emitLoaderEntryChange(context, packageName)
+    await Promise.resolve()
+    expect(service.graph().entries.map(entry => entry.id)).toEqual([packageName])
+  })
+
+  it('refreshes positive metadata and removes a withdrawn client declaration', async () => {
+    const packageName = '@fixture/changed-client'
+    writeBuiltPackage(packageName, { inject: ['old'] })
+    const { context, service } = constructWithRoute([packageName])
+    expect(service.graph().entries[0]?.inject).toEqual(['old'])
+    writeBuiltPackage(packageName, { inject: ['new'], immediately: true })
+    emitLoaderEntryChange(context, packageName)
+    await Promise.resolve()
+    expect(service.graph().entries[0]).toMatchObject({ inject: ['new'], immediately: true })
+    writePackage(packageName, {})
+    emitLoaderEntryChange(context, packageName)
+    await Promise.resolve()
+    expect(service.graph().entries).toEqual([])
+  })
+})
+
 describe('shared module declarations', () => {
   it('accepts external requests and carries them onto the graph row', () => {
     const packageName = '@fixture/shared-declared'

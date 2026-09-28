@@ -25,6 +25,8 @@ English | [中文](README.zh.md)
 <a id="use-this-package"></a>
 ## Use this package
 
+Explicit `delete(id)` removes historical generations first and the authoritative generation last under the writer lock. It retains the lock inode and workspace files. This is an intentional history deletion operation, separate from format migration, which still preserves historical generations.
+
 Mount this backend when a composition needs durable sessions backed by per-session files. The common path is explicit: load the session service, mount the backend, and give it a root directory.
 
 ### When to choose it

@@ -44,6 +44,22 @@ function repository(test: TestContext) {
 }
 
 describe('maintained repository reference policy', () => {
+  it('retains exact import baselines while checking adjacent maintained docs and organization URLs', () => {
+    const commit = 'a'.repeat(40)
+    const commits = new Set([commit])
+    for (const file of ['cordis-repositories.json', 'plugins/dsh-context-manager/COMPATIBILITY.json']) {
+      expect(findRepositoryReferences(file, commit, commits)).toEqual([])
+      expect(findRepositoryReferences(file, organizationUrl, commits)).toEqual([
+        { file, line: 1, kind: 'organization-url' },
+      ])
+    }
+    for (const file of ['CORDIS.md', 'plugins/dsh-context-manager/README.md', 'plugins/new/COMPATIBILITY.json']) {
+      expect(findRepositoryReferences(file, commit, commits)).toEqual([
+        { file, line: 1, kind: 'commit-hash' },
+      ])
+    }
+  })
+
   it('permits only the independent kit repository and its source URLs', () => {
     for (const suffix of ['', '.git', '/tree/main/packages/entry']) {
       expect(findRepositoryReferences('package.json', `${organizationUrl}/libreoffice-kit${suffix}`, new Set())).toEqual([])

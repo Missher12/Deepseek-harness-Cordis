@@ -101,6 +101,7 @@ export class InputTriggerController {
   private fetch: AbortController | null = null
   private disposed = false
   /** Per-source lexicon unsubscribers (sources without the hook never enter). */
+  private readonly candidateOffs = new Map<InputTriggerSource, () => void>()
   private readonly lexiconOffs = new Map<InputTriggerSource, () => void>()
 
   constructor(private readonly deps: InputTriggerControllerDeps) {
@@ -111,6 +112,7 @@ export class InputTriggerController {
     for (const src of deps.roster.all()) {
       src.warm?.(projection)
       this.watchLexicon(src, projection)
+      this.watchCandidates(src, projection)
     }
     this.refreshLexicon()
   }
@@ -407,6 +409,8 @@ export class InputTriggerController {
     }
     this.lexiconOffs.get(source)?.()
     this.lexiconOffs.delete(source)
+    this.candidateOffs.get(source)?.()
+    this.candidateOffs.delete(source)
     this.refreshLexicon()
   }
 
@@ -421,6 +425,7 @@ export class InputTriggerController {
     const projection = this.project()
     source.warm?.(projection)
     this.watchLexicon(source, projection)
+    this.watchCandidates(source, projection)
     this.refreshLexicon()
   }
 
@@ -450,6 +455,8 @@ export class InputTriggerController {
     this.hit = null
     for (const off of this.lexiconOffs.values()) off()
     this.lexiconOffs.clear()
+    for (const off of this.candidateOffs.values()) off()
+    this.candidateOffs.clear()
   }
 
   /** The session projection handed to sources (agent-backed identity; constant per scope). */
@@ -495,6 +502,20 @@ export class InputTriggerController {
       rolls.set(src.trigger, prev === undefined ? names : [...prev, ...names])
     }
     this.lexicon.set(rolls)
+  }
+
+  private watchCandidates(source: InputTriggerSource, projection: ClientSessionContext): void {
+    if (source.subscribeCandidates === undefined) return
+    this.candidateOffs.set(source, source.subscribeCandidates(projection, () => {
+      const state = this.menu.getSnapshot()
+      if (this.disposed || !state.open || this.hit?.trigger !== source.trigger) return
+      const hit = this.hit
+      const launched = this.launcher.getSnapshot()
+      const roster = this.deps.roster.sources(hit.trigger).filter(item => launched === null || item.name === launched)
+      this.menu.set(seedGroups(state, roster))
+      this.reduce({ type: 'hit', hit })
+      this.fetchCandidates(hit, roster)
+    }))
   }
 
   /** Wire one source's lexicon invalidation channel into refresh (hookless or roll-less sources never notify). */

@@ -2,6 +2,22 @@
 
 /** English strings (the key-set source of truth for this pair). */
 export const en = {
+  reasoningCapability: 'Reasoning capability',
+  reasoningMode: 'Capability declaration',
+  reasoningInherit: 'Inherit detected capability',
+  reasoningDisabled: 'No selectable reasoning capability',
+  reasoningCustom: 'Custom supported levels',
+  reasoningHint: 'Only declared levels are supported. Lowering the maximum removes higher entries; defaults and session selections stay unchanged. Declarations do not verify an endpoint.',
+  reasoningUnknown: 'No inherited reasoning declaration is available for this model.',
+  reasoningMaximum: 'Highest supported level',
+  reasoningChooseLevels: 'Select supported levels below',
+  reasoningSupported: 'Supported level',
+  reasoningWire: 'Endpoint value',
+  reasoningOmit: 'Omit the off value',
+  reasoningInvalid: 'Declare at least one thinking level and a non-empty endpoint value for every selected level; only off may omit its value.',
+  reasoningAdvanced: 'Advanced: supported levels and protocol mappings',
+  reasoningCatalog: 'Catalog model capabilities',
+
   nav: 'Models',
   deepSeekAccount: 'DeepSeek Account',
   title: 'Models',
@@ -122,6 +138,22 @@ export type ModelsKey = keyof typeof en
 
 /** Chinese strings (same keys as {@link en}). */
 export const zh: { [Key in keyof typeof en]: string } = {
+  reasoningCapability: '思考能力',
+  reasoningMode: '能力声明',
+  reasoningInherit: '继承识别结果',
+  reasoningDisabled: '不声明可选思考能力',
+  reasoningCustom: '自定义支持档位',
+  reasoningHint: '仅声明的档位可用；降低最高档会移除更高条目，不改变默认档和会话选择。能力声明不等于端点实测。',
+  reasoningUnknown: '该模型没有可继承的思考能力声明。',
+  reasoningMaximum: '最高支持档位',
+  reasoningChooseLevels: '请在下方选择支持档位',
+  reasoningSupported: '支持档位',
+  reasoningWire: '端点取值',
+  reasoningOmit: '不发送 off 强度值',
+  reasoningInvalid: '至少声明一个思考档位，并为每个选中档填写非空端点取值；只有 off 可不发送强度值。',
+  reasoningAdvanced: '高级：支持档位与协议映射',
+  reasoningCatalog: '目录模型的思考能力',
+
   nav: '模型',
   deepSeekAccount: 'DeepSeek 账号',
   title: '模型',

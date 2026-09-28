@@ -223,6 +223,13 @@ export interface InputTriggerSource {
    */
   subscribeLexicon?(session: ClientSessionContext, listener: () => void): () => void
   /**
+   * Subscribe to candidate availability changes independently of text decorations.
+   * @param session - stable owning session.
+   * @param listener - invalidate visible candidates and cancel their previous lookup.
+   * @returns unsubscribe.
+   */
+  subscribeCandidates?(session: ClientSessionContext, listener: () => void): () => void
+  /**
    * Open a reference preview without changing or submitting the draft.
    * @param session - session owning the composer.
    * @param reference - source-owned id and optional chip glyph; text references retain their trigger.

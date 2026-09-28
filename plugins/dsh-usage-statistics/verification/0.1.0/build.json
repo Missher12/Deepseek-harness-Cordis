@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "externalImports": [
+    {
+      "path": "react",
+      "kind": "require-call",
+      "external": true
+    },
+    {
+      "path": "react/jsx-runtime",
+      "kind": "require-call",
+      "external": true
+    }
+  ]
+}

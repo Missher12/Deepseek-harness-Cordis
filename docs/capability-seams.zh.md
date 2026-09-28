@@ -17,6 +17,12 @@ flowchart LR
   pkg_plugin_manager["plugin-manager"]
   svc_pluginManager["ctx.pluginManager<br/>Current-profile plugin and bundle management"]
   pkg_ui_settings_plugin_inventory["ui-settings-plugin-inventory"]
+  pkg_host_plugin_inventory["host-plugin-inventory"]
+  svc_pluginInventory["ctx.pluginInventory<br/>Live plugin composition and callable capabilities"]
+  pkg_client_ui_reference["client-ui-reference"]
+  pkg_client_ui_settings_plugin_inventory["client-ui-settings-plugin-inventory"]
+  svc_pluginReferenceResolver["ctx.pluginReferenceResolver<br/>Selected plugin reference admission"]
+  pkg_api_session_controller["api-session-controller"]
   svc_profileContext["ctx.profileContext<br/>Launcher-owned profile data"]
   pkg_client_connection["client-connection"]
   svc_connection["ctx.connection<br/>Authenticated browser transport"]
@@ -40,7 +46,6 @@ flowchart LR
   pkg_attachment["attachment"]
   svc_attachments["ctx.attachments<br/>Durable binary attachment storage"]
   pkg_attachment_local["attachment-local"]
-  pkg_api_session_controller["api-session-controller"]
   pkg_tool_fs["tool-fs"]
   pkg_llm_pi_ai["llm-pi-ai"]
   pkg_llm_deepseek["llm-deepseek"]
@@ -334,6 +339,8 @@ flowchart LR
   pkg_host_directory_picker --> svc_directoryPicker
   pkg_host_directory_picker_browse --> svc_directoryPicker
   pkg_host_directory_picker_native --> svc_directoryPicker
+  pkg_host_plugin_inventory --> svc_pluginInventory
+  pkg_host_plugin_inventory --> svc_pluginReferenceResolver
   pkg_host_product_telemetry_otel --> svc_productTelemetry
   pkg_host_webserver --> svc_webServer
   pkg_inspector --> svc_inspector
@@ -474,8 +481,14 @@ flowchart LR
   svc_lsp --> pkg_tool_lsp
   svc_mcpResources --> pkg_mcp_resources
   svc_officeToPdf --> pkg_client_ui_sidebar_documentpreview
+  svc_pluginInventory --> pkg_client_ui_plugin_manager
+  svc_pluginInventory --> pkg_client_ui_reference
+  svc_pluginInventory --> pkg_client_ui_settings_plugin_inventory
+  svc_pluginInventory --> pkg_host_plugin_inventory
   svc_pluginManager --> pkg_plugin_manager
   svc_pluginManager --> pkg_ui_settings_plugin_inventory
+  svc_pluginReferenceResolver --> pkg_api_session_controller
+  svc_pluginReferenceResolver --> pkg_host_plugin_inventory
   svc_pluginRegistryProbe --> pkg_client_ui_plugin_manager
   svc_profileContext --> pkg_plugin_manager
   svc_ptcRuntime --> pkg_tools
@@ -572,6 +585,8 @@ flowchart LR
 | `ctx.hmr` | `core` | [`hmr`](../packages/boot/hmr) | - | [`app-boot`](../packages/boot/app-boot) | - | 负责模块和精确配置监听；应用修改共用其队列，自动重载等待应用文件锁。 |
 | `ctx.pluginRegistryProbe` | `core` | [`client-ui-plugin-manager`](../packages/client/ui-plugin-manager) | - | [`client-ui-plugin-manager`](../packages/client/ui-plugin-manager) | - | 在 Host 上并发比较公共安装源响应；初始安装源推荐由 Client 负责。 |
 | `ctx.pluginManager` | `core` | [`plugin-manager`](../packages/boot/plugin-manager) | - | [`plugin-manager`](../packages/boot/plugin-manager), `ui-settings-plugin-inventory` | - | 与 CLI 共享 profile 包操作，并向 Web 和 Agent 调用方分别报告持久状态与运行状态。 |
+| `ctx.pluginInventory` | `core` | [`host-plugin-inventory`](../packages/host/plugin-inventory) | - | [`client-ui-reference`](../packages/client/ui-reference), [`client-ui-settings-plugin-inventory`](../packages/client/ui-settings-plugin-inventory), [`client-ui-plugin-manager`](../packages/client/ui-plugin-manager), [`host-plugin-inventory`](../packages/host/plugin-inventory) | - | 读取 Loader 状态和 Agent 可见的工具；列出插件不会安装、启用、执行插件或授予权限。 |
+| `ctx.pluginReferenceResolver` | `core` | [`host-plugin-inventory`](../packages/host/plugin-inventory) | - | [`api-session-controller`](../packages/api/session-controller), [`host-plugin-inventory`](../packages/host/plugin-inventory) | - | 在提交时和每次模型步骤前检查用户直接选择的引用，再记录当前可用能力的说明。 |
 | `ctx.profileContext` | `core` | [`app-boot`](../packages/boot/app-boot) | - | [`plugin-manager`](../packages/boot/plugin-manager) | - | dsh launcher 提供纯数据形式的 profile 位置与组合输入；重载调度由 dsh-hmr 负责。 |
 | `ctx.connection` | `core` | [`client-connection`](../packages/client/connection) | - | [`api-gateway`](../packages/api/gateway), [`host-frontend-static`](../packages/host/frontend-static) | - | 负责浏览器认证与共享 HTTP 请求分发；API 适配器注册端点和流。 |
 | `ctx.mcpResources` | `seam` | [`mcp-resources`](../packages/mcp/mcp-resources) | [`mcp-client`](../packages/mcp/mcp-client) | [`mcp-resources`](../packages/mcp/mcp-resources) | - | 连接所有者提供的操作在调用 agent 的作用域内服务于共享资源工具。 |

@@ -35,7 +35,7 @@ Mouse selection uses native browser clicks, including their cancellation behavio
 
 ### Model and effort
 
-Models stay grouped by provider. The composer menu shows model and effort names only, with DeepSeek Account first and DeepSeek second; third-party providers retain their catalog order. Navigation chevrons use `--dsw-alias-menu-icon`. The `/model` popup shows provider names and catalog descriptions; it localizes the two built-in DeepSeek descriptions and leaves external provider descriptions verbatim. The popup applies the selected model's default effort; the composer can then choose any advertised effort. An adapter without reasoning metadata leaves the Effort row absent; there is no arbitrary effort input.
+Models stay grouped by provider. The composer menu shows model and effort names only, with DeepSeek Account first and DeepSeek second; third-party providers retain their catalog order. Navigation chevrons use `--dsw-alias-menu-icon`. The `/model` popup shows provider names and catalog descriptions; it localizes the two built-in DeepSeek descriptions and leaves external provider descriptions verbatim. The popup applies the selected model's default effort; the composer can then choose any advertised effort. An adapter without reasoning metadata leaves the Effort row absent unless the session still holds an obsolete effort; in that case the row offers an explicit return to the provider default. Capability refreshes label invalid stored efforts and retain their values until the user selects a replacement; there is no automatic selection or arbitrary effort input.
 
 The composer replaces the model and effort text with the Models icon when the expanded controls cannot share one line, and restores the text when space permits. The full selection remains available in the trigger's accessible name, tooltip, and menu.
 
@@ -92,7 +92,7 @@ These limits define the current model surface. They are current package constrai
 
 - **No create-time or addressed-subagent selection** — both entries require an existing ordinary session's Agent; there is no draft-phase model choice to fold into session creation, and subagent continuation deliberately exposes no independent model-selection contract.
 - **Directory names are presentation-only** — selection and persistence use provider/model/effort ids; a provider whose catalog or exact-model metadata lookup fails lists as an unselectable failure row until reload.
-- **No arbitrary effort input** — the composer offers only the exact model's adapter-advertised levels; an adapter without reasoning metadata leaves the Effort row absent.
+- **No arbitrary effort input** — the composer offers only the exact model's adapter-advertised levels; an adapter without reasoning metadata only offers clearing an obsolete stored effort.
 
 <a id="dev-note"></a>
 ### Dev Note

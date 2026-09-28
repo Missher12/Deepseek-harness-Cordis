@@ -31,6 +31,7 @@ import { apiKeyFailure } from './apiKey.ts'
 import { EditorFooter } from './EditorFooter.tsx'
 import { validateDeepSeekModels } from './DeepSeekModelsEditor.tsx'
 import { ModelListEditor } from './ModelListEditor.tsx'
+import { validProviderReasoning } from './reasoning.ts'
 import type { ModelDraft } from './ModelListEditor.tsx'
 import { deriveKeyRef } from './store.ts'
 import { protocolLabel } from './protocol-label.ts'
@@ -124,13 +125,14 @@ export function CustomProviderCard(props: CustomProviderCardProps): ReactNode {
   // bad row is named by its position here too. Capacities have route-level
   // fallbacks; what a route cannot default is at least one model.
   const modelFailure = validateDeepSeekModels(models)
+  const reasoningFailure = !validProviderReasoning({ models })
   const keyFailure = apiKeyFailure(keyDraft)
   // The typed key with paste whitespace removed. A blank field yields an empty
   // string, which the create path reads as "no key supplied" — a route may
   // legitimately authenticate through the provider's own ambient discovery.
   const keyValue = keyDraft.trim()
   const ready = route.length > 0 && !routeInvalid && !routeTaken
-    && normalizedBaseURL.length > 0 && !baseUrlInvalid && models.length > 0 && modelFailure === undefined
+    && normalizedBaseURL.length > 0 && !baseUrlInvalid && models.length > 0 && modelFailure === undefined && !reasoningFailure
     && keyFailure === undefined
   // The one blocked gate worth a line under the form. A satisfied card says
   // nothing at all rather than printing an empty paragraph.
@@ -148,10 +150,11 @@ export function CustomProviderCard(props: CustomProviderCardProps): ReactNode {
       ? t('customNeedsBaseUrl')
       : modelFailure !== undefined
         ? `${t('model')} ${String(modelFailure.index + 1)}: ${t(modelFailure.key)}`
-        : t('customNeedsModels')
+        : reasoningFailure ? t('reasoningInvalid') : t('customNeedsModels')
 
   /** Perform the create, returning a failure message or undefined. */
   const createOnce = async (): Promise<string | undefined> => {
+    if (reasoningFailure) return t('reasoningInvalid')
     const keyRef = deriveKeyRef(route)
     const storesKey = keyValue.length > 0
     if (!committed) {

@@ -21,9 +21,9 @@ import LocalAttachmentStore, {
 describe('local attachment service', () => {
   it('resolves every omitted admission limit explicitly', () => {
     const service = new LocalAttachmentStore(new Context(), {})
-    expect(DEFAULT_MAX_IMAGE_BYTES).toBe(20 * 1024 * 1024)
-    expect(DEFAULT_MAX_IMAGES_PER_MESSAGE).toBe(20)
-    expect(DEFAULT_MAX_MESSAGE_IMAGE_BYTES).toBe(200 * 1024 * 1024)
+    expect(DEFAULT_MAX_IMAGE_BYTES).toBe(20_000_000)
+    expect(DEFAULT_MAX_IMAGES_PER_MESSAGE).toBe(9)
+    expect(DEFAULT_MAX_MESSAGE_IMAGE_BYTES).toBe(180_000_000)
     expect(DEFAULT_MAX_IMAGE_PIXELS).toBe(64_000_000)
     expect(DEFAULT_MAX_IMAGE_DIMENSION).toBe(8192)
     expect(service.imageLimits).toEqual({
@@ -55,6 +55,28 @@ describe('local attachment service', () => {
     ))
     expect(() => service.imageHostPath({ ...ref, attachmentId: AttachmentId('invalid') }))
       .toThrow(expect.objectContaining({ code: 'INVALID_ATTACHMENT_REF' }))
+  })
+
+  it('admits exactly 20 decimal MB and nine images, refusing an oversized or corrupt whole batch', async () => {
+    const dshHome = await mkdtemp(join(tmpdir(), 'dsh-image-boundary-'))
+    try {
+      const service = new LocalAttachmentStore(new Context(), { dshHome })
+      const png = await sharp({ create: { width: 1, height: 1, channels: 3, background: '#ffffff' } }).png().toBuffer()
+      const atLimit = new Uint8Array(20_000_000)
+      atLimit.set(png)
+      const image = { data: atLimit, mediaType: 'image/png' as const }
+      await expect(service.validateImage(image)).resolves.toBeUndefined()
+      await expect(service.validateImage({ ...image, data: new Uint8Array(20_000_001) }))
+        .rejects.toMatchObject({ code: 'IMAGE_TOO_LARGE' })
+      const batch = Array.from({ length: 9 }, () => ({ data: new Uint8Array(png), mediaType: 'image/png' as const }))
+      await expect(service.saveImages([...batch, batch[0]!])).rejects.toMatchObject({ code: 'TOO_MANY_IMAGES' })
+      await expect(service.saveImages([...batch.slice(0, 8), { ...image, data: atLimit.subarray(0, 12) }]))
+        .rejects.toMatchObject({ code: 'INVALID_IMAGE' })
+      expect(existsSync(join(service.root, 'objects'))).toBe(false)
+      await expect(service.saveImages(batch)).resolves.toHaveLength(9)
+      await expect(service.validateImage({ ...batch[0]!, mediaType: 'image/jpeg' }))
+        .rejects.toMatchObject({ code: 'IMAGE_TYPE_MISMATCH' })
+    } finally { await rm(dshHome, { recursive: true, force: true }) }
   })
 
   it('resolves and validates the instance image-compression concurrency', () => {

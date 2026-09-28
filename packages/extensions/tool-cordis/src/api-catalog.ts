@@ -446,6 +446,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         throws: ['AttachmentError when the encoding or storage operation is refused.'],
       },
       {
+        signature: 'admitFileStream(input: SaveFileStreamAttachment): Promise<FileAttachmentRef>',
+        description: 'Validate an ordinary-file upload signature before publishing its receipt.',
+        parameters: [{ name: 'input', description: 'ordered exact bytes, optional cancellation, and display name.' }],
+        returns: 'a durable file reference; recognized images require the image endpoint.',
+      },
+      {
         signature: 'isAttachmentError(error: unknown): error is AttachmentError',
         description: 'Identify a failure emitted by this attachment capability by its stable code.',
         parameters: [{ name: 'error', description: 'value caught from an attachment operation.' }],
@@ -1605,6 +1611,32 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'pluginInventory',
+    summary: 'Loader inventory and Agent-scoped callable-plugin discovery.',
+    description: 'Loader inventory and Agent-scoped callable-plugin discovery.',
+    methods: [
+      {
+        signature: '@Remote(\'list\') async list(): Promise<PluginInventorySnapshot>',
+        description: 'Read the Loader directly on every call. Cordis\'s internal plugin/status events already maintain Entry.fiber and Fiber.state, so a second cache would only add another lifecycle truth to keep synchronized.\n\nWhen an agent-preset roster is composed, the snapshot also carries each preset\'s composition rows, because those rows — not the Loader\'s own entries — are where a deployment that mounts the roster runs its model-facing plugins.',
+        parameters: [],
+        returns: 'Current non-group Loader entries in Loader order, with optional display metadata and per-preset compositions when a roster is composed.',
+      },
+      {
+        signature: '@Remote(\'candidates\') async candidates(agent: Agent, query: string, signal: AbortSignal): Promise<PluginCapabilityCandidate[]>',
+        description: 'List only currently callable plugin instances for a target Agent.',
+        parameters: [{ name: 'agent', description: 'target Agent resolved by the Remote\'s Session lookup.' }, { name: 'query', description: 'case-insensitive module, title or tool-name substring.' }, { name: 'signal', description: 'caller cancellation, checked before reading the catalog.' }],
+        returns: 'bounded candidates with canonical mentions and execution modes.',
+      },
+      {
+        signature: 'resolveReferences(agent: Agent, ids: readonly PluginInstanceId[]): PluginCapabilityCandidate[]',
+        description: 'Resolve selected identities against the current Agent, without candidate pagination.',
+        parameters: [{ name: 'agent', description: 'target Agent entering the request.' }, { name: 'ids', description: 'validated stable identities from direct user text.' }],
+        returns: 'current summaries, in first-reference order.',
+        throws: ['RemoteError when any referenced owner has no currently visible tools.'],
+      },
+    ],
+  },
+  {
     key: 'pluginManager',
     summary: 'Manage profile files and apply their declared reload lifecycle.',
     description: 'Manage profile files and apply their declared reload lifecycle.',
@@ -1680,6 +1712,26 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Unload and remove a profile-owned bundle dependency through dsh plugin\'s pnpm path.',
         parameters: [{ name: 'name', description: 'Installed dependency name.' }],
         returns: 'Removal diagnostics and the remaining profile state.',
+      },
+    ],
+  },
+  {
+    key: 'pluginReferenceResolver',
+    summary: 'Optional logged-message admission provider; its live service enables completion candidates.',
+    description: 'Optional logged-message admission provider; its live service enables completion candidates.',
+    methods: [
+      {
+        signature: 'isAvailable(): boolean',
+        description: 'Whether the owner still accepts references, including Loader disposal in progress.',
+        parameters: [],
+        returns: 'false as soon as Loader disables the owner or its Fiber stops being active.',
+      },
+      {
+        signature: 'validate(agent: Agent, ids: readonly PluginInstanceId[]): PluginCapabilityCandidate[]',
+        description: 'Validate a submitted reference before enqueue; pre-step repeats this check.',
+        parameters: [{ name: 'agent', description: 'target Agent whose current tools determine availability.' }, { name: 'ids', description: 'identities recovered by the canonical parser.' }],
+        returns: 'the selected live summaries; never executes or grants tool access.',
+        throws: ['RemoteError when the resolver, any reference or the occurrence budget is unavailable.'],
       },
     ],
   },
@@ -1862,6 +1914,11 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Resolve or resume one ordinary Session for another Host API domain.',
         parameters: [{ name: 'sessionId', description: 'Session identity whose Agent owns the operation.' }],
         returns: 'the live Agent or the stable Session-domain failure.',
+      },
+      {
+        signature: 'async deleteArchivedSession(sessionId: SessionId): Promise<void>',
+        description: 'Delete one archived conversation through its lifecycle and storage owners.',
+        parameters: [{ name: 'sessionId', description: 'archived session identity; workspace files are retained.' }],
       },
       {
         signature: 'inspect( sessionId: SessionId, signal?: AbortSignal, ): Promise<SessionInspection>',
@@ -2049,6 +2106,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [],
         returns: 'resolution once every write handle active at the call has flushed.',
         throws: ['{AggregateError} naming each session whose flush failed; the remaining handles still flush.'],
+      },
+      {
+        signature: 'delete(id: SessionId): Promise<boolean>',
+        description: 'Permanently remove one inactive session\'s stored history. Implementations must exclude writers and retain the workspace\'s files. A missing id is a successful no-op; providers without deletion support reject explicitly.',
+        parameters: [{ name: 'id', description: 'stored session identity, never a filesystem path.' }],
+        returns: 'whether a stored history was removed.',
       },
       {
         signature: 'abstract stat(id: SessionId, options?: SessionPersistenceStatOptions): Promise<SessionPersistenceSnapshot | undefined>',
@@ -3241,6 +3304,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the exact disposer that unregisters the guard.',
       },
       {
+        signature: 'catalog(scope?: ScopeKey): ToolCatalog',
+        description: 'Read actual owners after the same restrictions and shadowing used by execution. The returned array is detached; definitions and contexts remain borrowed. A catalog entry does not bypass guards or approval at execution time.',
+        parameters: [{ name: 'scope', description: 'viewing Agent or standing scope; omitted for the global view.' }],
+        returns: 'current presentation and live registrations, without synthetic transports.',
+      },
+      {
         signature: 'get(name: string, scope?: ScopeKey): ToolDefinition | undefined',
         description: 'Look up a tool as one scope sees it (scoped shadows global; a restricted-away global reads as absent). Presenters pass the calling agent so the rendered card matches the definition that actually executed.',
         parameters: [{ name: 'name', description: 'the tool name as registered.' }, { name: 'scope', description: 'the viewing scope (the agent); omitted = the global view.' }],
@@ -3650,6 +3719,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Archive one session durably. The session must exist (live or in session persistence); its workspace accounting — or lack of one — is irrelevant. Without `stopActivity` the session must also be inactive: the `workspace/session-activity` waterfall is asked once, and any reported activity rejects with WorkspaceActiveSessionError before anything is written. With `stopActivity` the archive is written without an activity check, and the `workspace/session-stop` providers are then asked to stop the session\'s work: the durable archive set is what a provider\'s `agent/pre-step` gate reads, so every wake the stops induce is already blocked. Archiving drops the session\'s pin in the same durable write (pinning and archival are mutually exclusive). An already archived id resolves without writing, asking, or stopping.',
         parameters: [{ name: 'sessionId', description: 'The session to archive.' }, { name: 'options', description: 'Whether running work is stopped instead of refusing.' }],
         returns: 'resolution after durability and, with `stopActivity`, after every stop request was issued.',
+      },
+      {
+        signature: 'deleteArchivedSession(sessionId: SessionId, release?: () => Promise<void>): Promise<void>',
+        description: 'Permanently delete an archived session and remove its accounting. Activity and fork descendants refuse deletion. The lifecycle owner may release its own idle agent before persistence takes the exclusive writer lock.',
+        parameters: [{ name: 'sessionId', description: 'archived identity to delete.' }, { name: 'release', description: 'optional lifecycle-owner teardown, after admission.' }],
+        returns: 'resolution after history and registry cleanup; a cleanup failure can be retried.',
       },
       {
         signature: 'unarchiveSession(sessionId: SessionId): Promise<void>',
@@ -4066,6 +4141,14 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [],
   },
   {
+    name: 'plugin-capabilities/changed',
+    mode: 'emit',
+    signature: '\'plugin-capabilities/changed\'(): void',
+    summary: 'Invalidate callable-plugin snapshots after registry or Loader lifecycle changes.',
+    description: 'Invalidate callable-plugin snapshots after registry or Loader lifecycle changes. This notification carries no capability data; consumers re-query their Agent.',
+    parameters: [],
+  },
+  {
     name: 'plugin-manager/changed',
     mode: 'emit',
     signature: '\'plugin-manager/changed\'(change: PluginChange): void',
@@ -4416,6 +4499,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'AgentPresetDocument',
     declaration: 'export interface AgentPresetDocument {\n    readonly agentPreset: string;\n    readonly content: string;\n    readonly name?: string;\n    readonly description?: string;\n}',
+  },
+  {
+    name: 'AgentPresetPluginGroup',
+    declaration: 'export interface AgentPresetPluginGroup {\n    readonly id: string;\n    readonly name?: string;\n    readonly isDefault: boolean;\n    readonly broken?: string;\n    readonly rows: readonly AgentPresetPluginRow[];\n}',
+  },
+  {
+    name: 'AgentPresetPluginRow',
+    declaration: 'export interface AgentPresetPluginRow {\n    readonly entryId: string | null;\n    readonly moduleName: string;\n    readonly meta?: PluginLocalizedMeta;\n    readonly enabled: PresetPluginEnablement;\n    readonly condition?: string;\n    readonly fiberPhase: PluginFiberPhase;\n}',
   },
   {
     name: 'AgentPresetRoster',
@@ -5511,7 +5602,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'LlmDiscoveredModel',
-    declaration: 'export interface LlmDiscoveredModel {\n    id: string;\n    name?: string;\n    contextWindow?: number;\n    maxTokens?: number;\n    inputModalities?: readonly ModelModality[];\n}',
+    declaration: 'export interface LlmDiscoveredModel {\n    id: string;\n    name?: string;\n    contextWindow?: number;\n    maxTokens?: number;\n    inputModalities?: readonly ModelModality[];\n    reasoningEfforts?: false | Readonly<Record<string, string | null>>;\n}',
   },
   {
     name: 'LlmFailure',
@@ -5826,6 +5917,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface PlatformSession {\n    readonly origin: string;\n    readonly token: string;\n    readonly userId: AccountUserId | null;\n    readonly embeddedPageDist?: string;\n    readonly requestHeaders?: Readonly<Record<string, string>>;\n}',
   },
   {
+    name: 'PluginCapabilityCandidate',
+    declaration: 'export interface PluginCapabilityCandidate {\n    readonly id: PluginInstanceId;\n    readonly label: string;\n    readonly description: string;\n    readonly mention: string;\n    readonly moduleName: string;\n    readonly entryId: PluginEntryId;\n    readonly presetId?: string;\n    readonly meta?: PluginLocalizedMeta;\n    readonly capabilities: readonly PluginToolCapability[];\n    readonly capabilityCount: number;\n}',
+  },
+  {
+    name: 'PluginCapabilityId',
+    declaration: 'export type PluginCapabilityId = Branded<\'PluginCapabilityId\'>;',
+  },
+  {
     name: 'PluginChange',
     declaration: 'export interface PluginChange {\n    readonly reason: \'plugin\' | \'bundle\' | \'install\' | \'remove\';\n}',
   },
@@ -5866,8 +5965,16 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type PluginInstallRequestId = Branded<\'PluginInstallRequestId\'>;',
   },
   {
+    name: 'PluginInstanceId',
+    declaration: 'export type PluginInstanceId = Branded<\'PluginInstanceId\'>;',
+  },
+  {
     name: 'PluginInventoryEntry',
     declaration: 'export interface PluginInventoryEntry {\n    readonly entryId: PluginEntryId;\n    readonly moduleName: string;\n    readonly meta?: PluginLocalizedMeta;\n    readonly enabled: boolean;\n    readonly fiberPhase: PluginFiberPhase;\n}',
+  },
+  {
+    name: 'PluginInventorySnapshot',
+    declaration: 'export interface PluginInventorySnapshot {\n    readonly managementAvailable?: boolean;\n    readonly entries: readonly PluginInventoryEntry[];\n    readonly agentPresets?: readonly AgentPresetPluginGroup[];\n}',
   },
   {
     name: 'PluginLocalizedMeta',
@@ -5880,6 +5987,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'PluginSpecInspection',
     declaration: 'export type PluginSpecInspection = {\n    readonly status: \'accepted\';\n    readonly kind: InstallSpecKind;\n    readonly name?: string;\n    readonly version?: string;\n    readonly description?: string;\n    readonly bundle: boolean | null;\n    readonly registry: Registry;\n    readonly host?: string;\n} | {\n    readonly status: \'refused\';\n    readonly problem: PluginInspectProblem;\n    readonly reason: string;\n    readonly registries?: Registry[];\n};',
+  },
+  {
+    name: 'PluginToolCapability',
+    declaration: 'export interface PluginToolCapability {\n    readonly id: PluginCapabilityId;\n    readonly name: string;\n    readonly description: string;\n    readonly invocation: \'native\' | \'ptc\' | \'both\';\n}',
   },
   {
     name: 'PostToolDecision',
@@ -5916,6 +6027,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'PresetOption',
     declaration: 'export interface PresetOption {\n    value: string;\n    name: string;\n    description?: string;\n}',
+  },
+  {
+    name: 'PresetPluginEnablement',
+    declaration: 'export type PresetPluginEnablement = boolean | \'conditional\';',
   },
   {
     name: 'PresetSpec',
@@ -7482,6 +7597,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type ToolCallView = GenericCallView | TerminalCallView | DiffCallView;',
   },
   {
+    name: 'ToolCatalog',
+    declaration: 'export interface ToolCatalog {\n    readonly mode: ToolPresentationMode;\n    readonly registrations: readonly ToolRegistration[];\n}',
+  },
+  {
     name: 'ToolDefinition',
     declaration: 'export interface ToolDefinition extends ToolSchema {\n    readonly output: ToolOutputDefinition;\n    execute(args: unknown, exec: ToolRunContext): Promise<unknown>;\n    projectContent?(exec: Readonly<ToolExecution>, result: Readonly<ToolExecutionResult>): ContentBlock[] | undefined;\n    finalizeContent?(exec: Readonly<ToolExecution>, result: Readonly<ToolExecutionResult>): ContentBlock[] | undefined;\n    timeoutMs?: number;\n    isConcurrencySafe?(args: unknown): boolean;\n    presentCall?(args: unknown): ToolCallView | undefined;\n    presentResult?(args: unknown, result: ToolResult): ToolResultView | undefined;\n}',
   },
@@ -7550,6 +7669,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ToolProviderResult {\n    readonly schemas: readonly ToolSchema[];\n    readonly knownNames?: readonly string[];\n}',
   },
   {
+    name: 'ToolRegistration',
+    declaration: 'export interface ToolRegistration {\n    readonly definition: ToolDefinition;\n    readonly context: Context;\n}',
+  },
+  {
     name: 'ToolRemovalBlock',
     declaration: 'export interface ToolRemovalBlock {\n    type: \'tool-removal\';\n    toolName: string;\n}',
   },
@@ -7575,7 +7698,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'ToolRuntime',
-    declaration: 'export class ToolRuntime extends Service {\n    static inject;\n    static Config: z<Config>;\n    readonly [TOOL_RUNTIME_SCHEDULER]: ToolRuntimeScheduler;\n    constructor(ctx: Context, config: Config = {});\n    presentAs(mode: ToolPresentationMode): () => void;\n    register(definition: ToolDefinition): () => void;\n    restrict(filter: ToolRestriction): () => void;\n    guard(guard: ToolGuard): () => void;\n    get(name: string, scope?: ScopeKey): ToolDefinition | undefined;\n    schemas(scope?: ScopeKey): ToolSchema[];\n    executionMode(exec: ToolExecutionInput): ToolExecutionMode;\n    async execute(exec: ToolExecutionInput): Promise<ToolExecutionResult>;\n}',
+    declaration: 'export class ToolRuntime extends Service {\n    static inject;\n    static Config: z<Config>;\n    readonly [TOOL_RUNTIME_SCHEDULER]: ToolRuntimeScheduler;\n    constructor(ctx: Context, config: Config = {});\n    presentAs(mode: ToolPresentationMode): () => void;\n    register(definition: ToolDefinition): () => void;\n    restrict(filter: ToolRestriction): () => void;\n    guard(guard: ToolGuard): () => void;\n    catalog(scope?: ScopeKey): ToolCatalog;\n    get(name: string, scope?: ScopeKey): ToolDefinition | undefined;\n    schemas(scope?: ScopeKey): ToolSchema[];\n    executionMode(exec: ToolExecutionInput): ToolExecutionMode;\n    async execute(exec: ToolExecutionInput): Promise<ToolExecutionResult>;\n}',
   },
   {
     name: 'ToolRuntimeScheduler',

@@ -15,6 +15,12 @@ flowchart LR
   pkg_plugin_manager["plugin-manager"]
   svc_pluginManager["ctx.pluginManager<br/>Current-profile plugin and bundle management"]
   pkg_ui_settings_plugin_inventory["ui-settings-plugin-inventory"]
+  pkg_host_plugin_inventory["host-plugin-inventory"]
+  svc_pluginInventory["ctx.pluginInventory<br/>Live plugin composition and callable capabilities"]
+  pkg_client_ui_reference["client-ui-reference"]
+  pkg_client_ui_settings_plugin_inventory["client-ui-settings-plugin-inventory"]
+  svc_pluginReferenceResolver["ctx.pluginReferenceResolver<br/>Selected plugin reference admission"]
+  pkg_api_session_controller["api-session-controller"]
   svc_profileContext["ctx.profileContext<br/>Launcher-owned profile data"]
   pkg_client_connection["client-connection"]
   svc_connection["ctx.connection<br/>Authenticated browser transport"]
@@ -38,7 +44,6 @@ flowchart LR
   pkg_attachment["attachment"]
   svc_attachments["ctx.attachments<br/>Durable binary attachment storage"]
   pkg_attachment_local["attachment-local"]
-  pkg_api_session_controller["api-session-controller"]
   pkg_tool_fs["tool-fs"]
   pkg_llm_pi_ai["llm-pi-ai"]
   pkg_llm_deepseek["llm-deepseek"]
@@ -332,6 +337,8 @@ flowchart LR
   pkg_host_directory_picker --> svc_directoryPicker
   pkg_host_directory_picker_browse --> svc_directoryPicker
   pkg_host_directory_picker_native --> svc_directoryPicker
+  pkg_host_plugin_inventory --> svc_pluginInventory
+  pkg_host_plugin_inventory --> svc_pluginReferenceResolver
   pkg_host_product_telemetry_otel --> svc_productTelemetry
   pkg_host_webserver --> svc_webServer
   pkg_inspector --> svc_inspector
@@ -472,8 +479,14 @@ flowchart LR
   svc_lsp --> pkg_tool_lsp
   svc_mcpResources --> pkg_mcp_resources
   svc_officeToPdf --> pkg_client_ui_sidebar_documentpreview
+  svc_pluginInventory --> pkg_client_ui_plugin_manager
+  svc_pluginInventory --> pkg_client_ui_reference
+  svc_pluginInventory --> pkg_client_ui_settings_plugin_inventory
+  svc_pluginInventory --> pkg_host_plugin_inventory
   svc_pluginManager --> pkg_plugin_manager
   svc_pluginManager --> pkg_ui_settings_plugin_inventory
+  svc_pluginReferenceResolver --> pkg_api_session_controller
+  svc_pluginReferenceResolver --> pkg_host_plugin_inventory
   svc_pluginRegistryProbe --> pkg_client_ui_plugin_manager
   svc_profileContext --> pkg_plugin_manager
   svc_ptcRuntime --> pkg_tools
@@ -570,6 +583,8 @@ flowchart LR
 | `ctx.hmr` | `core` | [`hmr`](../packages/boot/hmr) | - | [`app-boot`](../packages/boot/app-boot) | - | Owns module and exact configuration watchers; application mutations share its queue and automatic reloads await the application file lock. |
 | `ctx.pluginRegistryProbe` | `core` | [`client-ui-plugin-manager`](../packages/client/ui-plugin-manager) | - | [`client-ui-plugin-manager`](../packages/client/ui-plugin-manager) | - | Races public registry responses on the Host; the Client owns the initial registry recommendation. |
 | `ctx.pluginManager` | `core` | [`plugin-manager`](../packages/boot/plugin-manager) | - | [`plugin-manager`](../packages/boot/plugin-manager), `ui-settings-plugin-inventory` | - | Shares profile package operations with the CLI and reports persisted and running state to Web and agent callers. |
+| `ctx.pluginInventory` | `core` | [`host-plugin-inventory`](../packages/host/plugin-inventory) | - | [`client-ui-reference`](../packages/client/ui-reference), [`client-ui-settings-plugin-inventory`](../packages/client/ui-settings-plugin-inventory), [`client-ui-plugin-manager`](../packages/client/ui-plugin-manager), [`host-plugin-inventory`](../packages/host/plugin-inventory) | - | Reads Loader state and Agent-visible tools; listing a plugin never installs, enables, executes, or grants permission to it. |
+| `ctx.pluginReferenceResolver` | `core` | [`host-plugin-inventory`](../packages/host/plugin-inventory) | - | [`api-session-controller`](../packages/api/session-controller), [`host-plugin-inventory`](../packages/host/plugin-inventory) | - | Checks direct-user references on submission and before each model step, then records guidance from currently available capabilities. |
 | `ctx.profileContext` | `core` | [`app-boot`](../packages/boot/app-boot) | - | [`plugin-manager`](../packages/boot/plugin-manager) | - | The dsh launcher supplies data-only profile locations and composition inputs; reload scheduling belongs to dsh-hmr. |
 | `ctx.connection` | `core` | [`client-connection`](../packages/client/connection) | - | [`api-gateway`](../packages/api/gateway), [`host-frontend-static`](../packages/host/frontend-static) | - | Owns browser authentication and shared HTTP request dispatch; API adapters register endpoints and streams. |
 | `ctx.mcpResources` | `seam` | [`mcp-resources`](../packages/mcp/mcp-resources) | [`mcp-client`](../packages/mcp/mcp-client) | [`mcp-resources`](../packages/mcp/mcp-resources) | - | Connection-owned providers serve shared resource tools in the calling agent scope. |

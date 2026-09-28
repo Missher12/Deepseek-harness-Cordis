@@ -7,6 +7,24 @@ import { findConcreteTermViolations, readTrackedSource } from './verify-concrete
 const blockedTerm = 'prove' + 'nance'
 
 describe('concrete terminology policy', () => {
+  it('retains only the published usage Bundle manifest name and its exact references', () => {
+    const manifest = `plugins/dsh-usage-statistics/${blockedTerm}.json`
+    expect(findConcreteTermViolations(manifest, '{"files":[]}')).toEqual([])
+    expect(findConcreteTermViolations(manifest, blockedTerm)).toEqual([{ file: manifest, line: 1 }])
+    for (const file of [
+      'plugins/dsh-usage-statistics/package.json',
+      'plugins/dsh-usage-statistics/README.md',
+      'plugins/dsh-usage-statistics/VALIDATION.md',
+    ]) {
+      expect(findConcreteTermViolations(file, `Read ${blockedTerm}.json`)).toEqual([])
+      expect(findConcreteTermViolations(file, `Read ${blockedTerm}.json for ${blockedTerm}`)).toEqual([{ file, line: 1 }])
+    }
+    const other = `plugins/other/${blockedTerm}.json`
+    expect(findConcreteTermViolations(other, '{}')).toEqual([{ file: other, line: null }])
+    expect(findConcreteTermViolations('plugins/dsh-usage-statistics/INSTALL.md', `${blockedTerm}.json`))
+      .toEqual([{ file: 'plugins/dsh-usage-statistics/INSTALL.md', line: 1 }])
+  })
+
   it('rejects case variants in paths, prose, and identifiers', () => {
     expect(findConcreteTermViolations(`docs/${blockedTerm}-notes.md`, [
       'origin metadata',

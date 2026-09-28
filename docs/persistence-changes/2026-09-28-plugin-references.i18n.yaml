@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for 2026-09-28-plugin-references.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-09-28-plugin-references.md
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-09-28-plugin-references:
+  en: 309d6828a2411ad0
+  zh: 66343b89b7f7d7b2
+/2026-09-28-plugin-references/summary:
+  en: 04ed88c45d7111d5
+  zh: 8d849dd3d2b0eee1
+/2026-09-28-plugin-references/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-09-28-plugin-references/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-09-28-plugin-references/compatibility:
+  en: e3e68a5e5ab72dbb
+  zh: fe2d40ccef4c56b5
+/2026-09-28-plugin-references/verification:
+  en: 3c7f4d81c9c97d97
+  zh: de991659bdf1fe01
+/2026-09-28-plugin-references/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

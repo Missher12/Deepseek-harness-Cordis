@@ -100,7 +100,7 @@ interface BenchOptions {
   attachments?: readonly ComposerAttachment[]
   /** Upload states served for file-kind drafts (absent = every file is ready). */
   fileUploads?: DraftFileUploads
-  addFiles?: (files: readonly File[], directories?: ReadonlySet<File>) => string | null
+  addFiles?: (files: readonly File[], directories?: ReadonlySet<File>) => string | null | Promise<string | null>
   commandMenuOpen?: boolean
   busyEnter?: 'queue' | 'steer'
   toggleCommandMenu?: (selection: { start: number; end: number }) => void
@@ -380,11 +380,20 @@ describe('image draft rail', () => {
     expect(addFiles).toHaveBeenCalledWith([folder, emptyFile, withoutApi, withoutEntry], new Set([folder]))
   })
 
+  it('does not show a late intake refusal in a different Session', async () => {
+    let settle!: (error: string | null) => void
+    const result = bench({ addFiles: () => new Promise((resolve) => { settle = resolve }) })
+    act(() => { attachmentOwner(result.slotCalls).onAddFiles([new File(['notes'], 'notes.txt')]) })
+    result.view.rerender(<InputBar {...result.props} sessionId={'other' as SessionId} />)
+    await act(async () => { settle('old session refusal'); await Promise.resolve() })
+    expect(result.view.queryByRole('alert')).toBeNull()
+  })
+
   it('pre-checks projected limits at intake: whole-batch refusal with product copy, none added', () => {
     const limits = {
-      maxImageBytes: 1024 * 1024,
+      maxImageBytes: 1_000_000,
       maxImagesPerMessage: 2,
-      maxMessageImageBytes: 2 * 1024 * 1024,
+      maxMessageImageBytes: 2 * 1_000_000,
       maxImagePixels: 40_000_000,
       maxImageDimension: 2000,
       mediaTypes: ['image/png'] as const,
@@ -401,15 +410,15 @@ describe('image draft rail', () => {
     cleanup()
     // Per-file bytes.
     const overFile = bench({ addFiles: vi.fn(() => null), imageLimits: limits })
-    intake(overFile, [png(1024 * 1024 + 1, 'big.png')])
+    intake(overFile, [png(1_000_000 + 1, 'big.png')])
     expect(overFile.view.getByRole('alert').textContent).toContain('单张图片不能超过 1MB')
     expect(overFile.props.addFiles).not.toHaveBeenCalled()
     cleanup()
     // Aggregate bytes across the existing rail plus the new batch.
-    const held = new File([new ArrayBuffer(1024 * 1024 * 1.5)], 'held.png', { type: 'image/png' })
+    const held = new File([new ArrayBuffer(1_000_000 * 1.5)], 'held.png', { type: 'image/png' })
     const attachment = { kind: 'image' as const, id: 'draft-1' as DraftAttachmentId, file: held, previewUrl: 'blob:held' }
     const overTotal = bench({ addFiles: vi.fn(() => null), imageLimits: limits, attachments: [attachment] })
-    intake(overTotal, [png(1024 * 1024, 'more.png')])
+    intake(overTotal, [png(1_000_000, 'more.png')])
     expect(overTotal.view.getByRole('alert').textContent).toContain('图片总大小超过 2MB')
     expect(overTotal.props.addFiles).not.toHaveBeenCalled()
     cleanup()
@@ -448,9 +457,9 @@ describe('image draft rail', () => {
     const result = bench({
       addFiles: vi.fn(() => null),
       imageLimits: {
-        maxImageBytes: 5 * 1024 * 1024,
+        maxImageBytes: 5 * 1_000_000,
         maxImagesPerMessage: 20,
-        maxMessageImageBytes: 100 * 1024 * 1024,
+        maxMessageImageBytes: 100 * 1_000_000,
         maxImagePixels: 40_000_000,
         maxImageDimension: 2000,
         mediaTypes: ['image/png'] as const,

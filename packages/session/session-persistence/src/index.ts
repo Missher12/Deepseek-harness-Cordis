@@ -178,6 +178,17 @@ export abstract class SessionPersistence extends Service {
   abstract flush(): Promise<void>
 
   /**
+   * Permanently remove one inactive session's stored history. Implementations
+   * must exclude writers and retain the workspace's files. A missing id is a
+   * successful no-op; providers without deletion support reject explicitly.
+   * @param id - stored session identity, never a filesystem path.
+   * @returns whether a stored history was removed.
+   */
+  delete(id: SessionId): Promise<boolean> {
+    return Promise.reject(new Error(`session persistence does not support deleting "${id}"`))
+  }
+
+  /**
    * Observe one stored session without reading its event log or taking
    * ownership.
    *

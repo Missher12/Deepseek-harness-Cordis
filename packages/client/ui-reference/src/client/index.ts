@@ -28,6 +28,7 @@ import { formatFileMention } from '@deepseek-ai/dsh-file-reference/grammar'
 import type { FileReferenceCandidate } from '@deepseek-ai/dsh-file-reference/types'
 import type { SessionReferenceMentionCandidate } from '@deepseek-ai/dsh-session-reference/types'
 import { abbreviateHomePath, fileAddressFor } from '@deepseek-ai/dsh-util-workspace-path'
+import { pluginReferenceSource } from './plugin-source.ts'
 import { en, NS, zh, type ReferenceKey } from './locales.ts'
 
 declare module '@deepseek-ai/dsh-api-session-controller/client' {
@@ -156,6 +157,9 @@ export function apply(ctx: ClientContext): void {
   }
   const inputTriggers = ctx.get('inputTriggers') as InputTriggerServiceContract
   ctx.effect(() => inputTriggers.registerSource(source), 'ui-reference: @ source')
+  ctx.inject(['remote.pluginInventory'], (scope) => {
+    scope.effect(() => inputTriggers.registerSource(pluginReferenceSource(scope, sessions, () => t('section.plugins'))), 'ui-reference: plugin source')
+  })
 }
 
 type Translate = (key: ReferenceKey, params?: Record<string, unknown>) => string

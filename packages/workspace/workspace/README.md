@@ -25,6 +25,8 @@ Use this package to keep an ordered, persistent list of project directories and 
 <a id="use-this-package"></a>
 ## Use this package
 
+`deleteArchivedSession(id, release?)` removes an archived conversation’s history and accounting. It refuses running work, dependent fork children and foreign live ownership. An optional lifecycle-owner release runs after admission. Failed accounting cleanup retains the archive marker so deletion can be retried. Workspace files remain.
+
 Use this package to give the product a project list: named directories the user works in, the sessions that ran in each, a stable order, and a way to hide sessions without losing them or bring them back. The API contracts behind each action live in the implementation section.
 
 ### When to use it

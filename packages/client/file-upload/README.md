@@ -54,6 +54,8 @@ The Host plugin provides `ctx.fileUploads`. It owns the authenticated streaming 
 | [`src/client/runtime.ts`](src/client/runtime.ts) | Dedicated Worker and page-owned carrier implementations |
 | [`src/client/index.ts`](src/client/index.ts) | Client plugin registration and `ctx.fileUpload` declaration |
 
+Both encoded and streaming ordinary-file uploads use attachment admission before issuing receipts. PNG, JPEG, GIF, and WebP signatures are rejected from this path regardless of the supplied name; callers must submit them as images. Empty and other ordinary files retain their existing byte-for-byte behavior.
+
 </details>
 
 **Runtime invariant:** No companion is published. Each upload receipt belongs to one exact Session, and each request uses one selected carrier. Unsupported stream carriers fail before the body is sent.

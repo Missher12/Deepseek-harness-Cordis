@@ -6,6 +6,10 @@
 
 源码：[`packages/core/tools/src/index.ts`](../../packages/core/tools/src/index.ts) · [`packages/core/tools/src/schema.ts`](../../packages/core/tools/src/schema.ts) · [`packages/core/tools/src/presentation.ts`](../../packages/core/tools/src/presentation.ts)
 
+## `ToolCatalog` — 有效注册所有者
+
+`ToolCatalog` 包含所选 `ToolPresentationMode` 和独立只读 `ToolRegistration` 数组。每条记录将工具定义与借用的注册 Context 配对。`catalog(scope)` 沿用分派时的作用域过滤及同名覆盖，排除合成 `run_code`，不授予执行权限。消费端不得释放注册 Context。
+
 ## `ToolDefinition` — 一个已注册的工具
 
 由一个 `ToolSchema`（面向模型的字段）、必需的规范输出声明、`execute` 函数、仅供宿主使用的调度器元数据、可选的最终内容回调和可选 UI 展示函数组成。注册表持有这些定义，循环通过它们分派调用。注册表的 `schemas()` 通过显式允许列表构建面向模型的 `ToolSchema[]`；`output`/`execute`/`projectContent`/`finalizeContent`/`timeoutMs`/`isConcurrencySafe`/`presentCall`/`presentResult` 绝不能泄漏到模型请求中。
@@ -549,6 +553,15 @@ restrict(filter: ToolRestriction): () => void
  * @returns the exact disposer that unregisters the guard.
  */
 guard(guard: ToolGuard): () => void
+
+/**
+ * Read actual owners after the same restrictions and shadowing used by execution.
+ * The returned array is detached; definitions and contexts remain borrowed.
+ * A catalog entry does not bypass guards or approval at execution time.
+ * @param scope - viewing Agent or standing scope; omitted for the global view.
+ * @returns current presentation and live registrations, without synthetic transports.
+ */
+catalog(scope?: ScopeKey): ToolCatalog
 
 /**
  * Look up a tool as one scope sees it (scoped

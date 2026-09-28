@@ -1271,6 +1271,19 @@ export function WorkspaceBrowser({
         )}
         <div className={clsx(css.headerActions, wide && searchExpanded && css.headerActionsHidden)}>
           {wide && (
+            <Tooltip label={t(archivedFilter === 'only' ? 'empty.viewOthers' : 'viewOptions.onlyArchived')} side="bottom" delayMs={500}>
+              <button
+                type="button"
+                className={css.iconButton}
+                aria-label={t('viewOptions.onlyArchived')}
+                aria-pressed={archivedFilter === 'only'}
+                onClick={() => { actions.setArchivedFilter(archivedFilter === 'only' ? 'default' : 'only') }}
+              >
+                <IconArchiveOutlineRegular size={16} />
+              </button>
+            </Tooltip>
+          )}
+          {wide && (
             <ViewOptionsMenu
               groupBy={groupBy}
               orderBy={orderBy}

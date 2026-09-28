@@ -8,6 +8,10 @@ DeepSeek Harness（`dsh`）是由 [DeepSeek AI](https://deepseek.com) 开发的�
 
 文档：[https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
 
+## Cordis 工作区
+
+这是 Missher 的 DSH 统一源码仓库。桌面程序及公共 Harness 包位于仓库根目录，四个可独立安装的 Bundle 位于 [plugins/](plugins/README.zh.md)。仓库归属、私有项目和验证范围见 [CORDIS.md](CORDIS.md)。Media@Missher 与定制思考强度插件继续保存在独立私有仓库；MSE Learning 继续作为独立公开产品维护。
+
 ## 开发者预览
 
 DeepSeek Harness 处于 _开发者预览_ 阶段，正在快速迭代。**未来将出现破坏兼容性的变更。**
@@ -35,8 +39,8 @@ npx @deepseek-ai/dsh web
 如需从仓库源码运行：
 
 ```sh
-git clone https://github.com/deepseek-ai/deepseek-harness.git
-cd deepseek-harness
+git clone https://github.com/Missher12/Deepseek-harness-Cordis.git
+cd Deepseek-harness-Cordis
 pnpm install
 pnpm run build
 pnpm dsh web

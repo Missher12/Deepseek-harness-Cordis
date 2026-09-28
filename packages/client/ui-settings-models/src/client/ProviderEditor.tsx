@@ -11,12 +11,9 @@
  * display name and wire protocol of a pi-ai route the adapter does not ship —
  * the two fields the create card asked that route for, editable here for the
  * same reason).
- * Reasoning effort is deliberately absent: it is a per-MODEL capability, and
- * the models under one provider disagree about it, so a provider-scoped
- * control can only be set to a value some of them reject. The composer's
- * model picker offers each model its own levels; `cordis.patch.yml` keeps the
- * profile field for a deployment that knows its route. Everything else stays
- * owned by `cordis.patch.yml`. Profile edits land as minimal `settings.mutate`
+ * Per-model reasoning declarations preserve sparse endpoint mappings without
+ * changing the route's request default or a Session selection. Profile edits
+ * land as minimal `settings.mutate`
  * path ops against the stored section — the card names only the fields it can
  * see instead of rebuilding the whole subtree from a partial descriptor.
  */
@@ -33,6 +30,7 @@ import {
 import { apiKeyFailure } from './apiKey.ts'
 import { EditorFooter } from './EditorFooter.tsx'
 import { ModelListEditor } from './ModelListEditor.tsx'
+import { validProviderReasoning } from './reasoning.ts'
 import { deriveKeyRef, protocolChoices } from './store.ts'
 import { protocolLabel } from './protocol-label.ts'
 import type { ModelsOperations } from './operations.ts'
@@ -106,6 +104,21 @@ function draftAt(
   return structuredClone(subtree) as Record<string, unknown>
 }
 
+/** Separate a reasoning-only edit so unsetting restores the composition layer. */
+function reasoningOnlyOps(base: readonly string[], before: unknown, after: unknown): SettingsPathOpView[] | undefined {
+  const record = (value: unknown): Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown> : {}
+  const previous = record(before)
+  const next = record(after)
+  const withoutReasoning = (value: Record<string, unknown>): unknown => Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'reasoningEfforts'))
+  if (JSON.stringify(withoutReasoning(previous)) !== JSON.stringify(withoutReasoning(next))) return undefined
+  if (JSON.stringify(previous['reasoningEfforts']) === JSON.stringify(next['reasoningEfforts'])) return []
+  const path = [...base, 'reasoningEfforts']
+  return [next['reasoningEfforts'] === undefined
+    ? { op: 'unset', path }
+    : { op: 'set', path, value: next['reasoningEfforts'] as JsonValue }]
+}
+
 /**
  * The minimal path ops carrying `after` over `before`, both as the card sees
  * them. Only keys the card observed are named; fields absent from both sides
@@ -127,6 +140,18 @@ export function pathOps(
   const ops: SettingsPathOpView[] = []
   for (const [key, value] of Object.entries(after)) {
     if (JSON.stringify(previous[key]) === JSON.stringify(value)) continue
+    const prior = previous[key]
+    if (key === 'models' && Array.isArray(prior) && Array.isArray(value) && prior.length === value.length) {
+      const edits = value.map((model, index) => reasoningOnlyOps([...base, key, String(index)], prior[index], model))
+      if (edits.every(edit => edit !== undefined)) { ops.push(...edits.flat()); continue }
+    }
+    if (key === 'modelOverrides' && typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      const old = typeof prior === 'object' && prior !== null && !Array.isArray(prior) ? prior as Record<string, unknown> : {}
+      const next = value as Record<string, unknown>
+      const edits = [...new Set([...Object.keys(old), ...Object.keys(next)])]
+        .map(id => reasoningOnlyOps([...base, key, id], old[id], next[id]))
+      if (edits.every(edit => edit !== undefined)) { ops.push(...edits.flat()); continue }
+    }
     ops.push({ op: 'set', path: [...base, key], value: value as JsonValue })
   }
   for (const key of Object.keys(previous)) {
@@ -184,7 +209,8 @@ export function ProviderEditor(props: ProviderEditorProps): ReactNode {
   const disabled = props.readOnly || busy
   const accountProvider = props.provider === 'deepseek-account'
   // Account settings use a configurable Cordis entry id.
-  const layout = accountProvider ? 'deepseek' : layoutOf(namespace.ns)
+  const layout = accountProvider ? 'deepseek'
+    : schema.nodeAtPath(root, [...settingsPath, 'models', '0', 'reasoningEfforts']) !== undefined ? 'pi-ai' : layoutOf(namespace.ns)
   const keyRef = refFor(schema, namespace, settingsPath, props.provider)
   // The same schema read the create card makes, so the choices offered here
   // and there cannot drift apart: both come from the adapter's own `Config`.
@@ -226,6 +252,7 @@ export function ProviderEditor(props: ProviderEditorProps): ReactNode {
   // The model list is validated by the same per-row checker for both families,
   // so a bad row is named by its position rather than by a blanket message.
   const modelFailure = validateDeepSeekModels(schema.getPath(draft, ['models']))
+  const reasoningFailure = !validProviderReasoning(draft)
   const keyFailure = apiKeyFailure(keyDraft)
   // What a probe or a write must carry: the typed key with paste whitespace
   // removed. A blank field yields an empty string, which both call sites read
@@ -257,6 +284,7 @@ export function ProviderEditor(props: ProviderEditorProps): ReactNode {
    * outside the card. Ops name only the fields this card can see.
    */
   const applyOnce = async (): Promise<string | undefined> => {
+    if (reasoningFailure && props.credentialOnly !== true) return t('reasoningInvalid')
     const ns = namespace.ns
     // A pi-ai profile names the conventional reference only when this page is
     // about to store a key. Otherwise the provider keeps its native auth path.
@@ -487,6 +515,12 @@ export function ProviderEditor(props: ProviderEditorProps): ReactNode {
                   probe={probe}
                   probeBlocked={keyFailure}
                   operations={operations}
+                  reasoningOverrides={schema.getPath(draft, ['modelOverrides']) as Record<string, unknown> | undefined}
+                  reasoningInheritedOverrides={schema.getPath(namespace.base, [...settingsPath, 'modelOverrides']) as Record<string, unknown> | undefined}
+                  onReasoningOverride={(model, value) => {
+                    const path = ['modelOverrides', model, 'reasoningEfforts']
+                    setDraft(current => value === undefined ? schema.deletePath(current, path) : schema.setPath(current, path, value))
+                  }}
                   onBusyChange={setListBusy}
                 />
               )}
@@ -512,6 +546,7 @@ export function ProviderEditor(props: ProviderEditorProps): ReactNode {
         ? <p className={styles['advancedHint']}>{`${t('advancedHint')} (${namespace.ns})`}</p>
         : curatedFields(layout)}
       {failure !== undefined ? <p className={styles['error']}>{failure}</p> : null}
+      {reasoningFailure ? <p role="alert" className={styles['error']}>{t('reasoningInvalid')}</p> : null}
       {props.credentialOnly === true || modelFailure === undefined
         ? null
         : (
@@ -523,7 +558,7 @@ export function ProviderEditor(props: ProviderEditorProps): ReactNode {
         t={t}
         busy={busy}
         submitDisabled={disabled || layout === 'unknown'
-          || (props.credentialOnly !== true && modelFailure !== undefined)
+          || (props.credentialOnly !== true && (modelFailure !== undefined || reasoningFailure))
           || shownKeyFailure !== undefined
           || (props.credentialRequired === true && keyValue.length === 0)}
         submitLabelKey={props.submitLabelKey ?? 'apply'}

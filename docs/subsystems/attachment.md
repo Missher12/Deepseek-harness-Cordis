@@ -217,6 +217,13 @@ async admitPromptContent( content: readonly AttachmentAdmissionPart[], ): Promis
 admitEncodedFile(input: EncodedFileAttachment): Promise<FileAttachmentRef>
 
 /**
+ * Validate an ordinary-file upload signature before publishing its receipt.
+ * @param input - ordered exact bytes, optional cancellation, and display name.
+ * @returns a durable file reference; recognized images require the image endpoint.
+ */
+admitFileStream(input: SaveFileStreamAttachment): Promise<FileAttachmentRef>
+
+/**
  * Identify a failure emitted by this attachment capability by its stable code.
  * @param error - value caught from an attachment operation.
  * @returns whether the value is an attachment failure.

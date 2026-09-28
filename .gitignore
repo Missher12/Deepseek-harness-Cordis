@@ -46,3 +46,12 @@ worktrees/
 .agents/worktrees/
 .typert-*/
 native/system/test/bin/
+
+# Local coordination and private products never belong in this public repository.
+/coordination/
+/private/
+/plugins/dsh-reasoning-effort/
+/plugins/dsh-media-missher/
+/Media@Missher/
+/mse/
+/.git-consolidation/

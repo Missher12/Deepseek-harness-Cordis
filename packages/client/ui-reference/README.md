@@ -25,7 +25,7 @@ Use `dsh-client-ui-reference` when Web users need to mention files, folders, or 
 <a id="use-this-package"></a>
 ## Use this package
 
-The source is active whenever the composition mounts this package and a Host `ctx.fileReferences` provider is available. Type `@` followed by an unquoted token to see files first, then sessions; open `@"…` to search files only. The candidate list is a completion menu, not a search result page: pick once and keep typing.
+The source is active whenever the composition mounts this package and a Host `ctx.fileReferences` provider is available. Type `@` followed by an unquoted token to see files first, then sessions; open `@"…` to search paths containing spaces; an available plugin source can also match spaced labels. The candidate list is a completion menu, not a search result page: pick once and keep typing.
 
 ### What a pick inserts
 
@@ -58,6 +58,8 @@ Candidate requests require an existing retained Client Session and share one tem
 ### Serialization
 
 File picks preserve the natural text defined by the shared `@path` grammar as the hidden serialized and clipboard form. Session picks use the canonical `@[label](dsh-session:…)` mention; serialization never reconstructs identity from the visible title.
+
+When `remote.pluginInventory` is composed, an independent `plugin-reference` source lists the current Session’s callable plugins. Picks keep the Host-returned canonical mention as the chip ref, clipboard text, draft text, and submitted text; labels never determine identity. Same-label rows show their module and entry. Capability, preset, and connection changes invalidate open candidates. Missing or failed plugin discovery leaves file, folder, session, and slash-skill sources available. Host admission revalidates restored and copied references before adding only their selected capability context; choosing a candidate installs, enables, or executes nothing.
 
 </details>
 

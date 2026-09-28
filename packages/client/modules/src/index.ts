@@ -16,7 +16,7 @@
  * set with all current entries and flushes synchronously, so first scan and
  * steady state share one implementation. Package metadata (including the
  * negative "not a client package" verdict) is cached per Loader specifier and
- * owning-tree base URL until restart. The manifest package name identifies
+ * owning-tree base URL until that Loader entry changes. The manifest package name identifies
  * the browser module; distinct active Loader sources for that package are a
  * composition error. Bundle content changes reach the graph only through
  * {@link ClientModuleRegistry.rebuilt}.
@@ -599,7 +599,7 @@ export class ClientModuleRegistry extends Service {
   private readonly table = new Map<string, WebPluginRecord>()
   private readonly sources = new Map<string, ClientPackageSource>()
   // Resolution is entry-local: the same specifier can resolve differently in
-  // separate config trees. Negative verdicts remain stable until restart.
+  // separate config trees. Loader entry changes invalidate both verdicts.
   private readonly pkgMeta = new Map<string, ResolvedPkgMeta | null>()
   private readonly rebuildListeners = new Set<(id: string, rev: string) => void>()
   private readonly graphListeners = new Set<() => void>()
@@ -624,6 +624,9 @@ export class ClientModuleRegistry extends Service {
     ctx.on('internal/plugin', (fiber) => {
       const entryName = fiber.entry?.options.name
       if (entryName === undefined) return
+      for (const key of this.pkgMeta.keys()) {
+        if (key.endsWith(`\0${entryName}`)) this.pkgMeta.delete(key)
+      }
       this.dirty.add(entryName)
       if (this.flushQueued) return
       this.flushQueued = true
@@ -1033,7 +1036,9 @@ export class ClientModuleRegistry extends Service {
     }
     const source = sources[0]
     if (source === undefined) return this.table.delete(packageName)
-    if (this.table.get(packageName)?.sourceKey === source.sourceKey) return false
+    const previous = this.table.get(packageName)
+    if (previous?.sourceKey === source.sourceKey
+      && JSON.stringify(previous.meta) === JSON.stringify(source.meta)) return false
     // Startup and HMR share revisions so unchanged artifacts survive a server restart.
     const snapshot = this.initialBundleSnapshot(packageName, source.meta.clientPath)
     const rev = artifactRevision(snapshot.baseline)

@@ -42,13 +42,18 @@
   background: var(--dsw-alias-interactive-bg-hover);
 }
 
+.iconButton[aria-pressed="true"] {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
 /* View-options dropdown card: labels are short, so a content-sized card reads
    cramped and its width shifts with the locale — hold a stable floor. */
 .viewOptionsMenu {
   min-width: 200px;
 }
 
-/* Section header: title, an inline search control, and the two trailing
+/* Section header: title, an inline search control, and the trailing
    actions. Expanding search collapses the action cluster and takes its room. */
 .sectionHeader {
   flex: none;

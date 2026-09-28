@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-客户端可以调用 `pluginInventory/list`，按加载顺序展示宿主的当前插件，包括每个条目的标识符、模块标识、有效启用状态、存活阶段与可用的展示文本。部署组合了 agent preset roster 时，还会报告各预设的元数据、健康状态与压平后的插件组合；没有 roster 时，预设数据缺席。每次响应都是供展示和诊断使用的只读即时快照：它不能修改插件，也不提供历史或变更订阅。
+客户端可以查看 Host 的插件组合，并为单个会话选择可调用插件。`pluginInventory/list` 报告 Loader 与预设状态；`pluginInventory/candidates` 返回拥有所选 Agent 可见工具的插件。规范引用可在草稿重载和复制后保留。可选解析器在模型准入前检查可用性，并只记录所选能力指引。查询和选择都不会安装、启用、执行插件或授予权限。
 
 ## 目录
 
@@ -25,7 +25,22 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-当客户端或设置页需要展示宿主当前组合了什么——哪些插件已加载、已启用、是否存活，以及每个 agent preset 会给会话什么——时调用 `pluginInventory/list`。Remote 是唯一入口：该服务仅供 Remote 使用，刻意不声明同进程 Cordis `Context` 合并。
+当客户端或设置页需要展示宿主当前组合了什么——哪些插件已加载、已启用、是否存活，以及每个 agent preset 会给会话什么——时调用 `pluginInventory/list`。Client 调用返回 `RemoteResult`，需要处理失败结果。Host 消费端使用 `ctx.pluginInventory`，并向 `candidates` 传入实际 Agent。
+
+### 选择可调用插件
+
+Web Bundle 分别挂载清单与 `@deepseek-ai/dsh-host-plugin-inventory/reference-plugin`。解析器依赖清单；解析器缺席时，候选为空，残留引用会被拒绝。条目必须拥有活动工具注册，并通过 Agent 注册表、作用域限制与同名覆盖筛选。纯 UI、禁用、失败或归属不明的注册不会成为候选。
+
+调用 `pluginInventory/candidates(sessionId, query, signal)`，插入、剪贴板、草稿和提交原样使用返回的 `mention`。浏览器安全的 `./reference` 导出格式化并解析 `@{dsh-plugin:v1:<encoded-identity>}`；`describePluginReference` 提供历史模块/条目标签，不声明可用性。身份包含模块、Loader 条目及 host 或 preset 来源，不含 Agent 或内存对象。订阅 `plugin-capabilities/changed`，并在预设选择或重连后重新查询；事件只使数据失效，不携带替代目录。
+
+| 清单字段 | 默认值 | 含义 |
+|---|---|---|
+| `candidateLimit` | `50` | 最大补全行数 |
+| `toolLimit` | `64` | 每插件最大工具摘要数；`capabilityCount` 保留总数 |
+| `descriptionMaxChars` | `240` | 每段描述的最大字符数 |
+| 解析器 `maxReferences` | `16` | 单条提交消息中允许的最大标记出现次数 |
+
+提交和队列编辑拒绝畸形、不支持或不可用的引用。pre-step 按当前 Agent 再次校验排队引用。原用户文本保留完整标记；文件、目录、会话和技能引用继续使用各自解析器。附加指令消息采用 `plugin-reference` 归因并作为正文持久化，回放无需重新解析目录。
 
 ### 快照包含什么
 
@@ -87,11 +102,19 @@ Typert 生成由 `./typert` 与 `./remote` 导出的 Host 和 Client Remote 产�
 <a id="model-experience"></a>
 ## 模型体验
 
-无。这个仅限 Host 的只读 Loader 投影不注册任何面向模型的内容。
+### 所选插件指引
+
+#### 模型看到什么
+
+解析器在含引用的直接用户消息之后增加一条指令消息。固定标题为 `## Referenced plugins`；正文说明规范标记代表插件，保留原有权限与审批，并将后续 JSON 标为目录数据。JSON 只包含所选插件身份、模块名、有界工具摘要与工具数。引用解析不执行工具。
+
+#### Token 影响
+
+每个提交的引用贡献其所选插件的有界能力摘要。未选插件不贡献指令文本；`maxReferences`、`toolLimit` 和 `descriptionMaxChars` 限制这部分输入。
 
 #### KV Cache 影响
 
-无；该包既不组装也不发送提供方请求。
+指引经普通日志消息准入进入一次，保留既有历史前缀。每次新的直接引用读取实时目录；回放保留记录下来的指令文本。
 
 ## 已知限制与延期工作
 
@@ -100,7 +123,7 @@ Typert 生成由 `./typert` 与 `./remote` 导出的 Host 和 Client Remote 产�
 
 这些限制说明即时清单无法向客户端提供哪些信息。它们是当前包约束，不是任务积压。
 
-- **仅表示调用当下**——结果不包含持久的失败历史或订阅；只要不存在存活的根 Fiber，就会报告 `null`，而不区分其原因。
+- **仅表示调用当下**——结果不包含持久失败历史；候选变更事件需要重新查询；只要不存在存活的根 Fiber，就会报告 `null`，而不区分其原因。
 - **不标识引入层，也不修改插件**——服务不识别条目由哪个 bundle、profile 或 override 引入，也不能在任一平面启用、停用、添加或移除插件。
 - **预设仅随 roster 出现**——未装 `dsh-agent-preset-registry` 的部署只提供 Loader 条目；`agentPresets` 字段缺席而非为空。
 

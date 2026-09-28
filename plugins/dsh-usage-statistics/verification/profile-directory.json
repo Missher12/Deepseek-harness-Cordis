@@ -1,0 +1,22 @@
+{
+  "runtime": "0.1.7-rc.2",
+  "version": "0.2.0",
+  "installKind": "directory",
+  "artifactSha256": "f79395cb08fecabee0d723cd1e361fa84b428ebe8072f8777e7547a4c09a7f85",
+  "install": true,
+  "loaderBoot": true,
+  "privateRemoteManifest": true,
+  "syntheticTokens": 30000,
+  "cacheHitRate": 0.76,
+  "uninstallRestoresBase": true,
+  "pluginServiceRemoved": true,
+  "sessionBytesUnchanged": true,
+  "realModel": false,
+  "finalArtifactSha256": "baeb475416d6b6bd9572d49dbb0bae6f65b6f5112cbe24fd29aff57aaf74037e",
+  "entrySha256": {
+    "lib/index.js": "2c21f8b7663e00e5acc6fe3847e85c982f5f42095ff278d6a645134dbf5d0669",
+    "lib/client.js": "a096f36feb214de8ade7ed7a91855dbf054ebf55c9a1f42c528d7356a9d9dcd5",
+    "lib/typert.js": "313333a7b8a123db10e0884a5ab36424eb78709c5271dc0f9f367b64394cd81d"
+  },
+  "finalRuntimeEntriesMatch": true
+}

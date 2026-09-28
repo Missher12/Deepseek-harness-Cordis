@@ -250,6 +250,25 @@ describe('model discovery registry', () => {
     ])
   })
 
+  it('preserves optional sparse reasoning mappings across discovery without sharing adapter objects', async () => {
+    const ctx = await setup()
+    const mapping = { off: null, low: 'light', high: 'ultra' }
+    ctx.llm.registerModelDiscovery('renamed-pi', async () => [
+      { id: 'custom', reasoningEfforts: mapping },
+      { id: 'disabled', reasoningEfforts: false },
+      { id: 'unknown' },
+    ])
+    const found = await ctx.llm.remoteDiscoverModels('renamed-pi', { provider: 'route' }, new AbortController().signal)
+    expect(found).toEqual([
+      { id: 'custom', reasoningEfforts: { off: null, low: 'light', high: 'ultra' } },
+      { id: 'disabled', reasoningEfforts: false },
+      { id: 'unknown' },
+    ])
+    expect(found[0]?.reasoningEfforts).not.toBe(mapping)
+    mapping.high = 'changed-after-read'
+    expect(found[0]?.reasoningEfforts).toEqual({ off: null, low: 'light', high: 'ultra' })
+  })
+
   it('carries cancellation into Remote discovery and maps provider failures', async () => {
     const ctx = await setup()
     const discover = vi.fn()

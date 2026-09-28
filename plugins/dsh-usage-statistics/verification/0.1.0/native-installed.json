@@ -1,0 +1,23 @@
+{
+  "mode": "installed",
+  "desktopVersion": "0.5.10",
+  "scheme": "http:",
+  "oneUsageEntry": true,
+  "activityCells": 371,
+  "chartModes": [
+    "daily",
+    "weekly",
+    "cumulative"
+  ],
+  "pluginStyles": true,
+  "realModel": false,
+  "errors": [],
+  "artifactSha256": "699bfe50c673035372eb7ed62aaf10e4334eb0bdbd35046c6c6b851b426e6301",
+  "entrySha256": {
+    "lib/index.js": "2c21f8b7663e00e5acc6fe3847e85c982f5f42095ff278d6a645134dbf5d0669",
+    "lib/client.js": "fc18276bb1aec9905375520580cd146c1092921c363ee5d0c01b0166aa87ffaf",
+    "lib/typert.js": "9bd956ec4c30b0c6107f583c2b51ad98d1bf841468c8459b0c7213a7db1aff20"
+  },
+  "finalArtifactSha256": "d0ba9604ac0731cbf56289789afc676b82d8e9645fda73be3c02e7227e94d7c2",
+  "finalRuntimeEntriesMatch": true
+}

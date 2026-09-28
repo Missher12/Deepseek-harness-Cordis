@@ -1,0 +1,25 @@
+{
+  "desktopVersion": "0.1.7-rc.2",
+  "scheme": "dsh-app:",
+  "nativeLocalDirectoryInstall": true,
+  "activityCells": 371,
+  "chartModes": [
+    "daily",
+    "weekly",
+    "cumulative"
+  ],
+  "syntheticTokens": 30000,
+  "errors": [],
+  "nativeUninstall": true,
+  "usageEntryRemoved": true,
+  "pluginStylesRemoved": true,
+  "sessionBytesUnchanged": true,
+  "realModel": false,
+  "entrySha256": {
+    "lib/index.js": "2c21f8b7663e00e5acc6fe3847e85c982f5f42095ff278d6a645134dbf5d0669",
+    "lib/client.js": "a096f36feb214de8ade7ed7a91855dbf054ebf55c9a1f42c528d7356a9d9dcd5",
+    "lib/typert.js": "313333a7b8a123db10e0884a5ab36424eb78709c5271dc0f9f367b64394cd81d"
+  },
+  "finalArtifactSha256": "baeb475416d6b6bd9572d49dbb0bae6f65b6f5112cbe24fd29aff57aaf74037e",
+  "finalRuntimeEntriesMatch": true
+}

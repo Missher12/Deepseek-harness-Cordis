@@ -66,6 +66,8 @@ The package separates an abstract discovery service from a shared, browser-safe 
 
 The UI recognizes an active `@` token through `activeAtToken`, calls `list` with the query text, and renders the ranked candidates. On selection, `formatFileMention` emits the matching prompt spelling (`@path`, `@"path with spaces"`, or an open `@"dir/` for a quoted directory). No file content is read at any point; providers may additionally install the stable `FILE_REFERENCE_PROMPT` section when the addressed agent has a `read` tool.
 
+The model guidance distinguishes ordinary path mentions from structured plugin and Session markers. Structured references belong to their owning resolvers and must not be treated as paths or passed to filesystem tools.
+
 </details>
 
 -----

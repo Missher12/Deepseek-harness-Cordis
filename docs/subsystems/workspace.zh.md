@@ -561,6 +561,16 @@ insertBefore(id: WorkspaceId, beforeId?: WorkspaceId): Promise<readonly Workspac
 archiveSession(sessionId: SessionId, options: ArchiveSessionOptions = {}): Promise<void>
 
 /**
+ * Permanently delete an archived session and remove its accounting. Activity
+ * and fork descendants refuse deletion. The lifecycle owner may release its
+ * own idle agent before persistence takes the exclusive writer lock.
+ * @param sessionId - archived identity to delete.
+ * @param release - optional lifecycle-owner teardown, after admission.
+ * @returns resolution after history and registry cleanup; a cleanup failure can be retried.
+ */
+deleteArchivedSession(sessionId: SessionId, release?: () => Promise<void>): Promise<void>
+
+/**
  * Unarchive one session durably by dropping it from the registry-global
  * archive set; the accounting slot was never touched, so the session
  * returns to its recorded position. Unarchiving runs no session-existence

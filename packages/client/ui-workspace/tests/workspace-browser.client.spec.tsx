@@ -151,6 +151,26 @@ function rerender(b: ReturnType<typeof mount>, overrides: Partial<WorkspaceBrows
 }
 
 describe('WorkspaceBrowser', () => {
+  it('toggles archived-only rows from the header without changing workspace membership', () => {
+    const b = mount({
+      useSessions: hook(sessionState([summary('live', 2), summary('archived', 1)])),
+      useWorkspaces: hook(workspaceState([workspace('project', ['live', 'archived'])], [sid('archived')])),
+    })
+    const toggle = screen.getByRole('button', { name: '仅显示已归档' })
+    fireEvent.click(screen.getByText('project'))
+    expect(toggle.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(toggle)
+    expect(b.store.getSnapshot().archivedFilter).toBe('only')
+    expect(toggle.getAttribute('aria-pressed')).toBe('true')
+    expect(screen.queryByText('live')).toBeNull()
+    expect(screen.getByText('archived')).toBeTruthy()
+    fireEvent.click(toggle)
+    expect(b.store.getSnapshot().archivedFilter).toBe('default')
+    expect(screen.getByText('live')).toBeTruthy()
+    expect(screen.queryByText('archived')).toBeNull()
+    expect(b.props.useWorkspaces(state => state.items[0]?.sessionIds)).toEqual([sid('live'), sid('archived')])
+  })
+
   it.each([{ messages: en, common: commonEn }, { messages: zh, common: commonZh }])('shows localized fork failures and dismisses them', ({ messages, common }) => {
     const b = mount({ t: makeTranslate(messages, common) })
     act(() => { b.controls.forkFailed('unavailable') })

@@ -25,6 +25,8 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
+后端支持时，`delete(id)` 永久删除空闲会话的历史；不支持的后端明确拒绝。它排除活动写入者，不删除工作区文件。应用应通过 `sessionController.deleteArchivedSession(id)` 完成归档准入、生命周期释放与注册表清理。
+
 挂载一个持久化后端即可让会话持久化。后端把自己注册为 `ctx.sessionPersistence`，并把每个已发布会话的实时事件路由进该会话的活跃写句柄；agent-loop——会话在生产环境中的发布点——在发布之前获取每个会话的写句柄，因此组合中的其他部分不变。
 
 ### 选择后端

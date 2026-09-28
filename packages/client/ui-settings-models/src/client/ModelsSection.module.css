@@ -722,3 +722,8 @@ select.input {
   line-height: 20px;
   text-align: center;
 }
+
+.reasoningFields { border: 1px solid var(--dsw-alias-border-l3); border-radius: var(--dsw-radius-sm); padding: 12px; min-width: 0; }
+.reasoningLevel { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.reasoningLevel > label { display: inline-flex; align-items: center; gap: 4px; }
+.reasoningLevel > input { flex: 1; min-width: 100px; }

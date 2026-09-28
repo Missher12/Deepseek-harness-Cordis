@@ -4,6 +4,12 @@
 
 [boot 包组](../../packages/boot/README.zh.md)负责 launcher 提供的 profile 访问与插件管理器。[插件管理器](../../packages/boot/plugin-manager/README.zh.md)文档说明持久化、重载与包操作行为。
 
+## 可调用插件引用
+
+[`dsh-host-plugin-inventory`](../../packages/host/plugin-inventory/README.zh.md) 投影组合诊断及当前 Agent 的可调用工具所有者。`PluginInventorySnapshot` 包含 Loader 条目与可选预设组合，不授予执行权限。
+
+`PluginInstanceId` 是模块、Loader 条目及 host 或 preset 来源的 opaque 身份。`PluginCapabilityId` 标识该所有者中的单个工具。`PluginCapabilityCandidate` 包含身份、标签、规范 mention、模块/条目/预设展示数据、有界 `PluginToolCapability` 摘要及总数 `capabilityCount`；每个工具摘要包含 id、名称、描述及 native/PTC/both 调用模式。原标记保留在用户正文；单独记录的指引只携带归因。新提交和 pre-step 再次校验可用性，历史回放不校验。
+
 ## 管理记录
 
 `PluginEntryId` 标识一个 Loader 条目；调用方从 `listPlugins` 获取，不自行拼接 patch id。
@@ -81,6 +87,50 @@ async getLinked(url: string): Promise<string[]>
 ```
 
 Source: [`packages/boot/hmr/src/index.ts`](../../packages/boot/hmr/src/index.ts)
+
+<a id="ctxplugininventory--plugininventorygateway"></a>
+
+### `ctx.pluginInventory` — `PluginInventoryGateway`
+
+Loader inventory and Agent-scoped callable-plugin discovery.
+
+```ts cordis-catalog
+/**
+ * Read the Loader directly on every call. Cordis's internal plugin/status
+ * events already maintain Entry.fiber and Fiber.state, so a second cache
+ * would only add another lifecycle truth to keep synchronized.
+ *
+ * When an agent-preset roster is composed, the snapshot also carries each
+ * preset's composition rows, because those rows — not the Loader's own
+ * entries — are where a deployment that mounts the roster runs its
+ * model-facing plugins.
+ * @returns Current non-group Loader entries in Loader order, with optional display metadata
+ * and per-preset compositions when a roster is composed.
+ */
+@Remote('list') async list(): Promise<PluginInventorySnapshot>
+
+/**
+ * List only currently callable plugin instances for a target Agent.
+ * @param agent - target Agent resolved by the Remote's Session lookup.
+ * @param query - case-insensitive module, title or tool-name substring.
+ * @param signal - caller cancellation, checked before reading the catalog.
+ * @returns bounded candidates with canonical mentions and execution modes.
+ */
+@Remote('candidates') async candidates(agent: Agent, query: string, signal: AbortSignal): Promise<PluginCapabilityCandidate[]>
+
+/**
+ * Resolve selected identities against the current Agent, without candidate pagination.
+ * @param agent - target Agent entering the request.
+ * @param ids - validated stable identities from direct user text.
+ * @returns current summaries, in first-reference order.
+ * @throws RemoteError when any referenced owner has no currently visible tools.
+ */
+resolveReferences(agent: Agent, ids: readonly PluginInstanceId[]): PluginCapabilityCandidate[]
+```
+
+Types: [Agent](core.zh.md)
+
+Source: [`packages/host/plugin-inventory/src/index.ts`](../../packages/host/plugin-inventory/src/index.ts)
 
 <a id="ctxpluginmanager--pluginmanager"></a>
 
@@ -179,6 +229,33 @@ Manage profile files and apply their declared reload lifecycle.
 
 Source: [`packages/boot/plugin-manager/src/index.ts`](../../packages/boot/plugin-manager/src/index.ts)
 
+<a id="ctxpluginreferenceresolver--pluginreferenceresolver"></a>
+
+### `ctx.pluginReferenceResolver` — `PluginReferenceResolver`
+
+Optional logged-message admission provider; its live service enables completion candidates.
+
+```ts cordis-catalog
+/**
+ * Whether the owner still accepts references, including Loader disposal in progress.
+ * @returns false as soon as Loader disables the owner or its Fiber stops being active.
+ */
+isAvailable(): boolean
+
+/**
+ * Validate a submitted reference before enqueue; pre-step repeats this check.
+ * @param agent - target Agent whose current tools determine availability.
+ * @param ids - identities recovered by the canonical parser.
+ * @returns the selected live summaries; never executes or grants tool access.
+ * @throws RemoteError when the resolver, any reference or the occurrence budget is unavailable.
+ */
+validate(agent: Agent, ids: readonly PluginInstanceId[]): PluginCapabilityCandidate[]
+```
+
+Types: [Agent](core.zh.md)
+
+Source: [`packages/host/plugin-inventory/src/reference-plugin.ts`](../../packages/host/plugin-inventory/src/reference-plugin.ts)
+
 <a id="ctxpluginregistryprobe--pluginregistryprobe"></a>
 
 ### `ctx.pluginRegistryProbe` — `PluginRegistryProbe`
@@ -261,6 +338,27 @@ Module replacements have finished loading.
 ```
 
 Source: [`packages/boot/hmr/src/index.ts`](../../packages/boot/hmr/src/index.ts)
+
+<a id="plugin-capabilities-events"></a>
+
+### `plugin-capabilities/*` events
+
+<a id="plugin-capabilitieschanged--emit"></a>
+
+#### `plugin-capabilities/changed` — emit
+
+Invalidate callable-plugin snapshots after registry or Loader lifecycle changes. This notification carries no capability data; consumers re-query their Agent.
+
+```ts cordis-catalog
+/**
+ * Invalidate callable-plugin snapshots after registry or Loader lifecycle changes.
+ * This notification carries no capability data; consumers re-query their Agent.
+ * @mode emit
+ */
+'plugin-capabilities/changed'(): void
+```
+
+Source: [`packages/host/plugin-inventory/src/types.ts`](../../packages/host/plugin-inventory/src/types.ts)
 
 <a id="plugin-manager-events"></a>
 

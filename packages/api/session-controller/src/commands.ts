@@ -11,6 +11,8 @@ import type {
 } from '@deepseek-ai/dsh-attachment'
 import type { FileUploadReceiptId } from '@deepseek-ai/dsh-client-file-upload/types'
 import type {} from '@deepseek-ai/dsh-client-file-upload'
+import { parsePluginReferenceText, PluginReferenceSyntaxError } from '@deepseek-ai/dsh-host-plugin-inventory/reference'
+import type {} from '@deepseek-ai/dsh-host-plugin-inventory'
 import {
   ReasoningEffortId, assistantStreamChunks, createUserMessage, freezeMessage,
 } from '@deepseek-ai/dsh-llm'
@@ -267,7 +269,7 @@ export class SessionCommandController {
     const composition = await this.agents.composeAgent(this.agents.presetForObservation(source))
     try {
       const { provider, model } = this.ctx.agentDefaultModel.currentSelection()
-      await this.ctx.agents.create({
+      this.agents.own(await this.ctx.agents.create({
         sessionId: childId,
         seed,
         inheritedEventCount: SessionLogOffset(boundary + 1),
@@ -281,7 +283,7 @@ export class SessionCommandController {
         },
         agentOptions: { provider, model },
         setup: composition.setup,
-      })
+      }))
     } catch (error) {
       throw new RemoteError(
         'gateway/internal',
@@ -352,6 +354,7 @@ export class SessionCommandController {
           receiptId => this.ctx.fileUploads.resolve(agent, receiptId),
         )
         const content = await this.ctx.attachments.admitPromptContent(admission.content)
+        this.validatePluginReferences(agent, content)
         const message: UserMessage = createUserMessage({ content, source })
         if (this.ctx.agents.get(agent.id) !== agent) {
           throw new RemoteError(
@@ -374,6 +377,23 @@ export class SessionCommandController {
       return { accepted: true }
     }
     return hasImage ? this.agents.serializeImageAdmission(agent, admit) : admit()
+  }
+
+  /** Reject unsupported or stale plugin mentions before any Inbox mutation. */
+  private validatePluginReferences(agent: Agent, content: UserMessage['content']): void {
+    try {
+      const ids = content.flatMap(block => block.type === 'text'
+        ? parsePluginReferenceText(block.text).references : [])
+      if (ids.length === 0) return
+      const resolver = this.ctx.get('pluginReferenceResolver')
+      if (resolver === undefined) {
+        throw new RemoteError('gateway/bad-request', 'Plugin references are unavailable: their resolver is not active', {})
+      }
+      resolver.validate(agent, ids)
+    } catch (error) {
+      if (error instanceof PluginReferenceSyntaxError) throw new RemoteError('gateway/bad-request', error.message, {})
+      throw error
+    }
   }
 
   private async requireModel(selection: Pick<AgentModelSelection, 'provider' | 'model'>): Promise<void> {
@@ -479,6 +499,7 @@ export class SessionCommandController {
     }
     switch (request.action.kind) {
       case 'edit':
+        this.validatePluginReferences(agent, request.action.content)
         agent.inbox.replace(request.itemId, freezeMessage<UserMessage>({
           ...message,
           content: [...request.action.content],

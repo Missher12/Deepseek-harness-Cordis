@@ -9,17 +9,17 @@ const enT = makeTranslate(en, commonZh)
 
 describe('attachment rejection copy', () => {
   const limits = {
-    maxImageBytes: 5 * 1024 * 1024,
+    maxImageBytes: 5 * 1_000_000,
     maxImagesPerMessage: 20,
-    maxMessageImageBytes: 100 * 1024 * 1024,
+    maxMessageImageBytes: 100 * 1_000_000,
     maxImagePixels: 40_000_000,
     maxImageDimension: 2000,
     mediaTypes: ['image/png'] as const,
   }
 
   it('renders megabytes without a trailing fraction unless one exists', () => {
-    expect(imageSizeText(10 * 1024 * 1024)).toBe('10MB')
-    expect(imageSizeText(2.5 * 1024 * 1024)).toBe('2.5MB')
+    expect(imageSizeText(10 * 1_000_000)).toBe('10MB')
+    expect(imageSizeText(2.5 * 1_000_000)).toBe('2.5MB')
   })
 
   it('maps user-solvable reasons to limit-naming copy', () => {

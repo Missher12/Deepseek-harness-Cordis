@@ -1,7 +1,7 @@
 /** Durable attachment storage seam (`ctx.attachments`). @module @deepseek-ai/dsh-attachment */
 
 import { Context, Service } from '@deepseek-ai/cordis'
-import { admitEncodedFile as admitFileInput, admitEncodedImages } from './admission.ts'
+import { admitEncodedFile as admitFileInput, admitEncodedImages, admitFileStream as admitStreamInput } from './admission.ts'
 import { AttachmentError, isAttachmentError as matchesAttachmentError } from './error.ts'
 import type {
   AdmittedPromptContentPart,
@@ -136,6 +136,15 @@ export abstract class AttachmentStore extends Service {
    */
   admitEncodedFile(input: EncodedFileAttachment): Promise<FileAttachmentRef> {
     return admitFileInput(this, input)
+  }
+
+  /**
+   * Validate an ordinary-file upload signature before publishing its receipt.
+   * @param input - ordered exact bytes, optional cancellation, and display name.
+   * @returns a durable file reference; recognized images require the image endpoint.
+   */
+  admitFileStream(input: SaveFileStreamAttachment): Promise<FileAttachmentRef> {
+    return admitStreamInput(this, input)
   }
 
   /**

@@ -8,6 +8,11 @@
     "docs/cordis-api/inherited.md",
     "docs/i18n/style-samples.md",
     "docs/i18n/terminology.md",
-    "docs/i18n/translation-prompt.md"
+    "docs/i18n/translation-prompt.md",
+    "plugins/dsh-context-manager/README.md",
+    "plugins/dsh-context-manager/research/dsh-context-43274f9/README.md",
+    "plugins/dsh-output-renderer/README.md",
+    "plugins/dsh-session-bridge/README.md",
+    "plugins/dsh-usage-statistics/README.md"
   ]
 }

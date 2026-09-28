@@ -25,6 +25,8 @@ This package lets applications persist and resume session event logs through a b
 <a id="use-this-package"></a>
 ## Use this package
 
+`delete(id)` permanently removes inactive history when supported by the backend; unsupported providers reject explicitly. It excludes active writers and never deletes workspace files. Applications should use `sessionController.deleteArchivedSession(id)` for archive admission, lifecycle teardown and registry cleanup.
+
 Mount one persistence backend to make sessions durable. The backend registers itself as `ctx.sessionPersistence` and routes every published session's live events into that session's active write handle; agent-loop — the production publication point for sessions — acquires each session's write handle before publication, so nothing else in the composition changes.
 
 ### Choosing a backend

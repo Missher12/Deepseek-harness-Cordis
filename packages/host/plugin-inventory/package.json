@@ -31,7 +31,15 @@
       "default": "./lib/typert.remote-client.js"
     },
     "./src/*": "./src/*",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./reference": {
+      "types": "./lib/types/reference.d.ts",
+      "default": "./lib/types/reference.js"
+    },
+    "./reference-plugin": {
+      "types": "./lib/types/reference-plugin.d.ts",
+      "default": "./lib/types/reference-plugin.js"
+    }
   },
   "files": [
     "lib/index.js",
@@ -44,19 +52,18 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "@deepseek-ai/schemastery": "workspace:~"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis-plugin-loader": "workspace:~",
     "@deepseek-ai/dsh-agent-preset-registry": "workspace:*",
     "@deepseek-ai/dsh-brand": "workspace:*",
     "@deepseek-ai/dsh-typert-protocol": "workspace:*",
-    "@deepseek-ai/cordis": "workspace:~"
-  },
-  "peerDependenciesMeta": {
-    "@deepseek-ai/dsh-agent-preset-registry": {
-      "optional": true
-    }
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-agent": "workspace:*",
+    "@deepseek-ai/dsh-tools": "workspace:*",
+    "@deepseek-ai/dsh-llm": "workspace:*"
   },
   "devDependencies": {
     "@deepseek-ai/dsh-app-boot": "workspace:*",
@@ -65,6 +72,11 @@
     "@deepseek-ai/dsh-agent-preset-registry": "workspace:*",
     "@deepseek-ai/dsh-brand": "workspace:*",
     "@deepseek-ai/dsh-typert-protocol": "workspace:*",
-    "@deepseek-ai/cordis": "workspace:~"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-agent": "workspace:*",
+    "@deepseek-ai/dsh-tools": "workspace:*",
+    "@deepseek-ai/dsh-llm": "workspace:*",
+    "@deepseek-ai/dsh-system-prompt": "workspace:*",
+    "@deepseek-ai/dsh-scope": "workspace:*"
   }
 }

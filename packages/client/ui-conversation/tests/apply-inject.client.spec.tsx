@@ -381,7 +381,7 @@ describe('Conversation inject API', () => {
   it('releases a draft attachment only after the input shell accepts its removal', async () => {
     const b = await bench()
     const composer = b.composerApi(ROOT)
-    expect(composer.addFiles?.([
+    expect(await composer.addFiles?.([
       new File([Uint8Array.of(1)], 'draft.pdf', { type: 'application/pdf' }),
     ])).toBeNull()
     const controller = b.runtime.ctx.get('conversation') as unknown as {
@@ -406,7 +406,7 @@ describe('Conversation inject API', () => {
   it('cites shell-named files and folders as @ references and refuses folders without the shell bridge', async () => {
     const browser = await bench()
     const folder = new File([], 'project')
-    expect(browser.composerApi(ROOT).addFiles?.([folder], new Set([folder])))
+    expect(await browser.composerApi(ROOT).addFiles?.([folder], new Set([folder])))
       .toBe('只有桌面端支持添加文件夹，浏览器里请添加单个文件')
     expect(browser.inputApi(ROOT).state.getSnapshot().attachmentIds).toEqual([])
     await browser.runtime.dispose()
@@ -418,9 +418,9 @@ describe('Conversation inject API', () => {
       const composer = desktop.composerApi(ROOT)
       const { state } = desktop.inputApi(ROOT)
       const note = new File([Uint8Array.of(1)], 'notes.md', { type: 'text/markdown' })
-      const shot = new File([Uint8Array.of(2)], 'shot.png', { type: 'image/png' })
+      const shot = new File([Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10)], 'shot.png', { type: 'image/png' })
       const pasted = new File([Uint8Array.of(3)], 'pasted.bin', { type: 'application/octet-stream' })
-      expect(composer.addFiles?.([folder, note, shot, pasted], new Set([folder]))).toBeNull()
+      expect(await composer.addFiles?.([folder, note, shot, pasted], new Set([folder]))).toBeNull()
       // The folder and the file became references in the draft; the image and the pathless bytes stayed drafts.
       expect(state.getSnapshot().draft).toBe('@"/Users/me/my project/" @/Users/me/notes.md ')
       const drafts = composer.resolveDraftAttachments?.(state.getSnapshot().attachmentIds) ?? []
@@ -428,7 +428,7 @@ describe('Conversation inject API', () => {
       await vi.waitFor(() => { expect(desktop.rootUpload).toHaveBeenCalledOnce() })
       // A directory the shell cannot name is refused even with the bridge present.
       const nameless = new File([], 'nameless')
-      expect(composer.addFiles?.([nameless], new Set([nameless])))
+      expect(await composer.addFiles?.([nameless], new Set([nameless])))
         .toBe('无法获取文件夹路径，请重新拖入')
       await desktop.runtime.dispose()
     } finally {
@@ -453,7 +453,7 @@ describe('Conversation inject API', () => {
     const off = registerComposerKeymap(editor, {
       arbitrate: () => 'pass', space: () => false, dismissPopup: () => {},
       canSubmit: () => true, submit: () => {}, pasteText: (text) => { composer.keyboard!.paste(text) },
-      intakeFiles: (files, directories) => { expect(composer.addFiles?.(files, directories)).toBeNull() },
+      intakeFiles: (files, directories) => { void composer.addFiles?.(files, directories) },
     })
     onTestFinished(off)
     const folder = new File([], 'my project')
@@ -465,7 +465,7 @@ describe('Conversation inject API', () => {
       })), getData: () => '',
     } })
     editor.update(() => { editor.dispatchCommand(PASTE_COMMAND, event) }, { discrete: true })
-    expect(state.getSnapshot().draft).toBe('读取 @a.txt @"my project/" @b.txt ')
+    await vi.waitFor(() => { expect(state.getSnapshot().draft).toBe('读取 @a.txt @"my project/" @b.txt ') })
     const view = render(<div>{projectUserText(state.getSnapshot().draft, [])}</div>)
     expect(view.container.querySelector('[data-ref-chip="folder"]')?.textContent).toBe('my project')
     expect(view.container.querySelector('[data-ref-chip="folder"]')?.getAttribute('title')).toBe('@"my project/"')
@@ -480,11 +480,40 @@ describe('Conversation inject API', () => {
     actions.setDraft('keep this text')
     for (const name of ['bad"name', 'bad\nname']) {
       const files = [new File([], 'good.txt'), new File([], name)]
-      expect(b.composerApi(ROOT).addFiles?.(files)).toBe('路径含有无法引用的字符，请改名后再试')
+      expect(await b.composerApi(ROOT).addFiles?.(files)).toBe('路径含有无法引用的字符，请改名后再试')
       expect(state.getSnapshot().draft).toBe('keep this text')
       expect(state.getSnapshot().attachmentIds).toEqual([])
       expect(b.rootUpload).not.toHaveBeenCalled()
     }
+  })
+
+  it('counts signature-routed images against the live draft and captures every accepted image in the prompt', async () => {
+    const b = await bench()
+    onTestFinished(() => b.runtime.dispose())
+    await b.runtime.sessions.setProjection(ROOT, 'imageLimits', {
+      maxImageBytes: 20_000_000, maxImagesPerMessage: 9, maxMessageImageBytes: 180_000_000,
+      maxImagePixels: 64_000_000, maxImageDimension: 8192,
+      mediaTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/gif'],
+    })
+    const composer = b.composerApi(ROOT)
+    const { state, actions } = b.inputApi(ROOT)
+    actions.setDraft('keep this text')
+    const bytes = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADElEQVQImWNgZGIGAAAOAAeCcsnOAAAAAElFTkSuQmCC'), char => char.charCodeAt(0))
+    const image = () => new File([bytes], 'disguised.txt', { type: 'application/octet-stream' })
+    expect(await composer.addFiles!(Array.from({ length: 8 }, image))).toBeNull()
+    const originalIds = state.getSnapshot().attachmentIds
+    expect(await composer.addFiles!([image(), image()])).toBe('一条消息最多添加 9 张图片')
+    expect(state.getSnapshot().attachmentIds).toEqual(originalIds)
+    expect(state.getSnapshot().draft).toBe('keep this text')
+    expect(b.rootUpload).not.toHaveBeenCalled()
+    composer.removeAttachment!(originalIds[0]!)
+    expect(await composer.addFiles!([image(), image()])).toBeNull()
+    expect(state.getSnapshot().attachmentIds).toHaveLength(9)
+    actions.submit()
+    await vi.waitFor(() => { expect(b.sessionFake.prompt).toHaveBeenCalledOnce() })
+    const sent = b.sessionFake.prompt.mock.calls[0]![0]
+    expect(sent.filter(part => part.type === 'image')).toHaveLength(9)
+    expect(sent.filter(part => part.type === 'image').every(part => part.mediaType === 'image/png' && part.data === btoa(String.fromCharCode(...bytes)))).toBe(true)
   })
 
   it('fails loud for an unknown binding or an unloaded scoped service', async () => {
@@ -514,7 +543,7 @@ describe('Conversation inject API', () => {
     const resident = b.residentApi(ROOT)
     const { state, actions } = b.inputApi(ROOT)
     actions.setDraft('carry me')
-    expect(b.composerApi(ROOT).addFiles?.([
+    expect(await b.composerApi(ROOT).addFiles?.([
       new File([Uint8Array.of(1)], 'draft.pdf', { type: 'application/pdf' }),
     ])).toBeNull()
     await vi.waitFor(() => { expect(b.rootUpload).toHaveBeenCalledOnce() })

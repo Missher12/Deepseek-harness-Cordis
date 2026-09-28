@@ -9,6 +9,14 @@ import { historicalSchemaRegion } from './historical-schema-region.ts'
 const root = resolve(import.meta.dirname, '..')
 const blockedTerm = 'prove' + 'nance'
 const excludedPrefixes = ['vendor/', '.agents/notes/archived/'] as const
+// Retain the published Bundle's source-manifest filename without exempting prose.
+const bundleManifestName = `${blockedTerm}.json`
+const bundleManifestPath = `plugins/dsh-usage-statistics/${bundleManifestName}`
+const bundleManifestReferences = new Set([
+  'plugins/dsh-usage-statistics/package.json',
+  'plugins/dsh-usage-statistics/README.md',
+  'plugins/dsh-usage-statistics/VALIDATION.md',
+])
 
 /** One blocked term occurrence in a tracked path or text line. */
 export interface ConcreteTermViolation {
@@ -39,12 +47,13 @@ function containsBlockedTerm(value: string): boolean {
 export function findConcreteTermViolations(file: string, source: string): ConcreteTermViolation[] {
   if (isExcluded(file)) return []
   const violations: ConcreteTermViolation[] = []
-  if (containsBlockedTerm(file)) violations.push({ file, line: null })
+  if (file !== bundleManifestPath && containsBlockedTerm(file)) violations.push({ file, line: null })
   const lines = source.split(/\r?\n/u)
   const schemaRegion = historicalSchemaRegion(file, source)
   for (const [index, line] of lines.entries()) {
     if (schemaRegion !== undefined && index >= schemaRegion[0] && index < schemaRegion[1]) continue
-    if (containsBlockedTerm(line)) violations.push({ file, line: index + 1 })
+    const maintainedText = bundleManifestReferences.has(file) ? line.replaceAll(bundleManifestName, '') : line
+    if (containsBlockedTerm(maintainedText)) violations.push({ file, line: index + 1 })
   }
   return violations
 }

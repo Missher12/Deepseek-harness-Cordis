@@ -26,6 +26,7 @@ import { INVALID_CREDENTIAL_CODE, LlmError, normalizeApiKey } from '@deepseek-ai
 import type { LlmDiscoveredModel, LlmModelDiscoveryOperation } from '@deepseek-ai/dsh-llm'
 import { attributionHeaders } from '@deepseek-ai/dsh-llm'
 import { catalogModels } from './catalog.ts'
+import { getSupportedThinkingLevels } from './models.ts'
 
 /**
  * Protocols whose model listing this module can read. OpenAI protocols use
@@ -281,6 +282,9 @@ export async function discoverModels(
         contextWindow: model.contextWindow,
         maxTokens: model.maxTokens,
         inputModalities: [...model.input],
+        reasoningEfforts: model.reasoning ? Object.fromEntries(getSupportedThinkingLevels(model).map(level => [
+          level, model.thinkingLevelMap?.[level] ?? (level === 'off' ? null : level),
+        ])) : false,
       }))
     }
   }

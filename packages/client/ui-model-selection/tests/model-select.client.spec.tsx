@@ -56,6 +56,34 @@ function state(overrides: Partial<ModelDirectoryState> = {}): ModelDirectoryStat
 afterEach(cleanup)
 
 describe('ModelSelect reasoning effort', () => {
+  it('preserves an invalid stored effort after a catalog refresh and requires an explicit replacement', async () => {
+    const directory = createSnapshotStore(state({ current: { provider: 'deepseek-official', model: 'deepseek-v4-flash', reasoningEffort: 'max' } }))
+    const select = vi.fn().mockResolvedValue({ ok: true, value: undefined })
+    render(<ModelSelect locked={false} available directory={directory} load={vi.fn()} select={select} t={t} />)
+    act(() => { directory.set(state({ current: { provider: 'deepseek-official', model: 'deepseek-v4-flash', reasoningEffort: 'max' },
+      groups: [{ id: 'deepseek-official', name: 'DeepSeek', models: [{ id: 'deepseek-v4-flash', name: 'DeepSeek-V4-Flash', reasoning: { efforts: [{ id: 'high', name: 'High' }], defaultEffort: 'high' } }] }],
+    })) })
+    expect(select).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: /max.*已失效/ }))
+    fireEvent.click(screen.getByRole('menuitem', { name: /推理等级/ }))
+    expect(screen.getByRole('alert').textContent).toBe(zh['effort.reselect'])
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'High' }))
+    await waitFor(() => { expect(select).toHaveBeenCalledWith({ provider: 'deepseek-official', model: 'deepseek-v4-flash', reasoningEffort: 'high' }) })
+  })
+
+  it('allows explicitly clearing an effort when a model no longer declares reasoning', async () => {
+    const directory = createSnapshotStore(state({ current: { provider: 'deepseek-official', model: 'deepseek-v4-flash', reasoningEffort: 'max' },
+      groups: [{ id: 'deepseek-official', name: 'DeepSeek', models: [{ id: 'deepseek-v4-flash', name: 'DeepSeek-V4-Flash' }] }],
+    }))
+    const select = vi.fn().mockResolvedValue({ ok: true, value: undefined })
+    render(<ModelSelect locked={false} available directory={directory} load={vi.fn()} select={select} t={t} />)
+    expect(select).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: /max.*已失效/ }))
+    fireEvent.click(screen.getByRole('menuitem', { name: /推理等级/ }))
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Default' }))
+    await waitFor(() => { expect(select).toHaveBeenCalledWith({ provider: 'deepseek-official', model: 'deepseek-v4-flash' }) })
+  })
+
   it('renders effort names without descriptions and submits the effort as part of the session selection', async () => {
     const directory = createSnapshotStore<ModelDirectoryState>(state())
     const select = vi.fn(async (selection: ModelSelection) => {

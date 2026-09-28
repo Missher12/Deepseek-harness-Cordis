@@ -23,6 +23,8 @@ import type { ModelsOperations } from './operations.ts'
 import type { DeepSeekModelDraft } from './DeepSeekModelsEditor.tsx'
 import type { en } from './locales.ts'
 import { ModelRow } from './ModelRow.tsx'
+import { ModelReasoningFields } from './ModelReasoningFields.tsx'
+import type { ReasoningDeclaration } from './reasoning.ts'
 import styles from './ModelsSection.module.css'
 
 /**
@@ -65,6 +67,10 @@ export interface ProbeTarget {
 export interface ModelListEditorProps {
   /** The rows as currently drafted. */
   models: readonly ModelDraft[]
+  /** Catalog mode edits one override without replacing the served models list. */
+  reasoningOverrides?: Readonly<Record<string, unknown>> | undefined
+  reasoningInheritedOverrides?: Readonly<Record<string, unknown>> | undefined
+  onReasoningOverride?: (model: string, value: ReasoningDeclaration) => void
   /** Installed provider whose catalog supplies defaults without endpoint I/O. */
   catalogProvider?: string | undefined
   /** Route input types for models absent from the installed catalog. */
@@ -360,6 +366,9 @@ export function ModelListEditor(props: ModelListEditorProps): ReactNode {
             model={model}
             position={index + 1}
             inputField="input"
+            reasoningEnabled
+            reasoningIdentity={JSON.stringify([probe.settingsNs, probe.provider, textOf(model, 'id')])}
+            reasoningFallback={catalog?.find(candidate => candidate.id === textOf(model, 'id'))?.reasoningEfforts}
             inputFallback={inputDefaults.get(textOf(model, 'id')) ?? props.defaultInput}
             inputLoading={catalogProvider !== undefined && catalog === undefined}
             expanded={expanded.has(index)}
@@ -393,6 +402,26 @@ export function ModelListEditor(props: ModelListEditorProps): ReactNode {
           />
         ))}
       </div>
+      {models.length !== 0 || props.onReasoningOverride === undefined || catalog === undefined ? null : (
+        <details className={styles['customized']}>
+          <summary className={styles['customizedSummary']}>{t('reasoningCatalog')}</summary>
+          {catalog.map((model) => {
+            const override = props.reasoningOverrides?.[model.id]
+            const value = typeof override === 'object' && override !== null
+              ? (override as Record<string, unknown>)['reasoningEfforts'] : undefined
+            const base = props.reasoningInheritedOverrides?.[model.id]
+            const inherited = typeof base === 'object' && base !== null
+              ? (base as { reasoningEfforts?: ReasoningDeclaration }).reasoningEfforts : undefined
+            return <details key={model.id} className={styles['modelEntry']}>
+              <summary>{model.name ?? model.id} ({model.id})</summary>
+              <ModelReasoningFields key={JSON.stringify([probe.settingsNs, probe.provider, model.id])}
+                value={value} inherited={inherited === undefined ? model.reasoningEfforts : inherited}
+                label={model.id}
+                disabled={disabled} t={t} onChange={next => props.onReasoningOverride?.(model.id, next)} />
+            </details>
+          })}
+        </details>
+      )}
       <button
         type="button"
         className={styles['addModelButton']}

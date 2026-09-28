@@ -81,7 +81,7 @@ export const InputBar = memo(function InputBar({
   const uploads = useFileUploads(snapshot => snapshot)
   // Send waits for every picked file: uploading and failed drafts both hold
   // the gate (a failed upload is retried or removed, never silently dropped).
-  const uploadsPending = attachments.some(
+  const uploadsPending = input?.intakePending === true || attachments.some(
     attachment => attachment.kind === 'file' && uploads[attachment.id]?.status !== 'ready',
   )
   // Transient error banner (machine notices, image-intake rejections, and
@@ -89,6 +89,8 @@ export const InputBar = memo(function InputBar({
   // restarts the hold-then-fade cycle instead of reusing the faded one.
   const [toast, setToast] = useState<{ seq: number; text: string } | null>(null)
   const toastSeq = useRef(0)
+  const intakeSession = useRef(sessionId)
+  intakeSession.current = sessionId
   const showToast = useCallback((text: string) => {
     toastSeq.current += 1
     setToast({ seq: toastSeq.current, text })
@@ -210,7 +212,7 @@ export const InputBar = memo(function InputBar({
   // this composer.
   const intakeFiles = useCallback((files: readonly File[], directories?: ReadonlySet<File>): void => {
     if (subagent !== null || addFiles === undefined || files.length === 0) return
-    const rejected = ((): string | null => {
+    const rejected = ((): string | null | Promise<string | null> => {
       if (imageLimits !== undefined) {
         const mediaTypes = imageLimits.mediaTypes as readonly string[]
         const images = files.filter(file => mediaTypes.includes(file.type))
@@ -229,8 +231,11 @@ export const InputBar = memo(function InputBar({
       }
       return addFiles(files, directories)
     })()
-    if (rejected !== null) showToast(rejected)
-  }, [subagent, addFiles, attachments, imageLimits, showToast, t])
+    if (typeof rejected === 'string') showToast(rejected)
+    else if (rejected !== null) void rejected.then((error) => {
+      if (error !== null && intakeSession.current === sessionId) showToast(error)
+    }, () => { if (intakeSession.current === sessionId) showToast(t('image.unsupportedType')) })
+  }, [subagent, addFiles, attachments, imageLimits, showToast, t, sessionId])
 
   const canAcceptDrop = subagent === null && !locked && !machineBusy && addFiles !== undefined
 

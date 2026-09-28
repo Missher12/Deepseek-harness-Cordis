@@ -9,14 +9,17 @@
   en: f176d2f67d853178
   zh: b75160b74076f8ba
 /deepseek-ai-dsh-host-plugin-inventory/summary:
-  en: 103ae63994bb9291
-  zh: 3b2658a7a6064e4b
+  en: d03fbbe8f02bcaff
+  zh: e2f78c17ad25c872
 /deepseek-ai-dsh-host-plugin-inventory/table-of-contents:
   en: d152484eb41ac6b4
   zh: 09388d293f9be9cb
 /deepseek-ai-dsh-host-plugin-inventory/use-this-package:
-  en: 10bbb42c37ba25d2
-  zh: d628b1c9db7847e4
+  en: dc59abc6dfd1517b
+  zh: 1a1e89a83046057a
+/deepseek-ai-dsh-host-plugin-inventory/use-this-package/select-a-callable-plugin:
+  en: d9057efbf06b002d
+  zh: 6f76e21d4873f192
 /deepseek-ai-dsh-host-plugin-inventory/use-this-package/what-a-snapshot-contains:
   en: c8afdb1aec1c97bd
   zh: 0a8a765e02caab91
@@ -42,14 +45,23 @@
   en: 47de2da39cf6aefa
   zh: c7e945dcba775177
 /deepseek-ai-dsh-host-plugin-inventory/model-experience:
-  en: c3e5d5439c1a56fe
-  zh: 32804643402d54ea
-/deepseek-ai-dsh-host-plugin-inventory/model-experience/kv-cache-effect:
-  en: ca75c51c89c2c9b0
-  zh: de54f3467ef3b9be
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-host-plugin-inventory/model-experience/selected-plugin-guidance:
+  en: 34637367960dc5b9
+  zh: c72fad0692527dad
+/deepseek-ai-dsh-host-plugin-inventory/model-experience/selected-plugin-guidance/what-the-model-sees:
+  en: be5664ddeadcd4be
+  zh: 92dec2409c482b4b
+/deepseek-ai-dsh-host-plugin-inventory/model-experience/selected-plugin-guidance/token-effect:
+  en: 0281e7882b6b84ee
+  zh: 017cbe5e8d1c760d
+/deepseek-ai-dsh-host-plugin-inventory/model-experience/selected-plugin-guidance/kv-cache-effect:
+  en: a8c8d816e1b66b7f
+  zh: dc4e368007b4acac
 /deepseek-ai-dsh-host-plugin-inventory/known-limitations-and-deferred-work:
-  en: 6c1380959d4f5b13
-  zh: dab0c5c64b88a273
+  en: d9be5b0eb317db68
+  zh: 94f2f88dc2a3070f
 /deepseek-ai-dsh-host-plugin-inventory/known-limitations-and-deferred-work/dev-note:
   en: e67f633dc6fe7773
   zh: 3bb0c20c93f16f98

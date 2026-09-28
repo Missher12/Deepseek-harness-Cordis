@@ -3,6 +3,7 @@
  * owner, stay resident through Host rejection, and clear only after an
  * accepted prompt.
  */
+import { formatPluginReferenceMention, parsePluginReferenceText, pluginInstanceId } from '@deepseek-ai/dsh-host-plugin-inventory/reference'
 import { describe, expect, it, vi } from 'vitest'
 import type { Context } from '@deepseek-ai/cordis'
 import type { InputTriggerController, SubmitOutcome } from '../src/client/contract/input.ts'
@@ -281,5 +282,31 @@ describe('submit transaction hardening', () => {
     // Every editor commit re-tracks at the settled caret (the continue flag
     // is a contract passenger now): a trailing '/' keeps the menu open.
     expect(track).toHaveBeenCalledWith('@src/', 5, { tier: 'plain' }, shell.snapshot.draftRev)
+  })
+})
+
+
+describe('plugin identity through draft and history text', () => {
+  it('preserves the canonical reference through label insertion, reload, copy and resend', async () => {
+    const id = pluginInstanceId(JSON.stringify(['中文 @ 插件', 'entry with spaces', 'host']))
+    const mention = formatPluginReferenceMention(id)
+    const initial = new SessionInputShell({ actx: {} as Context, defaultSink: vi.fn(), commandAttachments })
+    initial.setDraft('@中文')
+    expect(initial.insertReference({ source: 'plugin-reference', ref: mention, label: '中文 @ 插件', clipboardText: mention },
+      { start: 0, end: 3, draftRev: initial.snapshot.draftRev })).toBe(true)
+    const copied = initial.snapshot.draft
+    expect(copied).toBe(`${mention} `)
+    initial.dispose()
+    const sink = vi.fn(async () => ({ kind: 'success' as const }))
+    const restored = new SessionInputShell({ actx: {} as Context, defaultSink: sink, commandAttachments })
+    restored.setDraft(copied)
+    expect(restored.snapshot.occurrences).toHaveLength(0)
+    restored.submit()
+    await vi.waitFor(() => { expect(sink).toHaveBeenCalledWith(mention, [], 'queue', expect.any(AbortSignal)) })
+    expect(parsePluginReferenceText(mention).references).toEqual([id])
+    restored.setDraft(mention)
+    restored.submit()
+    await vi.waitFor(() => { expect(sink).toHaveBeenCalledTimes(2) })
+    restored.dispose()
   })
 })

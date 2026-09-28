@@ -55,7 +55,12 @@ async function harness(options: HarnessOptions = {}) {
     listed.map(header => ({ header, revision: SessionPersistenceRevision(`rev-${header.id}`) })))
   const open = vi.fn(() => { throw new Error('event bodies must not be opened') })
   const stat = vi.fn(() => { throw new Error('per-session stat must not be needed') })
-  ctx.provide('sessionPersistence', { list, open, stat } as never)
+  const deleteHistory = vi.fn(async (id: SessionId) => {
+    const found = listed.some(header => header.id === id)
+    listed = listed.filter(header => header.id !== id)
+    return found
+  })
+  ctx.provide('sessionPersistence', { list, open, stat, delete: deleteHistory } as never)
 
   if (options.sessionStore === true) {
     await ctx.plugin(SessionStore)
@@ -82,6 +87,7 @@ async function harness(options: HarnessOptions = {}) {
     list,
     open,
     stat,
+    deleteHistory,
     setSessions: (headers: SessionHeader[]) => { listed = headers },
   }
 }
@@ -1399,3 +1405,59 @@ declare module '@deepseek-ai/dsh-workspace/types' {
     'probe-items': true
   }
 }
+
+
+describe('archived session deletion', () => {
+  it('requires archive admission and removes history, membership and archive state', async () => {
+    const dir = await makeDir('delete-archived')
+    const h = await harness({ sessions: [header('gone', dir), header('kept', dir)] })
+    const id = SessionId('gone')
+    await expect(h.registry.deleteArchivedSession(id)).rejects.toThrow('session/delete-not-archived')
+    expect(h.deleteHistory).not.toHaveBeenCalled()
+    await h.registry.archiveSession(id)
+    await h.registry.deleteArchivedSession(id)
+    expect(h.deleteHistory).toHaveBeenCalledOnce()
+    expect(h.registry.archivedSessionIds).toEqual([])
+    expect(h.registry.list()[0]!.sessionIds).toEqual(['kept'])
+    expect(storedRecord(h.pool, h.registry.list()[0]!.id).sessionIds).toEqual(['kept'])
+    await h.ctx.fiber.dispose()
+    const again = await harness({ pool: h.pool, sessions: [header('kept', dir)] })
+    expect(again.registry.archivedSessionIds).toEqual([])
+    expect(again.registry.list()[0]!.sessionIds).toEqual(['kept'])
+    await again.ctx.fiber.dispose()
+  })
+
+  it('refuses activity, dependent forks and foreign live ownership before deleting', async () => {
+    const dir = await makeDir('delete-guards')
+    const parent = header('parent', dir)
+    const h = await harness({ sessions: [parent] })
+    await h.registry.archiveSession(parent.id)
+    const remove = h.ctx.on('workspace/session-activity', async () => [{ kind: 'turn', sessionId: parent.id }] as never)
+    await expect(h.registry.deleteArchivedSession(parent.id)).rejects.toThrow('session/delete-active')
+    remove()
+    h.setSessions([parent, { ...header('child', dir), parentSession: parent.id }])
+    await expect(h.registry.deleteArchivedSession(parent.id)).rejects.toThrow('session/delete-has-children')
+    expect(h.deleteHistory).not.toHaveBeenCalled()
+    expect(h.registry.archivedSessionIds).toEqual([parent.id])
+    await h.ctx.fiber.dispose()
+    const live = await harness({ sessions: [parent], liveSessions: [parent] })
+    await live.registry.archiveSession(parent.id)
+    await expect(live.registry.deleteArchivedSession(parent.id)).rejects.toThrow('session/delete-owned')
+    expect(live.deleteHistory).not.toHaveBeenCalled()
+    await live.ctx.fiber.dispose()
+  })
+
+  it('keeps archive admission on a storage failure and permits a later retry', async () => {
+    const dir = await makeDir('delete-retry')
+    const h = await harness({ sessions: [header('retry', dir)] })
+    const id = SessionId('retry')
+    await h.registry.archiveSession(id)
+    h.deleteHistory.mockRejectedValueOnce(new Error('disk busy'))
+    await expect(h.registry.deleteArchivedSession(id)).rejects.toThrow('disk busy')
+    expect(h.registry.archivedSessionIds).toEqual([id])
+    expect(h.registry.list()[0]!.sessionIds).toEqual([id])
+    await h.registry.deleteArchivedSession(id)
+    expect(h.registry.archivedSessionIds).toEqual([])
+    await h.ctx.fiber.dispose()
+  })
+})

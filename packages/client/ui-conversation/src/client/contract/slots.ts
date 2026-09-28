@@ -383,7 +383,7 @@ export interface ComposerBarInjected {
    * instead of uploads; `directories` names the members the drop source
    * identified as directories.
    */
-  addFiles: ((files: readonly File[], directories?: ReadonlySet<File>) => string | null) | undefined
+  addFiles: ((files: readonly File[], directories?: ReadonlySet<File>) => string | null | Promise<string | null>) | undefined
   removeAttachment: ((id: DraftAttachmentId) => void) | undefined
   resolveDraftAttachments: ((ids: readonly DraftAttachmentId[]) => readonly ComposerAttachment[]) | undefined
   /** Restart one failed file upload; absent without a session. */

@@ -731,6 +731,13 @@ interface LlmDiscoveredModel {
   maxTokens?: number
   /** Accepted input types when disclosed by the catalog or endpoint; absent means unknown. */
   inputModalities?: readonly ModelModality[]
+  /**
+   * Adapter-owned editable effort declarations: canonical ids to wire values.
+   * Omitted means undisclosed; false means no selectable reasoning capability.
+   * Nullable wire values have adapter-specific semantics (pi-ai allows only off).
+   * This metadata describes a catalog, not a live endpoint verification.
+   */
+  reasoningEfforts?: false | Readonly<Record<string, string | null>>
 }
 ```
 

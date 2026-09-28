@@ -141,6 +141,8 @@ export class SessionInputShell implements SessionInput {
   private lastMirroredDraft = ''
   private attachmentIds: readonly DraftAttachmentId[] = []
   private disposed = false
+  private intakeCount = 0
+  private intakeTail: Promise<void> = Promise.resolve()
   /** Draft persistence mirror (Conversation store write; receives the clipboard projection). */
   private mirrorFn: ((text: string) => void) | undefined
   /** The mounted composer's file-picker opener (scoped pick-files event target). */
@@ -228,11 +230,30 @@ export class SessionInputShell implements SessionInput {
    * @returns false when admission is locked or the editor refuses the insertion.
    */
   addFiles(references: readonly ReferenceInsert[], ids: readonly DraftAttachmentId[]): boolean {
+    if (this.disposed) return false
     if (this.snapshot.phase === 'adjudicating' || this.snapshot.phase === 'submitting') return false
     if (!this.draftEditor.insertFileReferences(references)) return false
     this.attachmentIds = [...this.attachmentIds, ...ids]
     this.publish()
     return true
+  }
+
+  /**
+   * Serialize asynchronous file intake against the live draft and hold submission until it settles.
+   * @param operation - whole-batch validation and insertion, run in arrival order.
+   * @param unavailable - refusal returned after this session scope is disposed.
+   * @returns the batch decision without consuming the existing draft.
+   */
+  enqueueFileIntake(operation: () => Promise<string | null>, unavailable: string): Promise<string | null> {
+    if (this.disposed) return Promise.resolve(unavailable)
+    this.intakeCount += 1
+    this.publish()
+    const result = this.intakeTail.then(() => this.disposed ? unavailable : operation())
+    this.intakeTail = result.then(() => undefined, () => undefined)
+    return result.finally(() => {
+      this.intakeCount -= 1
+      if (!this.disposed) this.publish()
+    })
   }
 
   /**
@@ -291,6 +312,7 @@ export class SessionInputShell implements SessionInput {
    * dismisses and the menu tracks frozen.
    */
   submit(mode: InputSubmitMode = 'queue'): void {
+    if (this.disposed || this.intakeCount > 0) return
     if (this.snapshot.draft.trim() === '' && this.attachmentIds.length > 0) {
       if (this.snapshot.phase === 'plain') {
         const attachmentIds = [...this.attachmentIds]
@@ -820,6 +842,7 @@ export class SessionInputShell implements SessionInput {
     return {
       draft: this.projection.clipboardText,
       attachmentIds: this.attachmentIds,
+      intakePending: this.intakeCount > 0,
       draftRev: this.rev,
       phase: core.phase,
       ...(core.claim !== undefined ? { claim: core.claim } : {}),

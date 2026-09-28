@@ -88,7 +88,7 @@ async function bench(
   let source: InputTriggerSource | undefined
   ctx.provide('inputTriggers', {
     registerSource(candidate: InputTriggerSource) {
-      source = candidate
+      if (candidate.name === 'reference') source = candidate
       return () => { source = undefined }
     },
   })
@@ -100,6 +100,7 @@ async function bench(
     }
   }
   new RemoteService(ctx)
+  ctx.provide('remote.pluginInventory', { candidates: () => Promise.resolve({ ok: true, value: [] }) })
   ctx.provide('remote.fileReferences', { list: files })
   ctx.provide('remote.sessionReferenceResolver', { candidates: sessions })
   ctx.provide('locale', new LocaleRuntime(ctx))
@@ -133,7 +134,7 @@ describe('apply', () => {
     ctx.provide('sidebarRight', { openResource: vi.fn() })
     ctx.provide('inputTriggers', {
       registerSource(source: InputTriggerSource) {
-        registered = source
+        if (source.name === 'reference') registered = source
         return () => { registered = undefined }
       },
     })

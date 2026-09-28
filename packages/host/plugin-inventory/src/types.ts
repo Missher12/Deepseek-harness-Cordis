@@ -4,6 +4,71 @@ import type { PluginLocalizedMeta } from '@deepseek-ai/dsh-package-manifest'
 /** Stable Loader-tree identity of one configured plugin entry. */
 export type PluginEntryId = Branded<'PluginEntryId'>
 
+/** Stable module, Loader entry and composition identity; never a display label. */
+export type PluginInstanceId = Branded<'PluginInstanceId'>
+
+/** Stable tool identity within one plugin instance. */
+export type PluginCapabilityId = Branded<'PluginCapabilityId'>
+
+/** One currently visible tool; execution still applies guards and approval. */
+export interface PluginToolCapability {
+  readonly id: PluginCapabilityId
+  readonly name: string
+  readonly description: string
+  readonly invocation: 'native' | 'ptc' | 'both'
+}
+
+/** One callable plugin instance in the requesting Agent's current composition. */
+export interface PluginCapabilityCandidate {
+  readonly id: PluginInstanceId
+  readonly label: string
+  readonly description: string
+  readonly mention: string
+  readonly moduleName: string
+  readonly entryId: PluginEntryId
+  readonly presetId?: string
+  readonly meta?: PluginLocalizedMeta
+  readonly capabilities: readonly PluginToolCapability[]
+  /** Total visible tools, including any omitted from this bounded projection. */
+  readonly capabilityCount: number
+}
+
+declare module '@deepseek-ai/dsh-llm' {
+  interface MessageSourceMap {
+    /**
+     * Durable attribution only; replay preserves the recorded guidance without this producer.
+     * @persistenceAttribution
+     */
+    'plugin-reference': {
+      kind: 'plugin-reference'
+      form: 'instructions'
+      version: 1
+      instances: readonly PluginInstanceId[]
+    }
+  }
+}
+
+/** Bounds on completion results and model-facing capability summaries. */
+export interface CapabilityCatalogConfig {
+  /** Maximum plugin candidates returned by one completion query. */
+  candidateLimit?: number
+  /** Maximum tool summaries per plugin; capabilityCount retains the visible total. */
+  toolLimit?: number
+  /** Maximum characters in each plugin or tool description. */
+  descriptionMaxChars?: number
+}
+
+declare module '@deepseek-ai/cordis' {
+  interface Events {
+    /**
+     * Invalidate callable-plugin snapshots after registry or Loader lifecycle changes.
+     * This notification carries no capability data; consumers re-query their Agent.
+     * @mode emit
+     */
+    'plugin-capabilities/changed'(): void
+  }
+}
+
 /** Lifecycle state of an entry's root Fiber, or null when it has no live root Fiber. */
 export type PluginFiberPhase =
   | 'pending'

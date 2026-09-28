@@ -385,6 +385,47 @@ export class WorkspaceRegistry extends Service {
   }
 
   /**
+   * Permanently delete an archived session and remove its accounting. Activity
+   * and fork descendants refuse deletion. The lifecycle owner may release its
+   * own idle agent before persistence takes the exclusive writer lock.
+   * @param sessionId - archived identity to delete.
+   * @param release - optional lifecycle-owner teardown, after admission.
+   * @returns resolution after history and registry cleanup; a cleanup failure can be retried.
+   */
+  deleteArchivedSession(sessionId: SessionId, release?: () => Promise<void>): Promise<void> {
+    return this.enqueueOperation(async () => {
+      const state = this.requireState()
+      if (!state.archivedSessionIds.includes(sessionId)) {
+        throw new Error('session/delete-not-archived')
+      }
+      const activity = await this.ctx.waterfall(
+        'workspace/session-activity', { sessionId }, () => Promise.resolve([]),
+      )
+      if (activity.length > 0) throw new Error('session/delete-active')
+      const snapshots = await this.ctx.sessionPersistence.list()
+      if (snapshots.some(row => row.header.parentSession === sessionId)) {
+        throw new Error('session/delete-has-children')
+      }
+      await release?.()
+      if (this.ctx.get('sessions')?.get(sessionId) !== undefined) {
+        throw new Error('session/delete-owned')
+      }
+      await this.ctx.sessionPersistence.delete(sessionId)
+      // Keep the archive marker until all accounting is durable. If cleanup
+      // fails after physical deletion, retry still has an admitted identity.
+      for (const entity of this.entities.values()) await entity.detachSession(sessionId)
+      this.headers.delete(sessionId)
+      this.sessionPaths.delete(sessionId)
+      this.invalidSessionPaths.delete(sessionId)
+      await this.setState({
+        ...this.requireState(),
+        archivedSessionIds: state.archivedSessionIds.filter(id => id !== sessionId),
+        pinnedSessionIds: state.pinnedSessionIds.filter(id => id !== sessionId),
+      })
+    })
+  }
+
+  /**
    * Unarchive one session durably by dropping it from the registry-global
    * archive set; the accounting slot was never touched, so the session
    * returns to its recorded position. Unarchiving runs no session-existence

@@ -621,6 +621,9 @@ export class LlmRuntime extends TypertRemoteService {
         ...model.contextWindow === undefined ? {} : { contextWindow: model.contextWindow },
         ...model.maxTokens === undefined ? {} : { maxTokens: model.maxTokens },
         ...model.inputModalities === undefined ? {} : { inputModalities: [...model.inputModalities] },
+        ...model.reasoningEfforts === undefined ? {} : {
+          reasoningEfforts: model.reasoningEfforts === false ? false : { ...model.reasoningEfforts },
+        },
       })
     }
     return models

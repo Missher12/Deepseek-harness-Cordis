@@ -98,6 +98,9 @@
     - id: plugin-inventory
       name: '@deepseek-ai/dsh-host-plugin-inventory'
 
+    - id: plugin-reference
+      name: '@deepseek-ai/dsh-host-plugin-inventory/reference-plugin'
+
     # Session commands, cold reads, and live control over Typert Remote.
     - id: session-controller
       name: '@deepseek-ai/dsh-api-session-controller'

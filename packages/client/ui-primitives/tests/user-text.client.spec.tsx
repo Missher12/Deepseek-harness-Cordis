@@ -5,6 +5,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { fireEvent, render } from '@testing-library/react'
+import { formatPluginReferenceMention, parsePluginReferenceText, pluginInstanceId } from '@deepseek-ai/dsh-host-plugin-inventory/reference'
 import { projectUserText } from '../src/user-text.tsx'
 
 const project = (
@@ -145,5 +146,37 @@ describe('projectUserText', () => {
     expect(host.querySelectorAll('div').length).toBe(0)
     expect(host.querySelectorAll('[data-ref-chip]').length).toBe(0)
     expect(host.textContent).toBe('纯文本，无引用')
+  })
+})
+
+
+describe('plugin references in sent user text', () => {
+  it('keeps a reference-only message visible and canonical when copied, without a file action', () => {
+    const id = pluginInstanceId(JSON.stringify(['中文 @ 插件', 'instance one', 'host']))
+    const mention = formatPluginReferenceMention(id)
+    const openFile = vi.fn()
+    const view = render(<div>{projectUserText(mention, [], [], 'skill', { openFile, openSkill: vi.fn() })}</div>)
+    const chip = view.container.querySelector('[data-ref-chip="plugin"]')!
+    expect(chip.textContent).toBe('中文 @ 插件 · instance one')
+    expect(chip.textContent).not.toContain('dsh-plugin:')
+    expect(chip.querySelector('svg')).not.toBeNull()
+    expect(chip.getAttribute('title')).toBe(mention)
+    expect(view.container.querySelector('button')).toBeNull()
+    fireEvent.click(chip)
+    expect(openFile).not.toHaveBeenCalled()
+    expect(parsePluginReferenceText(chip.getAttribute('title')!).references).toEqual([id])
+  })
+
+  it('keeps distinct plugin identities beside ordinary files, sessions and skills', () => {
+    const mentions = ['first', 'second'].map(entry => formatPluginReferenceMention(pluginInstanceId(JSON.stringify(['same plugin', entry, 'host']))))
+    const text = `${mentions.join(' ')} @src/a.ts @[旧会话](dsh-session:eA) /review`
+    const host = project(text, [], ['review'])
+    expect([...host.querySelectorAll('[data-ref-chip]')].map(chip => chip.getAttribute('data-ref-chip')))
+      .toEqual(['plugin', 'plugin', 'file', 'session', 'skill'])
+    expect([...host.querySelectorAll('[data-ref-chip="plugin"]')].map(chip => chip.getAttribute('title'))).toEqual(mentions)
+    expect(parsePluginReferenceText(text).references).toHaveLength(2)
+    const invalid = project('@{dsh-plugin:v2:bad}')
+    expect(invalid.querySelector('[data-ref-chip="file"]')).toBeNull()
+    expect(invalid.textContent).toBe('@{dsh-plugin:v2:bad}')
   })
 })

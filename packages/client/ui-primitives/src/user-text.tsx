@@ -2,7 +2,7 @@
  * Display projection of reference forms in sent user text (bubble and queue
  * rows). The logged model text remains the single truth; this is presentation
  * only. Inline references follow the consumer's wrapping policy and keep long
- * labels within its width. Four decoration sources, by precedence: the wire session form
+ * labels within its width. Plugin markers use the shared codec and remain non-clickable; the wire session form
  * `@[label](dsh-session:...)` folds to its label; exact session labels
  * supplied by an adjacent recall decorate their bare `@label` mention; plain
  * `@name` word-boundary tokens decorate by shape alone; and a plain `/name`
@@ -15,7 +15,9 @@
  * tokens (`/plan。`) stay plain even for a loaded name.
  */
 import type { ReactNode } from 'react'
+import { describePluginReference, formatPluginReferenceMention, parsePluginReferenceText, PluginReferenceSyntaxError } from '@deepseek-ai/dsh-host-plugin-inventory/reference'
 import clsx from 'clsx'
+import { IconCordisPluginOutlineRegular } from './icons/index.tsx'
 import { ReferenceIconRegular } from './ReferenceIcon.tsx'
 import css from './user-text.module.css'
 import markdownCss from './markdown/MarkdownText.module.css'
@@ -31,7 +33,7 @@ interface DecorationRange {
   readonly end: number
   /** Matched source text (hover title). */
   readonly label: string
-  readonly kind: 'session' | 'plain'
+  readonly kind: 'session' | 'plugin' | 'plain'
   /** Pre-resolved display text (wire folds); derived from label when absent. */
   readonly display?: string
 }
@@ -63,6 +65,20 @@ export function projectUserText(
   references?: UserTextReferences,
 ): ReactNode {
   const ranges: DecorationRange[] = []
+  try {
+    let searchFrom = 0
+    for (const id of parsePluginReferenceText(text).references) {
+      const mention = formatPluginReferenceMention(id)
+      const start = text.indexOf(mention, searchFrom)
+      const description = describePluginReference(id)
+      ranges.push({ start, end: start + mention.length, label: mention, kind: 'plugin', display: `${description.moduleName} · ${description.entryId}` })
+      searchFrom = start + mention.length
+    }
+  } catch (error: unknown) {
+    // Invalid reserved markers remain visible data, never file navigation targets.
+    if (!(error instanceof PluginReferenceSyntaxError)) throw error
+    return <span className={css.plainRun}>{text}</span>
+  }
   SESSION_WIRE_RE.lastIndex = 0
   let wire: RegExpExecArray | null
   while ((wire = SESSION_WIRE_RE.exec(text)) !== null) {
@@ -96,7 +112,7 @@ export function projectUserText(
     if (label.startsWith('/') && !slashNames.includes(label.slice(1))) continue
     ranges.push({ start: tokenStart, end: tokenStart + label.length, label, kind: 'plain' })
   }
-  const rankOf = (range: DecorationRange): number => range.kind === 'session' ? 0 : 1
+  const rankOf = (range: DecorationRange): number => range.kind === 'plugin' ? 0 : range.kind === 'session' ? 1 : 2
   ranges.sort((a, b) => a.start - b.start || rankOf(a) - rankOf(b) || b.end - a.end)
   const parts: ReactNode[] = []
   let cursor = 0
@@ -107,6 +123,13 @@ export function projectUserText(
     if (range.start < cursor) continue
     const { start: tokenStart, end, label, kind } = range
     if (tokenStart > cursor) pushPlain(cursor, tokenStart)
+    if (kind === 'plugin') {
+      parts.push(<span key={tokenStart} className={css.refChip} data-ref-chip="plugin" title={label}>
+        <IconCordisPluginOutlineRegular size={16} className={css.refIcon} />{range.display}
+      </span>)
+      cursor = end
+      continue
+    }
     const referenceKind = kind === 'session'
       ? 'session'
       : label.startsWith('@')

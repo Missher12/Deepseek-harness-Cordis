@@ -1,6 +1,6 @@
 /** Profile patch edits and credential updates reach the next real adapter request. */
 
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import Loader, { type ModuleLoaderV2 } from '@deepseek-ai/cordis-plugin-loader'
 import Include from '@deepseek-ai/cordis-plugin-include'
-import LlmRuntime, { createMessage, createUserMessage, userAgent } from '@deepseek-ai/dsh-llm'
+import LlmRuntime, { createMessage, createUserMessage, ReasoningEffortId, userAgent } from '@deepseek-ai/dsh-llm'
 import LocalCredentialProvider from '@deepseek-ai/dsh-credentials-local'
 import { profileComposition } from '../../../settings/settings/tests/profile-composition.ts'
 import * as LlmPiAi from '@deepseek-ai/dsh-llm-pi-ai'
@@ -37,8 +37,8 @@ afterEach(async () => {
 })
 
 /** Boot the dormant composition: a bare `llm-pi-ai` row with no config at all. */
-async function loadComposition(): Promise<{ ctx: Context; settingsPath: string }> {
-  root = await mkdtemp(join(tmpdir(), 'dsh-pi-composition-'))
+async function loadComposition(options: { home?: string; ns?: string } = {}): Promise<{ ctx: Context; settingsPath: string }> {
+  root = options.home ?? await mkdtemp(join(tmpdir(), 'dsh-pi-composition-'))
   await writeFile(join(root, '.credentials.yaml'), 'version: 1\nrefs:\n  PI_COMPOSITION_KEY: key-from-store\n', { mode: 0o600 })
 
   const configPath = join(root, 'cordis.yml')
@@ -50,7 +50,7 @@ async function loadComposition(): Promise<{ ctx: Context; settingsPath: string }
     '  config:',
     `    path: ${JSON.stringify(join(root, '.credentials.yaml'))}`,
     '    debounceMs: 10',
-    '- id: llm-pi-ai',
+    `- id: ${options.ns ?? 'llm-pi-ai'}`,
     "  name: '@deepseek-ai/dsh-llm-pi-ai'",
     '',
   ].join('\n'))
@@ -83,6 +83,67 @@ async function loadComposition(): Promise<{ ctx: Context; settingsPath: string }
 }
 
 describe('llm-pi-ai real dormant composition', () => {
+  it('persists tri-state capabilities and sparse wire mappings through real settings, reload, and requests', async () => {
+    vi.stubEnv('PI_COMPOSITION_KEY', '')
+    const ns = 'renamed-pi-instance'
+    const server = await mockServer(Array.from({ length: 4 }, () => ({ events: textEvents })))
+    const composition = await loadComposition({ ns })
+    let { ctx } = composition
+    const { settingsPath } = composition
+    const home = root!
+    const firstMap = { off: null, low: 'light', high: 'deep', max: 'ultra' }
+    const profile = { api: 'openai-completions', baseURL: server.url, apiKeyEnv: 'PI_COMPOSITION_KEY', reasoning: 'high',
+      models: [{ id: 'same', reasoningEfforts: firstMap, compat: { supportsDeveloperRole: false } }, { id: 'untouched', reasoningEfforts: false }] }
+    await ctx.settings.mutate(ns, [{ op: 'set', path: ['providers'], value: {
+      a: profile,
+      b: { ...profile, models: [{ id: 'same', reasoningEfforts: { off: null, high: 'b-deep' } }] },
+      deepseek: { apiKeyEnv: 'PI_COMPOSITION_KEY', baseURL: server.url },
+    } }])
+    const revision = ctx.settings.describe().find(row => row.ns === ns)!.revision
+    const prepared = await ctx.llm.prepareCall({ provider: 'a', model: 'same', reasoningEffort: ReasoningEffortId('max') })
+    await ctx.settings.mutate(ns, [{ op: 'set', path: ['providers', 'a', 'models', '0', 'reasoningEfforts'],
+      value: { off: null, low: 'light', high: 'deep' } }], revision)
+    const disk = await readFile(settingsPath, 'utf8')
+    await expect(ctx.settings.mutate(ns, [{ op: 'set', path: ['providers', 'a', 'reasoning'], value: 'max' }], revision)).rejects.toThrow('changed since it was read')
+    expect(await readFile(settingsPath, 'utf8')).toBe(disk)
+    // A request already prepared owns its immutable configuration snapshot.
+    for await (const chunk of prepared.stream({ ...prepared.config, messages: [] })) void chunk
+    expect(server.requests[0]).toMatchObject({ reasoning_effort: 'ultra' })
+    const refused = await assemble(ctx, { provider: 'a', model: 'same', reasoningEffort: ReasoningEffortId('max'), messages: [] })
+    expect(refused.finish.kind).toBe('error')
+    expect(server.requests).toHaveLength(1)
+    await assemble(ctx, { provider: 'a', model: 'same', reasoningEffort: ReasoningEffortId('high'), messages: [] })
+    await assemble(ctx, { provider: 'b', model: 'same', reasoningEffort: ReasoningEffortId('high'), messages: [] })
+    expect(server.requests[1]).toMatchObject({ reasoning_effort: 'deep' })
+    expect(server.requests[2]).toMatchObject({ reasoning_effort: 'b-deep' })
+    expect(server.headers.every(headers => headers.authorization === 'Bearer key-from-store')).toBe(true)
+    // A fresh Loader reads the persisted sparse map; unrelated defaults survive.
+    await ctx.fiber.dispose()
+    ;({ ctx } = await loadComposition({ ns, home }))
+    expect(ctx.settings.describe().find(row => row.ns === ns)?.value).toMatchObject({ providers: {
+      a: { ...profile, models: [{ ...profile.models[0], reasoningEfforts: { off: null, low: 'light', high: 'deep' } }, profile.models[1]] },
+      b: { models: [{ id: 'same', reasoningEfforts: { off: null, high: 'b-deep' } }] },
+    } })
+    const beforeModels = await ctx.llm.listModels('deepseek')
+    const beforeReasoning = (await ctx.llm.resolveModelInfo('deepseek', 'deepseek-v4-flash')).reasoning
+    expect(beforeReasoning).toBeDefined()
+    await ctx.settings.mutate(ns, [{ op: 'set', path: ['providers', 'deepseek', 'modelOverrides', 'deepseek-v4-flash', 'reasoningEfforts'], value: false }])
+    await ctx.fiber.dispose()
+    ;({ ctx } = await loadComposition({ ns, home }))
+    expect((await ctx.llm.resolveModelInfo('deepseek', 'deepseek-v4-flash')).reasoning).toBeUndefined()
+    const disabled = await assemble(ctx, { provider: 'deepseek', model: 'deepseek-v4-flash', reasoningEffort: ReasoningEffortId('high'), messages: [] })
+    expect(disabled.finish.kind).toBe('error')
+    expect(server.requests).toHaveLength(3)
+    await assemble(ctx, { provider: 'deepseek', model: 'deepseek-v4-flash', messages: [] })
+    expect(server.requests[3]).not.toHaveProperty('reasoning_effort')
+    await ctx.settings.mutate(ns, [{ op: 'unset', path: ['providers', 'deepseek', 'modelOverrides', 'deepseek-v4-flash', 'reasoningEfforts'] }])
+    await ctx.fiber.dispose()
+    ;({ ctx } = await loadComposition({ ns, home }))
+    expect(await ctx.llm.listModels('deepseek')).toEqual(beforeModels)
+    expect((await ctx.llm.resolveModelInfo('deepseek', 'deepseek-v4-flash')).reasoning).toEqual(beforeReasoning)
+    expect(ctx.settings.describe().find(row => row.ns === ns)?.user).not.toHaveProperty('providers.deepseek.models')
+  }, 20_000)
+
   it('boots with zero routes and registers one the moment settings supply a profile', async () => {
     vi.stubEnv('PI_COMPOSITION_KEY', '')
     const server = await mockServer([{ events: textEvents }])

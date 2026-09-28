@@ -123,7 +123,7 @@ export class FileUploads extends TypertRemoteService {
     readonly name?: string
   }): Promise<FileUploadValue> {
     const agent = await this.resolveAgent(request.sessionId)
-    return this.commit(agent, async () => this.ctx.attachments.saveFileStream({
+    return this.commit(agent, async () => this.ctx.attachments.admitFileStream({
       data: request.data,
       ...(request.signal === undefined ? {} : { signal: request.signal }),
       ...(request.name === undefined ? {} : { name: request.name }),
