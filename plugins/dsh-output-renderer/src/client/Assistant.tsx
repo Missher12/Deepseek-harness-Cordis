@@ -18,7 +18,7 @@ type Props = ChatNodeViewProps<'assistant-step'> & InjectFace<OutputInjected>
 
 export const Assistant = memo(function Assistant({ node, groupPart, useTurnData, openFile, renderMessageImages,
   fileMentions, useOutputPreferences, outputText, t }: Props) {
-  const { motion, layout } = useOutputPreferences(state => state.value)
+  const { motion, layout, density, textSize } = useOutputPreferences(state => state.value)
   const data = node.data
   const running = data.status === 'running'
   const turn = node.location.kind === 'turn' || node.location.kind === 'step' ? node.location.turn : undefined
@@ -65,6 +65,7 @@ export const Assistant = memo(function Assistant({ node, groupPart, useTurnData,
   const interrupted = data.status === 'interrupted' && groupPart !== 'reasoning'
   if (!reasoning.length && !response.length && !interrupted) return null
   return <div className="dsh-output-assistant" data-output-layout={layout} data-output-part={groupPart}
+    data-output-density={density} data-output-text-size={textSize}
     data-output-both={reasoning.length > 0 && response.length > 0 || undefined} data-output-running={running || undefined}>
     {reasoning.length > 0 && <section className="dsh-output-reasoning" aria-label={outputText('thinking')}>
       <div className="dsh-output-label">{outputText('thinking')}</div>

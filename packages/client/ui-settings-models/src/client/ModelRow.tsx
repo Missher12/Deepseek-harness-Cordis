@@ -1,6 +1,7 @@
 /** Shared model fields and actions for both adapter catalog editors. */
 
 import type { ReactNode } from 'react'
+import clsx from 'clsx'
 import {
   IconChevronDownOutlineRegular, IconChevronRightOutlineRegular, IconTrashOutlineRegular,
 } from '@deepseek-ai/dsh-client-ui-primitives'
@@ -52,20 +53,22 @@ export function ModelRow(props: ModelRowProps): ReactNode {
     <div className={styles['modelEntry']}>
       <div className={styles['modelRow']}>
         {(['id', 'name'] as const).map(field => (
-          <input
-            key={field}
-            className={styles['input']}
-            type="text"
-            value={typeof model[field] === 'string' ? model[field] : ''}
-            placeholder={t(field === 'id' ? 'modelId' : 'modelName')}
-            aria-label={`${t(field === 'id' ? 'modelId' : 'modelName')} ${String(position)}`}
-            disabled={disabled}
-            onChange={(event) => {
-              const value = event.target.value
-              props.onFieldChange(field, field === 'name' && value === '' ? undefined : value)
-            }}
-            onBlur={field === 'id' ? event => props.onIdBlur?.(event.target.value) : undefined}
-          />
+          <label className={styles['modelField']} key={field}>
+            <span className={styles['modelFieldLabel']}>{t(field === 'id' ? 'modelId' : 'modelName')}</span>
+            <input
+              className={styles['input']}
+              type="text"
+              value={typeof model[field] === 'string' ? model[field] : ''}
+              placeholder={t(field === 'id' ? 'modelId' : 'modelNamePlaceholder')}
+              aria-label={`${t(field === 'id' ? 'modelId' : 'modelName')} ${String(position)}`}
+              disabled={disabled}
+              onChange={(event) => {
+                const value = event.target.value
+                props.onFieldChange(field, field === 'name' && value === '' ? undefined : value)
+              }}
+              onBlur={field === 'id' ? event => props.onIdBlur?.(event.target.value) : undefined}
+            />
+          </label>
         ))}
         <button
           type="button"
@@ -79,7 +82,7 @@ export function ModelRow(props: ModelRowProps): ReactNode {
         </button>
         <button
           type="button"
-          className={`${styles['iconButton']} ${styles['iconButtonDanger']}`}
+          className={clsx(styles['iconButton'], styles['iconButtonDanger'])}
           aria-label={`${t('removeModel')} ${String(position)}`}
           title={t('removeModel')}
           disabled={disabled}
@@ -88,6 +91,11 @@ export function ModelRow(props: ModelRowProps): ReactNode {
           <IconTrashOutlineRegular size={14} />
         </button>
       </div>
+      <ModelInputTypes
+        model={model} field={props.inputField} position={position}
+        fallback={props.inputFallback} loading={props.inputLoading === true}
+        disabled={disabled || props.inputLoading === true} t={t} onChange={props.onChange}
+      />
       {props.expanded
         ? (
           <div className={styles['modelAdvanced']}>
@@ -117,10 +125,7 @@ export function ModelRow(props: ModelRowProps): ReactNode {
                 props.onChange(next)
               }}
             /> : null}
-            <ModelInputTypes
-              model={model} field={props.inputField} position={position}
-              fallback={props.inputFallback} disabled={disabled || props.inputLoading === true} t={t} onChange={props.onChange}
-            />
+
           </div>
         )
         : null}

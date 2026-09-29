@@ -10,6 +10,7 @@ import type { SessionSeq } from '@deepseek-ai/dsh-session'
 import type {} from './index.ts'
 import type {} from '@deepseek-ai/dsh-agent-preset-registry'
 import { budget, type Policy } from './policy.ts'
+import { IdleCompactor } from './idle.ts'
 
 export const REBUILD = 'CONTEXT_MANAGER_REBUILD_REQUIRED'
 export const BLOCKED = 'CONTEXT_MANAGER_BLOCKED'
@@ -36,8 +37,10 @@ export default class ContextEngine extends BasicCompactionEngine {
   constructor(ctx: Context, config: BasicCompactionConfig = {}) {
     super(ctx, { ...config, auto: false })
     const engine = this
+    const idle = new IdleCompactor(ctx, agent => engine.owns(agent), (agent, signal) => engine.compactNow(agent, signal))
     ctx.effect(() => async () => {
       engine.lifetime.abort(new Error('上下文插件正在停用'))
+      await idle.dispose()
       await Promise.allSettled([...engine.activeSummaries])
     })
     ctx.on('agent/status', ({ agent, status }) => {
@@ -178,7 +181,8 @@ export default class ContextEngine extends BasicCompactionEngine {
       maxTokens, purpose: 'compaction', sessionId: agent.session.id,
       signal: activeSignal, toolHistory: agent.session.toolHistory(),
       ...(input.tools === undefined ? {} : { tools: [...input.tools] }),
-      messages: [...input.messages, { role: 'user', content: [{ type: 'text', text: INSTRUCTION }] }],
+      messages: [...input.messages, { role: 'user', content: [{ type: 'text', text: policy.summaryInstructions.trim()
+        ? `${INSTRUCTION}\nAdditional preservation focus (keep all requirements above):\n${policy.summaryInstructions.trim()}` : INSTRUCTION }] }],
     }
     for await (const chunk of this.ctx.llm.stream(options)) assembler.push(chunk)
     activeSignal.throwIfAborted()

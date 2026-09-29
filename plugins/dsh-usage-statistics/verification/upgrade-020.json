@@ -1,0 +1,120 @@
+{
+  "date": "2026-09-29",
+  "request": "UPGRADE-20260929",
+  "plugin": "@missher/dsh-usage-statistics",
+  "candidateVersion": "0.2.1-local.1",
+  "runtime": "0.2.0-rc.1",
+  "sourceHead": "c7c457e5e07fa11a04bf8764d5f89585d789f258",
+  "upstreamHead": "4878cdabd87d4041bdaff61d04c966883b9fd07a",
+  "pluginInitiallyClean": true,
+  "sdkHead": "c7c457e5e07fa11a04bf8764d5f89585d789f258",
+  "sdkTrackedTreeClean": true,
+  "nodeVersion": "v25.6.0",
+  "pnpmVersion": "11.7.0",
+  "artifact": ".verification/upgrade-020/candidate/dist/missher-dsh-usage-statistics-0.2.1-local.1.tgz",
+  "artifactSha256": "f8d33ed4057bfe8d2a3e4062f96987a9228ff46c474576e98f17dc15197c9aed",
+  "artifactFiles": [
+    "LICENSE",
+    "lib/client.js",
+    "lib/index.js",
+    "lib/typert.js",
+    "package.json",
+    "provenance.json",
+    "INSTALL.md",
+    "README.md",
+    "VALIDATION.md",
+    "licenses/deepseek-harness-MIT.txt",
+    "licenses/zod-MIT.txt",
+    "cordis.patch.yml"
+  ],
+  "entrySha256": {
+    "lib/index.js": "2c21f8b7663e00e5acc6fe3847e85c982f5f42095ff278d6a645134dbf5d0669",
+    "lib/client.js": "b33939c07afb56a107208c07229d1c2725f0506a6be576dc8f0a52f8dd8d5a88",
+    "lib/typert.js": "313333a7b8a123db10e0884a5ab36424eb78709c5271dc0f9f367b64394cd81d"
+  },
+  "sourceFilesChanged": [
+    "AGENTS.md",
+    "INSTALL.md",
+    "PROJECT_CONTEXT.md",
+    "README.md",
+    "VALIDATION.md",
+    "cordis.patch.yml",
+    "package.json",
+    "scripts/verify-profile.mjs",
+    "tests/host/compatibility.spec.ts"
+  ],
+  "businessSourceUnchanged": true,
+  "maintainedLibUnchanged": true,
+  "oldDailyManifestAndEntriesUnchanged": true,
+  "typecheck": {
+    "passed": true,
+    "command": "node node_modules/typescript/bin/tsc --noEmit"
+  },
+  "testGroups": [
+    {
+      "path": ".verification/upgrade-020/candidate/.verification/baseline-sdk-tests.json",
+      "sha256": "548cc87d2b86decba8927234e0018736d5141b457ca0a731f72ce44d4462f4d7",
+      "tests": 61,
+      "passed": 61,
+      "files": 10
+    },
+    {
+      "path": ".verification/upgrade-020/candidate/.verification/compatibility-tests.json",
+      "sha256": "1260cec438b8cdb3840210867aef66db9d06f4e1d01dfb3ad73f2e17b900165b",
+      "tests": 5,
+      "passed": 5,
+      "files": 1
+    }
+  ],
+  "testsPassed": 66,
+  "isolatedBuildPassed": true,
+  "packageManifestMatchesSource": true,
+  "packageEntriesMatchBuild": true,
+  "packageIncludesNoLocalAbsolutePathsInEntries": true,
+  "profile": {
+    "runtime": "0.2.0-rc.1",
+    "pnpmVersion": "11.7.0",
+    "version": "0.2.1-local.1",
+    "installKind": "tarball",
+    "artifactSha256": "f8d33ed4057bfe8d2a3e4062f96987a9228ff46c474576e98f17dc15197c9aed",
+    "install": true,
+    "loaderBoot": true,
+    "hostSnapshotRead": true,
+    "syntheticTokens": 30000,
+    "cacheHitRate": 0.76,
+    "uninstallRestoresBase": true,
+    "pluginServiceRemoved": true,
+    "sessionBytesUnchanged": true,
+    "cacheDomainVersion": 1,
+    "cacheRowVersion": 3,
+    "cacheBytesUnchangedAfterRestartRemoveReinstall": true,
+    "reinstallRestoresStatistics": true,
+    "realModel": false
+  },
+  "profileEvidence": ".verification/upgrade-020/candidate/verification/profile-tarball.json",
+  "cache": {
+    "domain": "missher_usage_statistics",
+    "domainVersion": 1,
+    "rowVersion": 3,
+    "browserKey": "dsh.usage-statistics.snapshot.v1",
+    "migrationAdded": false
+  },
+  "ui": {
+    "status": "not-verified",
+    "surface": "CUA/IAB",
+    "error": "net::ERR_BLOCKED_BY_CLIENT",
+    "isolatedHostStopped": true,
+    "shellBrowserFallbackUsed": false,
+    "browserRpcVerified": false,
+    "nativeUiVerified": false
+  },
+  "dailyProfileTouched": false,
+  "dailyAppInstalledOrRestarted": false,
+  "realModelCalls": false,
+  "published": false,
+  "remainingAcceptance": [
+    "frontmost controlled page and browser RPC",
+    "daily installation and multi-plugin coexistence",
+    "existing user history retention after coordinated installation"
+  ]
+}

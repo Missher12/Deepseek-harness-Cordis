@@ -1,15 +1,24 @@
 /** Offline development only: link an explicitly supplied built Harness checkout. */
-import { readFile, mkdir, readdir, symlink, lstat, access } from 'node:fs/promises'
+import { readFile, mkdir, readdir, symlink, lstat, access, realpath, unlink } from 'node:fs/promises'
 import { resolve, dirname } from 'node:path'
 const source = process.argv[2]
 if (!source) throw new Error('Usage: node scripts/link-harness.mjs /path/to/built-harness')
 const root = resolve(source)
 const manifest = JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8'))
-if (manifest.version !== '0.1.7-rc.2') throw new Error('Expected Harness 0.1.7-rc.2')
+const local = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
+const expected = local.peerDependencies['@deepseek-ai/dsh-agent']
+if (manifest.version !== expected) throw new Error(`Expected Harness ${expected}, got ${manifest.version}`)
 async function link(name, target) {
   const dest = resolve('node_modules', name)
   await mkdir(dirname(dest), { recursive: true })
-  try { await lstat(dest); return } catch (error) { if (error.code !== 'ENOENT') throw error }
+  try {
+    const existing = await lstat(dest)
+    if (!existing.isSymbolicLink()) throw new Error(`Refusing to replace a non-link dependency: ${dest}`)
+    let current
+    try { current = await realpath(dest) } catch (error) { if (error.code !== 'ENOENT') throw error }
+    if (current === await realpath(target)) return
+    await unlink(dest)
+  } catch (error) { if (error.code !== 'ENOENT') throw error }
   await symlink(target, dest, 'dir')
 }
 for (const family of ['vendor', 'packages']) {
@@ -23,14 +32,20 @@ for (const family of ['vendor', 'packages']) {
     }
   }
 }
-for (const name of ['esbuild', 'typescript', 'react', 'react-dom', 'jsdom', 'js-yaml', 'zod', '@types/react', '@types/node']) {
+for (const name of ['esbuild', 'typescript', 'react', 'react-dom', 'jsdom', 'js-yaml', 'zod', '@types/react', '@types/react-dom', '@types/node']) {
+  const version = local.devDependencies[name] ?? local.dependencies[name]
   let target = resolve(root, 'node_modules', name)
-  try { await access(target) } catch (error) {
+  let matches = false
+  try { matches = JSON.parse(await readFile(resolve(target, 'package.json'), 'utf8')).version === version } catch (error) {
     if (error.code !== 'ENOENT') throw error
-    const entry = (await readdir(resolve(root, 'node_modules/.pnpm'))).find(n => n.startsWith(name.replace('/', '+') + '@'))
+  }
+  if (!matches) {
+    const prefix = name.replace('/', '+') + '@' + version
+    const entry = (await readdir(resolve(root, 'node_modules/.pnpm'))).sort().find(n => n === prefix || n.startsWith(prefix + '_'))
     if (!entry) throw new Error('Missing development dependency: ' + name)
     target = resolve(root, 'node_modules/.pnpm', entry, 'node_modules', name)
   }
+  await access(target)
   await link(name, target)
 }
 console.log('Linked offline development dependencies from', root)

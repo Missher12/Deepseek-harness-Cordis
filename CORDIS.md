@@ -21,7 +21,7 @@
 | 项目 | 可见性 | 原因 |
 | --- | --- | --- |
 | [Media@Missher](https://github.com/Missher12/media-missher) | 私有 | 用户指定；源码和数据不进入本仓库 |
-| [dsh-reasoning-effort](https://github.com/Missher12/dsh-reasoning-effort) | 私有 | 用户再次确认继续私有；定制思考强度 UI 独立维护 |
+| [dsh-reasoning-effort](https://github.com/Missher12/dsh-reasoning-effort) | 公开 | 定制思考深度 UI 与独立设计源码单独维护 |
 | [MSE Learning](https://github.com/Missher12/mse-learning) | 公开 | 独立跨宿主学习产品；公开范围只包含独立产品导出 |
 
 应用凭据、聊天记录、附件、生产 profile、本地安装备份和私有验收响应不属于公开源码。仓库导航只记录上述项目地址，不下载或内嵌私有内容。

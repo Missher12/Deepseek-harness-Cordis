@@ -24,12 +24,12 @@ describe('usage heatmap styles', () => {
     expect(styles).toMatch(/\.detailsGrid\s*\{[^}]*margin-top:\s*44px/s)
   })
 
-  it('keeps all 53 by 7 zero-usage particles visible', () => {
+  it('keeps the original 53 by 7 geometry while leaving idle particles blank', () => {
     expect(styles).toMatch(/\.heatmap\s*\{[^}]*grid-template-rows:\s*repeat\(7,/s)
     expect(styles).toMatch(/\.heatmap\s*\{[^}]*grid-auto-flow:\s*column/s)
     expect(styles).toMatch(/\.heatmap\s*\{[^}]*aspect-ratio:\s*53\s*\/\s*7/s)
     expect(styles).toMatch(/\.heatmapWeek\s*\{[^}]*display:\s*contents/s)
-    expect(styles).toMatch(/\.day\s*\{[^}]*background:\s*var\(--dsw-alias-bg-skeleton\)/s)
+    expect(styles).toMatch(/\.day\s*\{[^}]*background:\s*transparent/s)
     expect(styles).not.toMatch(/\.weekly\s*\{/)
     expect(styles).not.toMatch(/\.cumulative\s*\{/)
     expect(styles).toMatch(/\.heatmapStage\s*\{[^}]*position:\s*relative/s)

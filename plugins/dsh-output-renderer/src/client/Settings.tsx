@@ -1,9 +1,10 @@
 /** Settings choices persist through the native Host configuration form. */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
+import { Button, Tag } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { OutputInjected } from './Assistant.tsx'
 import type { PreferencesController } from './settings.ts'
-import { LAYOUTS, MOTIONS } from '../preferences.ts'
+import { LAYOUTS, MOTIONS, DENSITIES, TEXT_SIZES } from '../preferences.ts'
 import { StreamMarkdown } from './stream.tsx'
 
 export interface SettingsInjected extends OutputInjected { setPreference: PreferencesController['set'] }
@@ -40,31 +41,50 @@ export function Settings({ useOutputPreferences, setPreference, t }: Props) {
   const disabled = state.saving || !state.ready || !state.writable
   return <div className="dsh-output-settings">
     <h2>{t('section')}</h2>
+    <p className="dsh-output-intro">{t('intro')}</p>
     <fieldset disabled={disabled}><legend>{t('layout')}</legend>
       <div className="dsh-output-options">
-        {LAYOUTS.map((layout, index) => <button key={layout} type="button" aria-pressed={state.value.layout === layout}
-          onClick={() => { void setPreference('layout', layout) }} className="dsh-output-choice" data-choice={layout}>
+        {LAYOUTS.map(layout => <Button key={layout} variant="outline" aria-pressed={state.value.layout === layout}
+          disabled={disabled} onClick={() => { void setPreference('layout', layout) }} className="dsh-output-choice" data-choice={layout}>
           <span className="dsh-output-mini" aria-hidden="true"><i /><i /><i /></span>
-          <span className="dsh-output-choice-name">{String.fromCharCode(65 + index)} · {t(layout)}</span>
+          <span className="dsh-output-choice-name">{t(layout)}</span>
           <span className="dsh-output-description">{t(`${layout}Hint`)}</span>
-        </button>)}
+        </Button>)}
       </div>
     </fieldset>
+    <div className="dsh-output-fields">
+      <div className="dsh-output-field"><div><span>{t('thinking')}</span><p className="dsh-output-description">{t('thinkingHint')}</p></div><Tag tone="neutral">{t('alwaysOpen')}</Tag></div>
+      <fieldset className="dsh-output-field" disabled={disabled}>
+        <legend>{t('density')}</legend>
+        <div className="dsh-output-controls">
+          {DENSITIES.map(density => <Button key={density} variant="outline" size="sm" disabled={disabled}
+            aria-pressed={state.value.density === density} onClick={() => { void setPreference('density', density) }}>{t(density)}</Button>)}
+        </div>
+      </fieldset>
+      <fieldset className="dsh-output-field" disabled={disabled}>
+        <legend>{t('textSize')}</legend>
+        <div className="dsh-output-controls">
+          {TEXT_SIZES.map(size => <Button key={size} variant="outline" size="sm" disabled={disabled}
+            aria-pressed={state.value.textSize === size} onClick={() => { void setPreference('textSize', size) }}>{t(size)}</Button>)}
+        </div>
+      </fieldset>
+    </div>
     <fieldset disabled={disabled}><legend>{t('motion')}</legend>
       <div className="dsh-output-motions">
-        {MOTIONS.map(motion => <button key={motion} type="button" aria-pressed={state.value.motion === motion}
+        {MOTIONS.map(motion => <Button key={motion} variant="outline" disabled={disabled} aria-pressed={state.value.motion === motion}
           onClick={() => { void setPreference('motion', motion) }} className="dsh-output-choice">
           <span className="dsh-output-choice-name">{t(motion)}</span>
           <span className="dsh-output-description">{t(`${motion}Hint`)}</span>
-        </button>)}
+        </Button>)}
       </div>
     </fieldset>
     <div className="dsh-output-settings-status" role="status" data-error={state.error || undefined}>
       {state.error ? t('failed') : !state.ready ? t('loading') : !state.writable ? t('unavailable') : state.saving ? t('saving') : t('saved')}
     </div>
     <section className="dsh-output-preview" aria-label={t('preview')}>
-      <div className="dsh-output-preview-header"><span>{t('preview')}</span><button type="button" onClick={replay}>{t('replay')}</button></div>
-      <div className="dsh-output-assistant" data-output-layout={state.value.layout} data-output-both="true">
+      <div className="dsh-output-preview-header"><span>{t('preview')}</span><Button variant="outline" size="sm" onClick={replay}>{t('replay')}</Button></div>
+      <div className="dsh-output-assistant" data-output-layout={state.value.layout} data-output-both="true"
+        data-output-density={state.value.density} data-output-text-size={state.value.textSize}>
         <section className="dsh-output-reasoning"><div className="dsh-output-label">{t('thinking')}</div><p>{t('note')}</p></section>
         <section className="dsh-output-answer"><div className="dsh-output-label dsh-output-answer-label">{t('answer')}</div>
           <StreamMarkdown text={sample} running={playing} motion={state.value.motion} labels={labels} />

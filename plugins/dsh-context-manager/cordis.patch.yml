@@ -1,4 +1,4 @@
-# Generated for Harness 0.1.7-rc.2; profile/user overrides remain later layers.
+# Generated for Harness 0.2.0-rc.1; profile/user overrides remain later layers.
 - id: compaction-basic
   name: '@deepseek-ai/dsh-compaction-basic'
   disabled: true

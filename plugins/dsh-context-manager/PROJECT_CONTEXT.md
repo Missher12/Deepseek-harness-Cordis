@@ -1,5 +1,11 @@
 # 上下文管理插件
 
+**2026-09-29 / UI-02、UI-06-context（当前）：**基于 0.4.0 保留全部闲置整理与请求前压缩功能，完成 0.5.0-local.1 本地升级包。官方峰谷改为原生价格/同等用量估算浮层；上下文单页增加公开投影重放的占用趋势、累计用量组成和逐次输入/输出变化。只写本插件，未改宿主或其他 Bundle；旧 lib 与旧包保持。53 项回归、Host/Client 类型、21 文件 lint、14 文件包边界、最终隔离 Loader 三项 active、RPC 和受控 Web 深浅主题/价格计算/草稿恢复/窄窗口检查均通过。最后标题栏留白 CSS 调整后已重建、做相关烟测并用最终包冷启动验证。交付位于 releases/dsh-context-manager-0.5.0-local.1（同名 tgz），证据 verification/RESULTS-UI-20260929.json。协调回执已写 coordination/2026-09-29/ui-implementation/context.md；协调者接手多插件组合验收，未写日常 profile，未进行 Git 发布、Electron 原生点击或真实供应商调用。以下为历史阶段记录。
+
+**2026-09-29 / CONTEXT-IDLE-20260929（上一阶段）：**用户授权升级上下文插件并要求 DSH 原生设置风格。源码候选 0.4.0-local.1，针对 Harness 0.2.0-rc.1。增加任务正常完成后的闲置压缩，默认开启、15 分钟、最低 65%（至少高于软目标 10 个百分点），一次任务完成只尝试一次；新消息、停用和关闭会取消本插件维护。使用公开 compactNow / Agent maintenance 与 workspace activity 扩展点，不改宿主或其他 Bundle。设置改用原生 SettingsForm、SettingsValueField 与 Switch；上下文单面板增加轻量状态、摘要用量，原默认展开、只读输入区和官方峰谷提示保留。隔离构建目录为 verification/idle-20260929，根 lib 与旧交付不覆盖；安装目录 releases/dsh-context-manager-0.4.0-local.1。当前完成 Host/Client 类型、48 项测试、19 文件 lint、真实隔离 profile 升级/Loader/RPC 及 Web 原生设置保存验证；真实供应商与 Electron 窗口未验收，日常安装仍由协调者单一写入，不自行更改日常 profile，不 Git 写入。完整证据及状态见 verification/RESULTS-IDLE-20260929.json。下述较早阶段按日期保留。
+
+**2026-09-29 / UPGRADE-20260929：**统一仓库源码已适配 Harness 0.2.0-rc.1，候选 0.3.6-local.1。现有业务接口、UI 和压缩逻辑无需修改；精确更新 DSH 版本声明，重新核验并生成预设元数据，修复开发脚本的旧 SDK 链接/React 类型发现。隔离构建、Host/Client 类型、34 项测试、插件 17 个源文件 lint、14 文件包边界均通过。实际 `dsh plugin add` tarball 安装后 3 个组件 active，inspector RPC 连读不改截面；卸载恢复原 5 行配置，重装后同一测试会话和自定义压缩参数仍保留。未修改生产 profile/旧源码/lib，未重启日常应用。实际 UI 因未认证根入口被浏览器拦截、正式认证入口仅被后台应用排队而未完成；不将组件测试当作原生验收。完整结果在 `verification/RESULTS-UPGRADE-020-20260929.json`，交付回执为协调目录 `coordination/2026-09-29/upgrade-020/context.md`。
+
 - **REQ-03 实施轮（2026-09-28，当前）**：用户“全部完成”的新授权已启动开发，前两轮“只分类/未启动”为历史。源代码候选 `0.3.5-local.1` 仅将 `ContextInspectorView` 初始值及 target 切换重置改为展开；普通刷新仍尊重手动收起。新增覆盖首次、重开、换会话、主动/投影刷新、正文与列表分页、迟到正文取消的回归，保留发送区/草稿测试。构建与 Host/Client 类型检查在 `verification/req03-implementation/candidate` 完成，相关 12 项测试通过，旧 0.3.4 lib 负对照确实在默认展开断言失败。根 lib、旧包及日常 profile 保持原样；峰谷提示未迁移。候选路径、SHA 与验收分层见 `../coordination/2026-09-28/implementation/context-manager.md`；等待后续联调与 Git 明确命令。
 
 - **本轮口径纠偏补充**：Ui-usage 指出 README 将失败重试一概排除在累计之外。已对照当前链接 SDK 的 token-meter 源码及 lib，确认本插件直接读 `tokenUsage`，有持久化有效用量的失败尝试/重试可以计入；逐次回复图的记录范围较小。仅修改 README、边界文档和回执，不修改实现或扩大测试，不重打包旧 0.3.4。

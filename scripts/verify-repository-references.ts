@@ -26,11 +26,16 @@ const recordedCommitFiles = new Set([
   'plugins/dsh-context-manager/verification/RESULTS-0.2.1.md',
   'plugins/dsh-context-manager/verification/RESULTS-0.3.0.md',
   'plugins/dsh-context-manager/verification/RESULTS-BOUNDARY-AUDIT-20260928.json',
+  'plugins/dsh-context-manager/verification/RESULTS-IDLE-20260929.json',
+  'plugins/dsh-context-manager/verification/RESULTS-UI-20260929.json',
+  'plugins/dsh-context-manager/verification/RESULTS-UPGRADE-020-20260929.json',
   'plugins/dsh-output-renderer/PROJECT_CONTEXT.md',
   'plugins/dsh-session-bridge/REPAIR_REPORT.md',
   'plugins/dsh-usage-statistics/PROJECT_CONTEXT.md',
   'plugins/dsh-usage-statistics/VALIDATION.md',
   'plugins/dsh-usage-statistics/verification/runtime.json',
+  'plugins/dsh-usage-statistics/verification/ui-20260929-color-only.json',
+  'plugins/dsh-usage-statistics/verification/upgrade-020.json',
 ])
 
 /** One prohibited reference in a maintained source file. */

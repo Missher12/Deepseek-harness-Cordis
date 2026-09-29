@@ -37,6 +37,8 @@ Summary and Preview share one ordered attachment list after the message text, pr
 
 Thinking in the inspector uses compact Markdown at the inspector's fixed 13px size and 20px line height, independent of the content-size setting. Headings add bold weight without increasing size or line height. Assistant output keeps its regular Markdown typography.
 
+Usage charts show input/output for the last 24 resident requests and cumulative reported tokens, including compaction requests. Selecting a bar reveals exact values; unreported usage leaves gaps rather than zeroes. Input includes uncached, cache-read and cache-write buckets; output already includes reasoning. Totals cover the resident snapshot, with an explicit notice when earlier history is not loaded. The charts collapse independently of the timing overview and ledger.
+
 ### The timing overview
 
 Historical replies retain TTFT, generation duration, and throughput when their recorded streams contain token timestamps. TTFT measures from the Step start to its first token, including output from an earlier retry attempt; an unloaded Step start or a stream without tokens leaves the corresponding metric unavailable.

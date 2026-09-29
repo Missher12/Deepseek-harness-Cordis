@@ -11,8 +11,8 @@ export interface UsageParticle {
   date: string
   /** Tokens shown on hover for the selected scope. */
   tokens: number
-  /** Four-step intensity for the selected scope; zero remains an idle particle. */
-  level: UsageActivityDay['level']
+  /** Five color shades for the selected scope; zero remains a blank particle. */
+  level: 0 | 1 | 2 | 3 | 4 | 5
   /** Inclusive start of the hover scope. */
   periodStart: string
   /** Inclusive end of the hover scope. */
@@ -50,11 +50,11 @@ function logarithmicRows(tokens: number, maximum: number): number {
   return Math.min(7, Math.max(1, Math.ceil(ratio * 7)))
 }
 
-/** Map a positive aggregate onto the same four relative color levels as a day. */
-function logarithmicLevel(tokens: number, maximum: number): UsageActivityDay['level'] {
+/** Change color alone, relative to the largest recorded value in this view. */
+function colorLevel(tokens: number, maximum: number): UsageParticle['level'] {
   if (tokens <= 0 || maximum <= 0) return 0
-  const level = Math.ceil(4 * Math.log1p(tokens) / Math.log1p(maximum))
-  return Math.min(4, Math.max(1, level)) as 1 | 2 | 3 | 4
+  const level = Math.ceil(5 * tokens / maximum)
+  return Math.min(5, Math.max(1, level)) as 1 | 2 | 3 | 4 | 5
 }
 
 /** Preserve a readable bottom-up progression for an already cumulative series. */
@@ -67,8 +67,8 @@ function cumulativeRows(tokens: number, maximum: number): number {
 function stackLevel(
   row: number,
   filledRows: number,
-  level: UsageActivityDay['level'],
-): UsageActivityDay['level'] {
+  level: UsageParticle['level'],
+): UsageParticle['level'] {
   return row >= 7 - filledRows ? level : 0
 }
 
@@ -88,10 +88,11 @@ export function buildParticleGrid(
   baselineTokens = 0,
 ): UsageWeek<UsageParticle>[] {
   if (mode === 'daily') {
+    const maximum = Math.max(0, ...activity.map(day => day.tokens))
     return buildDailyGrid(activity.map(day => ({
       date: day.date,
       tokens: day.tokens,
-      level: day.level,
+      level: colorLevel(day.tokens, maximum),
       periodStart: day.date,
       periodEnd: day.date,
       labelDate: day.date,
@@ -109,7 +110,7 @@ export function buildParticleGrid(
       const periodStart = week[0].date
       const periodEnd = (week[week.length - 1] as UsageActivityDay).date
       const filledRows = logarithmicRows(tokens, maximum)
-      const level = logarithmicLevel(tokens, maximum)
+      const level = colorLevel(tokens, maximum)
       return mapWeek(week, (day, row) => ({
         date: day.date,
         tokens,
@@ -135,7 +136,7 @@ export function buildParticleGrid(
     const labelDate = week[0].date
     const periodEnd = (week[week.length - 1] as UsageActivityDay).date
     const filledRows = cumulativeRows(tokens, maximum)
-    const level = logarithmicLevel(tokens, maximum)
+    const level = colorLevel(tokens, maximum)
     return mapWeek(week, (day, row) => ({
       date: day.date,
       tokens,

@@ -223,6 +223,8 @@ export type WorkspaceBrowserInjected = {
     hostInfo: HostObservable<RemoteHostFacts>
     workspaceShortcuts: HostObservable<WorkspaceShortcutState>
     shortcuts: HostObservable<readonly ShortcutCatalogEntry[]>
+    /** Workspace identities placed below the independently scrolling project list. */
+    trailingWorkspaceIds: HostObservable<readonly WorkspaceId[]>
   }
   /** Open the browser search and focus its input. */
   requestSearch: () => void

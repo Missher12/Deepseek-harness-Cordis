@@ -1,4 +1,5 @@
 import type { CompactionEntry } from './diagnostics-types.ts'
+import type { IdleStatus } from './idle-types.ts'
 
 export const categories = [
   { id: 'system', label: '系统指令' }, { id: 'tools', label: '工具定义' },
@@ -25,19 +26,25 @@ export interface RequestRow {
   seq: number; time: number; turn: number; step: number; provider: string; model: string
   input: number | null; output: number | null; cacheRead: number | null
 }
+export interface PressurePoint {
+  seq: number; time: number; tokens: number | null; window: number | null
+  kind: 'reply' | 'replace' | 'current'
+}
 export interface Inspection {
   sessionId: string; cursor: number; cutSeq: number; sampledAt: number; historical: boolean
   pressure: { projected: number; input: number; window: number | null } | null
   model: { provider: string; model: string; effort: string | null; maxTokens: number | null } | null
   parts: { category: Category; tokens: number; count: number }[]
   official: { system: number; tools: number; messages: number } | null
-  usage: { input: number; output: number; cacheRead: number } | null
+  usage: { input: number; output: number; cacheRead: number; uncached: number; cacheWrite: number } | null
+  pressureHistory: PressurePoint[]
   rows: ContentRow[]; total: number; offset: number; pageSize: number; activeCount: number; archivedCount: number
   requests: RequestRow[]; requestCount: number; compactions: CompactionEntry[]
 }
 export interface ContentQuery { sessionId: string; cutSeq: number; id: string; offset: number }
 export interface ContentPage { sessionId: string; cutSeq: number; id: string; text: string; offset: number; totalChars: number; nextOffset: number | null }
 export interface InspectorApi {
+  idleStatus(query: { sessionId: string }, signal: AbortSignal): Promise<IdleStatus>
   inspect(query: InspectQuery, signal: AbortSignal): Promise<Inspection>
   content(query: ContentQuery, signal: AbortSignal): Promise<ContentPage>
 }

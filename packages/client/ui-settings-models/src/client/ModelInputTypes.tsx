@@ -16,6 +16,8 @@ interface ModelInputTypesProps {
   position: number
   /** Prevent changes while read-only or saving. */
   disabled: boolean
+  /** Catalog capabilities are still loading. */
+  loading?: boolean
   /** Installed model or provider defaults when the row does not declare input types. */
   fallback?: readonly string[] | undefined
   /** Section copy. */
@@ -29,12 +31,18 @@ interface ModelInputTypesProps {
  * @param props - model declaration and row replacement action.
  * @returns the labeled text and image checkboxes.
  */
-export function ModelInputTypes({ model, field, position, disabled, fallback, t, onChange }: ModelInputTypesProps): ReactNode {
+export function ModelInputTypes({
+  model, field, position, disabled, loading = false, fallback, t, onChange,
+}: ModelInputTypesProps): ReactNode {
   const modalities = model[field]
   const selected = Array.isArray(modalities) && modalities.length > 0 ? modalities : fallback ?? ['text']
   return (
     <fieldset className={styles['modelInputTypes']} aria-label={`${t('modelInputTypes')} ${String(position)}`}>
       <legend className={styles['modelFieldLabel']}>{t('modelInputTypes')}</legend>
+      <p className={styles['inputSource']}>
+        {t(loading ? 'modelInputLoading' : Array.isArray(modalities) && modalities.length > 0
+          ? 'modelInputDeclared' : 'modelInputInherited')}
+      </p>
       <div className={styles['modelInputChoices']}>
         {(['text', 'image'] as const).map(modality => (
           <Checkbox
@@ -56,6 +64,7 @@ export function ModelInputTypes({ model, field, position, disabled, fallback, t,
           />
         ))}
       </div>
+      <p className={styles['inputHint']}>{t('modelInputHint')}</p>
     </fieldset>
   )
 }

@@ -9,10 +9,11 @@ import assert from 'node:assert/strict'
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
 const source = process.env.DSH_SOURCE_DIR
-if (!source) throw new Error('Set DSH_SOURCE_DIR to a built Harness 0.1.7-rc.2 source tree')
+if (!source) throw new Error('Set DSH_SOURCE_DIR to a built Harness 0.2.0-rc.1 source tree')
 const cli = resolve(source, 'apps/cli/lib/bin.js')
 const manifest = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'))
 const runtime = JSON.parse(await readFile(join(source, 'apps/cli/package.json'), 'utf8')).version
+assert.equal(runtime, manifest.peerDependencies['@deepseek-ai/dsh-session-persistence'])
 const artifact = join(root, `dist/missher-dsh-usage-statistics-${manifest.version}.tgz`)
 const installSpec = process.env.DSH_INSTALL_SPEC ?? artifact
 const label = installSpec === artifact ? 'tarball' : 'directory'
@@ -23,6 +24,11 @@ await writeFile(join(work, 'seed.mjs'), await readFile(join(root, 'scripts/accep
 const home = join(work, 'home')
 const env = Object.fromEntries(['PATH','HOME','TMPDIR','LANG','TZ'].filter(k => process.env[k]).map(k => [k, process.env[k]]))
 Object.assign(env, {DSH_HOME: home, DSH_TELEMETRY_DISABLED: '1', MISSHER_TENCENTDB_DIR: join(work, 'unused-memory')})
+// Use the SDK's pinned pnpm without changing system configuration or admission policy.
+env.PATH = join(source, 'node_modules/.bin') + (process.platform === 'win32' ? ';' : ':') + (env.PATH ?? '')
+const pnpmVersion = execFileSync('pnpm', ['--version'], {env, encoding: 'utf8'}).trim()
+const expectedPnpm = JSON.parse(await readFile(join(source, 'package.json'), 'utf8')).packageManager.split('@')[1]
+assert.equal(pnpmVersion, expectedPnpm)
 const run = args => execFileSync(process.execPath, [cli, ...args], {cwd: work, env, encoding: 'utf8', stdio: ['ignore','pipe','pipe'], timeout: 60_000})
 const profile = 'usage-preview'
 const patch = join(home, 'profiles', profile, 'cordis.patch.yml')
@@ -44,7 +50,7 @@ async function stop() {
 async function bootAndRead(mode) {
   const receipt = join(work, `${mode}.json`)
   const reporter = join(work, `${mode}-reporter.mjs`)
-  const installed = mode === 'installed'
+  const installed = mode !== 'removed'
   await writeFile(reporter, `import {writeFile} from 'node:fs/promises';
 export const inject=${JSON.stringify(installed ? ['usageStatistics','usageStatisticsAcceptanceSeed'] : ['usageStatisticsAcceptanceSeed'])};
 export async function apply(ctx){const snapshot=${installed ? 'await ctx.usageStatistics.snapshot()' : 'null'};await writeFile(${JSON.stringify(receipt)},JSON.stringify({snapshot,pluginActive:ctx.get('usageStatistics')!==undefined}));}`)
@@ -70,7 +76,7 @@ export async function apply(ctx){const snapshot=${installed ? 'await ctx.usageSt
     assert.equal(report.snapshot.sessionCount,1)
     assert.equal(report.snapshot.omittedSessions,0)
   } else assert.equal(report.snapshot,null)
-  assert.equal(report.pluginActive,mode==='installed')
+  assert.equal(report.pluginActive,installed)
   await stop()
   await writeFile(join(work, `${mode}.log`), log)
   return report.snapshot
@@ -86,12 +92,27 @@ async function protectedSessions(dir, result={}) {
 try {
   await bootAndRead('installed')
   const before=await protectedSessions(join(home,'sessions'))
+  // Preserve the existing v1 domain / v3 rows across process and Bundle lifetimes.
+  const cachePath=join(home,'storages','missher_usage_statistics.json')
+  const cacheBefore=await readFile(cachePath)
+  const cache=JSON.parse(cacheBefore)
+  assert.deepEqual(cache.unit,{name:'missher_usage_statistics',version:1})
+  assert.equal(cache.tables.sessions['usage-statistics-validation-v4'].schemaVersion,3)
+  await bootAndRead('restarted')
+  assert.deepEqual(await readFile(cachePath),cacheBefore)
+  assert.deepEqual(await protectedSessions(join(home,'sessions')),before)
   await writeFile(patch,'[]\n')
   await writeFile(join(work,'remove.log'),run(['plugin','--profile',profile,'remove','@missher/dsh-usage-statistics']))
   assert.equal(run(['--profile',profile,'--dump-config']),base)
   await bootAndRead('removed')
   assert.deepEqual(await protectedSessions(join(home,'sessions')),before)
-  const report={runtime,version:manifest.version,installKind:label,artifactSha256:createHash('sha256').update(await readFile(artifact)).digest('hex'),install:true,loaderBoot:true,privateRemoteManifest:true,syntheticTokens:30_000,cacheHitRate:0.76,uninstallRestoresBase:true,pluginServiceRemoved:true,sessionBytesUnchanged:true,realModel:false}
+  assert.deepEqual(await readFile(cachePath),cacheBefore)
+  await writeFile(join(work,'reinstall.log'),run(['plugin','--profile',profile,'add',installSpec,'--offline']))
+  await bootAndRead('reinstalled')
+  assert.deepEqual(await readFile(cachePath),cacheBefore)
+  assert.deepEqual(await protectedSessions(join(home,'sessions')),before)
+  await writeFile(patch,'[]\n')
+  const report={runtime,pnpmVersion,version:manifest.version,installKind:label,profileWork:work,artifactSha256:createHash('sha256').update(await readFile(artifact)).digest('hex'),install:true,loaderBoot:true,hostSnapshotRead:true,syntheticTokens:30_000,cacheHitRate:0.76,uninstallRestoresBase:true,pluginServiceRemoved:true,sessionBytesUnchanged:true,cacheDomainVersion:1,cacheRowVersion:3,cacheBytesUnchangedAfterRestartRemoveReinstall:true,reinstallRestoresStatistics:true,realModel:false}
   await writeFile(join(root,`verification/profile-${label}.json`),JSON.stringify(report,null,2)+'\n')
   console.log(JSON.stringify(report,null,2))
 } finally {await stop()}

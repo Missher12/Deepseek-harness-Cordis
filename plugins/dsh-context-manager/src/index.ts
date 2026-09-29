@@ -4,12 +4,14 @@ import type { Volatile } from '@deepseek-ai/cosmokit'
 import type {} from '@deepseek-ai/dsh-settings'
 import { defaults, validatePolicy, type Policy } from './policy.ts'
 import { diagnosticsProjection } from './diagnostics.ts'
+import type { IdleStatus } from './idle-types.ts'
 
 declare module '@deepseek-ai/cordis' { interface Context { contextManager: ContextManager } }
 export interface Config { policy: Volatile<Policy> }
 
 /** A single live policy shared by isolated preset engines. */
 export default class ContextManager extends Service {
+  private readonly idleReaders = new Map<string, () => IdleStatus>()
   static Config = z.object({
     policy: z.object({
       enabled: z.boolean().default(defaults.enabled),
@@ -20,6 +22,10 @@ export default class ContextManager extends Service {
       summaryMaxTokens: z.number().min(256).max(32768).step(1).default(defaults.summaryMaxTokens),
       maxPasses: z.number().min(1).max(2).step(1).default(defaults.maxPasses),
       timeoutMs: z.number().min(1000).max(300000).step(1).default(defaults.timeoutMs),
+      idleEnabled: z.boolean().default(defaults.idleEnabled),
+      idleMinutes: z.number().min(1).max(1440).step(1).default(defaults.idleMinutes),
+      idleMinPercent: z.number().min(10).max(95).default(defaults.idleMinPercent),
+      summaryInstructions: z.string().max(2000).default(defaults.summaryInstructions),
     }).default(defaults).volatile(),
   })
 
@@ -39,5 +45,27 @@ export default class ContextManager extends Service {
     const result = { ...this.config.policy.get() }
     validatePolicy(result)
     return Object.freeze(result)
+  }
+
+  /**
+   * Register a live Agent's status reader; the owner releases it on disposal.
+   * @param sessionId - owning session, without loading it.
+   * @param read - current idle maintenance status.
+   * @returns an identity-guarded release function.
+   */
+  registerIdle(sessionId: string, read: () => IdleStatus): () => void {
+    this.idleReaders.set(sessionId, read)
+    return () => { if (this.idleReaders.get(sessionId) === read) this.idleReaders.delete(sessionId) }
+  }
+
+  /**
+   * Read process-local status without loading a Session or scheduling work.
+   * @param sessionId - session whose state is requested.
+   * @returns the live status, or an inactive default.
+   */
+  idleStatus(sessionId: string): IdleStatus {
+    const policy = this.snapshot()
+    if (!policy.enabled || !policy.idleEnabled) return { status: 'off', dueAt: null, message: '闲置自动压缩已关闭' }
+    return this.idleReaders.get(sessionId)?.() ?? { status: 'waiting', dueAt: null, message: '等待本次运行中的任务正常完成' }
   }
 }

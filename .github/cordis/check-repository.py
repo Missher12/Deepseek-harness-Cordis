@@ -31,7 +31,7 @@ def main():
         for entry in inventory["external"]
         if entry["visibility"] == "private"
     }
-    if private != {"Missher12/media-missher", "Missher12/dsh-reasoning-effort"}:
+    if private != {"Missher12/media-missher"}:
         raise SystemExit("Private repository declarations require explicit user review.")
     tracked = subprocess.check_output(
         ["git", "ls-files", "-z"], cwd=ROOT

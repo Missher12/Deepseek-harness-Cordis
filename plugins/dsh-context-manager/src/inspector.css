@@ -1,11 +1,11 @@
 .dsh-context-settings.cmi-view {
-  --cmi-system: color-mix(in srgb, var(--dsw-static-deepseek-500) 66%, var(--dsw-alias-label-secondary));
-  --cmi-tools: color-mix(in srgb, var(--dsw-static-amber-500) 63%, var(--dsw-alias-label-secondary));
-  --cmi-user: color-mix(in srgb, var(--dsw-static-green-500) 62%, var(--dsw-alias-label-secondary));
-  --cmi-inject: color-mix(in srgb, var(--dsw-static-blue-400) 40%, var(--dsw-alias-label-secondary));
-  --cmi-skill: color-mix(in srgb, var(--dsw-static-amber-600) 64%, var(--dsw-alias-label-secondary));
-  --cmi-assistant: color-mix(in srgb, var(--dsw-static-deepseek-500) 85%, var(--dsw-alias-bg-base));
-  --cmi-tool: color-mix(in srgb, var(--dsw-static-green-500) 46%, var(--dsw-static-deepseek-500));
+  --cmi-system: color-mix(in srgb, var(--dsw-alias-state-business-primary) 66%, var(--dsw-alias-label-secondary));
+  --cmi-tools: color-mix(in srgb, var(--dsw-alias-state-warn-primary) 63%, var(--dsw-alias-label-secondary));
+  --cmi-user: color-mix(in srgb, var(--dsw-alias-state-success-primary) 62%, var(--dsw-alias-label-secondary));
+  --cmi-inject: color-mix(in srgb, var(--dsw-alias-link) 40%, var(--dsw-alias-label-secondary));
+  --cmi-skill: color-mix(in srgb, var(--dsw-alias-state-warn-label) 64%, var(--dsw-alias-label-secondary));
+  --cmi-assistant: color-mix(in srgb, var(--dsw-alias-state-business-primary) 85%, var(--dsw-alias-bg-base));
+  --cmi-tool: color-mix(in srgb, var(--dsw-alias-state-success-primary) 46%, var(--dsw-alias-state-business-primary));
   flex: 1; width: 100%; max-width: none; min-height: 0; overflow: auto; container-type: inline-size;
   font-family: var(--dsw-font-family); color: var(--dsw-alias-label-primary); font-size: 12px; line-height: 1.55;
   background: var(--dsw-alias-bg-base); font-variant-numeric: tabular-nums;
@@ -14,8 +14,8 @@
 .dsh-context-settings .cmi-inner * { box-sizing: border-box; }
 .dsh-context-settings .cmi-inner [hidden] { display: none !important; }
 .dsh-context-settings .cmi-inner h2, .dsh-context-settings .cmi-inner h3, .dsh-context-settings .cmi-inner p { margin: 0; }
-.dsh-context-settings .cmi-inner h2 { font-size: 15px; font-weight: 550; }
-.dsh-context-settings .cmi-inner h3 { font-size: 13px; font-weight: 550; }
+.dsh-context-settings .cmi-inner h2 { font-size: 15px; font-weight: 500; }
+.dsh-context-settings .cmi-inner h3 { font-size: 13px; font-weight: 500; }
 .dsh-context-settings .cmi-inner button { font-family: inherit; }
 .dsh-context-settings .cmi-inner button:focus-visible, .dsh-context-settings .cmi-inner select:focus-visible, .dsh-context-settings .cmi-inner summary:focus-visible, .dsh-context-settings .cmi-body:focus-visible { outline: 2px solid var(--dsw-alias-link); outline-offset: 2px; }
 .dsh-context-settings .cmi-header, .dsh-context-settings .cmi-between, .dsh-context-settings .cmi-section-title { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
@@ -23,16 +23,16 @@
 .dsh-context-settings .cmi-note { font-size: 11px; color: var(--dsw-alias-label-secondary); line-height: 1.6; }
 .dsh-context-settings .cmi-card > .cmi-note { margin-top: 7px; }
 .dsh-context-settings .cmi-data-status { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 15px; padding: 7px 1px 10px; font-size: 10px; color: var(--dsw-alias-label-tertiary); }
-.dsh-context-settings .cmi-card { border: 1px solid var(--dsw-alias-border-l2); border-radius: var(--dsw-radius-lg); padding: 12px 14px; margin-bottom: 10px; min-width: 0; background: var(--dsw-alias-bg-base); }
+.dsh-context-settings .cmi-card { border: .5px solid var(--dsw-alias-border-l2); border-radius: var(--dsw-radius-lg); padding: 12px 14px; margin-bottom: 10px; min-width: 0; background: var(--dsw-alias-bg-base); }
 .dsh-context-settings .cmi-metrics { display: grid; grid-template-columns: 1.25fr 1fr .85fr; gap: 10px; }
 .dsh-context-settings .cmi-metrics > .cmi-card { min-height: 110px; }
-.dsh-context-settings .cmi-number { display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px; font-size: 25px; font-weight: 600; margin: 6px 0 8px; line-height: 1.25; }
+.dsh-context-settings .cmi-number { display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px; font-size: 25px; font-weight: 500; margin: 6px 0 8px; line-height: 1.25; }
 .dsh-context-settings .cmi-number small { font-size: 10px; font-weight: 400; color: var(--dsw-alias-label-tertiary); }
 .dsh-context-settings .cmi-number strong { font-size: 15px; font-weight: 500; margin-left: auto; }
 .dsh-context-settings .cmi-meter { height: 6px; overflow: hidden; border-radius: 8px; margin: 0 0 8px; background: var(--dsw-alias-bg-module-platform); }
-.dsh-context-settings .cmi-meter > span { display: block; height: 100%; background: var(--dsw-alias-label-primary); border-radius: inherit; }
-.dsh-context-settings .cmi-inner .cmi-status { font-size: 15px; font-weight: 550; margin: 9px 0 7px; }
-.dsh-context-settings .cmi-small-number { font-size: 25px; font-weight: 550; margin: 5px 0 3px; line-height: 1.4; }
+.dsh-context-settings .cmi-meter > span { display: block; height: 100%; background: var(--dsw-alias-link); border-radius: inherit; }
+.dsh-context-settings .cmi-inner .cmi-status { font-size: 15px; font-weight: 500; margin: 9px 0 7px; }
+.dsh-context-settings .cmi-small-number { font-size: 25px; font-weight: 500; margin: 5px 0 3px; line-height: 1.4; }
 .dsh-context-settings .cmi-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .dsh-context-settings .cmi-composition { display: flex; gap: 2px; border-radius: 5px; height: 8px; overflow: hidden; margin: 10px 0 6px; }
 .dsh-context-settings .cmi-composition > button { padding: 0; border: 0; cursor: pointer; min-width: 2px; }
@@ -51,16 +51,16 @@
 .dsh-context-settings .cmi-facts { display: grid; grid-template-columns: minmax(85px, 1fr) minmax(0, 2fr); gap: 5px 12px; margin: 10px 0; font-size: 11px; }
 .dsh-context-settings .cmi-facts dt { color: var(--dsw-alias-label-secondary); }
 .dsh-context-settings .cmi-facts dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
-.dsh-context-settings .cmi-inner .cmi-subheading { border-top: 1px solid var(--dsw-alias-border-l1); padding-top: 10px; margin-top: 10px; }
+.dsh-context-settings .cmi-inner .cmi-subheading { border-top: .5px solid var(--dsw-alias-border-l1); padding-top: 10px; margin-top: 10px; }
 .dsh-context-settings .cmi-reference summary, .dsh-context-settings .cmi-request-table summary { cursor: pointer; font-size: 11px; color: var(--dsw-alias-label-secondary); }
 .dsh-context-settings .cmi-reference[open] summary { margin-bottom: 12px; }
 .dsh-context-settings .cmi-filter-toolbar { display: flex; gap: 8px; margin: 10px 0 8px; }
 .dsh-context-settings .cmi-filter-toolbar > input { flex: 1; min-width: 0; }
-.dsh-context-settings .cmi-filter-toolbar select { font: inherit; font-size: 12px; padding: 5px 9px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: var(--dsw-alias-bg-base); color: inherit; }
+.dsh-context-settings .cmi-filter-toolbar select { font: inherit; font-size: 12px; padding: 5px 9px; border: .5px solid var(--dsw-alias-border-l2); border-radius: 8px; background: var(--dsw-alias-bg-base); color: inherit; }
 .dsh-context-settings .cmi-filters { display: flex; flex-wrap: wrap; gap: 4px; }
 .dsh-context-settings .cmi-archive-toggle { display: flex; align-items: center; gap: 6px; font-size: 11px; margin: 9px 0 5px; color: var(--dsw-alias-label-secondary); }
-.dsh-context-settings .cmi-content-layout { display: grid; grid-template-columns: minmax(200px, .8fr) minmax(0, 1.2fr); border: 1px solid var(--dsw-alias-border-l2); border-radius: 10px; margin-top: 10px; overflow: hidden; }
-.dsh-context-settings .cmi-content-list { max-height: 370px; overflow: auto; border-right: 1px solid var(--dsw-alias-border-l2); padding: 7px; }
+.dsh-context-settings .cmi-content-layout { display: grid; grid-template-columns: minmax(200px, .8fr) minmax(0, 1.2fr); border: .5px solid var(--dsw-alias-border-l2); border-radius: 10px; margin-top: 10px; overflow: hidden; }
+.dsh-context-settings .cmi-content-list { max-height: 370px; overflow: auto; border-right: .5px solid var(--dsw-alias-border-l2); padding: 7px; }
 .dsh-context-settings .cmi-content-list > button { display: block; width: 100%; padding: 7px; text-align: left; background: transparent; border: 1px solid transparent; border-radius: 8px; color: inherit; cursor: pointer; }
 .dsh-context-settings .cmi-content-list > button[aria-pressed='true'] { border-color: var(--dsw-alias-border-l3); background: var(--dsw-alias-bg-module-platform); }
 .dsh-context-settings .cmi-content-list strong { display: flex; align-items: baseline; font-size: 12px; font-weight: 500; overflow-wrap: anywhere; }
@@ -73,11 +73,11 @@
 .dsh-context-settings .cmi-detail-facts { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 10px 0; font-size: 11px; color: var(--dsw-alias-label-secondary); }
 .dsh-context-settings .cmi-body { white-space: pre-wrap; overflow-wrap: anywhere; overflow: auto; max-height: 300px; padding: 10px; border-radius: 8px; background: var(--dsw-alias-bg-module-platform); font-size: 11px; line-height: 1.7; font-family: var(--dsw-font-family-code, monospace); user-select: text; }
 .dsh-context-settings .cmi-pagination { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 8px; font-size: 10px; color: var(--dsw-alias-label-secondary); }
-.dsh-context-settings .cmi-chart { position: relative; display: flex; gap: 5px; height: 110px; padding-top: 23px; margin: 10px 2px 25px; border-bottom: 1px solid var(--dsw-alias-border-l2); }
+.dsh-context-settings .cmi-chart { position: relative; display: flex; gap: 5px; height: 110px; padding-top: 23px; margin: 10px 2px 25px; border-bottom: .5px solid var(--dsw-alias-border-l2); }
 .dsh-context-settings .cmi-chart-max { position: absolute; top: 0; right: 0; font-size: 10px; color: var(--dsw-alias-label-tertiary); }
 .dsh-context-settings .cmi-chart > button { flex: 1; min-width: 0; padding: 0; border: 0; background: transparent; position: relative; display: flex; align-items: flex-end; justify-content: center; cursor: pointer; }
-.dsh-context-settings .cmi-chart > button > span { display: block; width: 70%; max-width: 30px; border-radius: 3px 3px 0 0; background: var(--dsw-alias-label-tertiary); min-height: 0; }
-.dsh-context-settings .cmi-chart > button.cmi-chart-selected > span { background: var(--dsw-alias-label-primary); }
+.dsh-context-settings .cmi-chart > button > span { display: block; width: 35%; max-width: 30px; border-radius: 3px 3px 0 0; background: var(--dsw-alias-label-tertiary); min-height: 0; }
+.dsh-context-settings .cmi-chart > button.cmi-chart-selected { background: var(--dsw-alias-interactive-bg-hover); border-radius: 4px 4px 0 0; }
 .dsh-context-settings .cmi-chart small { position: absolute; top: calc(100% + 7px); font-size: 9px; color: var(--dsw-alias-label-tertiary); }
 .dsh-context-settings .cmi-request { background: var(--dsw-alias-bg-module-platform); padding: 10px; border-radius: 9px; }
 .dsh-context-settings .cmi-request strong { font-size: 12px; font-weight: 500; }
@@ -85,14 +85,14 @@
 .dsh-context-settings .cmi-request-table { margin-top: 10px; }
 .dsh-context-settings .cmi-request-table > div { overflow: auto; margin-top: 12px; }
 .dsh-context-settings .cmi-request-table table { width: 100%; border-collapse: collapse; white-space: nowrap; font-size: 11px; }
-.dsh-context-settings .cmi-request-table td, .dsh-context-settings .cmi-request-table th { border-bottom: 1px solid var(--dsw-alias-border-l1); padding: 9px; text-align: right; font-weight: 400; }
+.dsh-context-settings .cmi-request-table td, .dsh-context-settings .cmi-request-table th { border-bottom: .5px solid var(--dsw-alias-border-l1); padding: 9px; text-align: right; font-weight: 400; }
 .dsh-context-settings .cmi-request-table td:first-child, .dsh-context-settings .cmi-request-table th:first-child { text-align: left; }
 .dsh-context-settings .cmi-request-table button { background: transparent; border: 0; color: var(--dsw-alias-link); cursor: pointer; font: inherit; }
 .dsh-context-settings .cmi-events { list-style: none; padding: 0; margin: 5px 0 0; }
-.dsh-context-settings .cmi-events > li { border-top: 1px solid var(--dsw-alias-border-l2); padding: 7px 0; font-size: 12px; overflow-wrap: anywhere; }
+.dsh-context-settings .cmi-events > li { border-top: .5px solid var(--dsw-alias-border-l2); padding: 7px 0; font-size: 12px; overflow-wrap: anywhere; }
 .dsh-context-settings .cmi-events strong { font-weight: 500; }
 .dsh-context-settings .cmi-empty { padding: 18px 12px; text-align: center; color: var(--dsw-alias-label-secondary); font-size: 12px; }
-.dsh-context-settings .cmi-notice { display: flex; justify-content: space-between; align-items: center; gap: 14px; border: 1px solid var(--dsw-alias-border-l3); border-radius: 9px; padding: 12px 16px; margin-bottom: 14px; font-size: 12px; }
+.dsh-context-settings .cmi-notice { display: flex; justify-content: space-between; align-items: center; gap: 14px; border: .5px solid var(--dsw-alias-border-l3); border-radius: 9px; padding: 12px 16px; margin-bottom: 14px; font-size: 12px; }
 .dsh-context-settings .cmi-notice p { font-size: 11px; color: var(--dsw-alias-label-secondary); margin-top: 4px; }
 @container (max-width: 520px) {
   .dsh-context-settings .cmi-metrics { grid-template-columns: 1fr 1fr; }
@@ -104,7 +104,7 @@
   .dsh-context-settings .cmi-inner { padding: 12px 12px 20px; }
   .dsh-context-settings .cmi-card { padding: 12px; }
   .dsh-context-settings .cmi-content-layout { grid-template-columns: 1fr; }
-  .dsh-context-settings .cmi-content-list { max-height: 260px; border-right: 0; border-bottom: 1px solid var(--dsw-alias-border-l2); }
+  .dsh-context-settings .cmi-content-list { max-height: 260px; border-right: 0; border-bottom: .5px solid var(--dsw-alias-border-l2); }
   .dsh-context-settings .cmi-content-detail { padding: 12px; }
   .dsh-context-settings .cmi-filter-toolbar { flex-wrap: wrap; }
   .dsh-context-settings .cmi-filter-toolbar > input { flex-basis: 100%; }
@@ -121,3 +121,34 @@
 .dsh-context-settings .cmi-summary .cmi-card-footer { margin-top: auto; }
 .dsh-context-settings .cmi-expand-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; margin: 0 0 8px; }
 .dsh-context-settings .cmi-reference { margin-top: 10px; }
+.dsh-context-settings.cmi-view { --cmi-uncached: var(--dsw-alias-link); --cmi-cache: color-mix(in srgb, var(--dsw-alias-state-success-primary) 75%, var(--dsw-alias-label-primary)); --cmi-write: var(--dsw-alias-state-warn-primary); --cmi-output: var(--dsw-alias-label-deep-diving); }
+.dsh-context-settings .cmi-composition { height: 12px; }
+.dsh-context-settings .cmi-usage-stack { display: flex; height: 12px; border-radius: 4px; overflow: hidden; gap: 2px; margin-top: 14px; }
+.dsh-context-settings .cmi-usage-stack span { min-width: 1px; }
+.dsh-context-settings .cmi-usage-legend { display: grid; gap: 6px; margin: 10px 0 12px; font-size: 12px; }
+.dsh-context-settings .cmi-usage-legend > div { display: flex; justify-content: space-between; gap: 10px; }
+.dsh-context-settings .cmi-usage-legend :is(dt, dd) { margin: 0; }
+.dsh-context-settings .cmi-usage-legend small { display: inline-block; min-width: 52px; margin-left: 8px; text-align: right; color: var(--dsw-alias-label-secondary); }
+.dsh-context-settings .cmi-usage-legend i, .dsh-context-settings .cmi-chart-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 7px; }
+.dsh-context-settings [data-usage='uncached'] { background: var(--cmi-uncached); }
+.dsh-context-settings [data-usage='cache'] { background: var(--cmi-cache); }
+.dsh-context-settings [data-usage='write'] { background: var(--cmi-write); }
+.dsh-context-settings [data-usage='output'] { background: var(--cmi-output); }
+.dsh-context-settings .cmi-chart > button > span[data-usage='uncached'] { background: var(--cmi-uncached); }
+.dsh-context-settings .cmi-chart > button > span[data-usage='output'] { background: var(--cmi-output); }
+.dsh-context-settings .cmi-chart-legend { display: flex; gap: 12px; color: var(--dsw-alias-label-secondary); font-size: 11px; margin: 0 0 10px; }
+.dsh-context-settings .cmi-pressure-plot { position: relative; height: 140px; margin: 12px 0 0; }
+.dsh-context-settings .cmi-pressure-plot > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.dsh-context-settings .cmi-pressure-grid { fill: none; stroke: var(--dsw-alias-border-l1); stroke-width: .5; vector-effect: non-scaling-stroke; }
+.dsh-context-settings .cmi-pressure-line { fill: none; stroke: var(--dsw-alias-link); stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.dsh-context-settings .cmi-pressure-scale, .dsh-context-settings .cmi-pressure-zero { position: absolute; top: 0; right: 0; font-size: 10px; color: var(--dsw-alias-label-secondary); }
+.dsh-context-settings .cmi-pressure-zero { top: auto; bottom: 0; }
+.dsh-context-settings .cmi-pressure-point { position: absolute; transform: translate(-50%, -50%); padding: 0; width: 16px; height: 20px; border: 0; background: transparent; color: var(--dsw-alias-link); cursor: pointer; border-radius: 6px; }
+.dsh-context-settings .cmi-pressure-point > span { display: block; margin: auto; width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+.dsh-context-settings .cmi-pressure-point[data-kind='replace'] { color: var(--cmi-cache); }
+.dsh-context-settings .cmi-pressure-point[data-kind='replace'] > span { width: 8px; height: 8px; border: 1.5px solid var(--dsw-alias-bg-base); }
+.dsh-context-settings .cmi-pressure-point[data-unknown='true'] > span { border: 1px dashed var(--dsw-alias-label-secondary); background: transparent; width: 7px; height: 7px; }
+.dsh-context-settings .cmi-pressure-point[aria-pressed='true'] { outline: 1px solid currentColor; outline-offset: 1px; }
+.dsh-context-settings .cmi-pressure-range { margin: 0 6px; }
+.dsh-context-settings .cmi-pressure-caption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-top: 8px; font-size: 12px; color: var(--dsw-alias-label-secondary); }
+.dsh-context-settings .cmi-pressure-caption strong { font-size: 15px; font-weight: 500; color: var(--dsw-alias-label-primary); }

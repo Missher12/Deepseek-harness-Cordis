@@ -224,6 +224,8 @@ type SessionTreeProps = Pick<
   | 'sidebar.session.row.leading'
   | 'sidebar.session.row.hover'
 > & {
+  /** Presentation-only placement after ordinary groups in the same scrolling list. */
+  trailingWorkspaceIds: readonly WorkspaceId[]
   shortcuts: readonly import('@deepseek-ai/dsh-client-shortcuts/client').ShortcutCatalogEntry[]
   /** Always-mounted Session list snapshot. */
   list: SessionListState
@@ -287,7 +289,7 @@ function SessionTree({
   insertWorkspaceBefore,
   nestWorkspaces, groupExpansion, setGroupExpanded,
   setSessionOrder, home, t,
-  revealSessionId, onSessionRevealed, shortcuts,
+  revealSessionId, onSessionRevealed, shortcuts, trailingWorkspaceIds,
 }: SessionTreeProps) {
   const panelActive = usePanelInfo(info => info.activePanelId !== null)
   const statuses = useSessionStatus(s => s)
@@ -314,13 +316,14 @@ function SessionTree({
   }, [current, currentGroup, setGroupExpanded, groupExpansion])
   const parents = useMemo(() => {
     if (!nestWorkspaces) return new Map<string, WorkspaceId | undefined>()
-    const keysByPath = new Map(workspaces.map(workspace => [workspace.path, workspace.workspaceId]))
+    const projectWorkspaces = workspaces.filter(workspace => !trailingWorkspaceIds.includes(workspace.workspaceId))
+    const keysByPath = new Map(projectWorkspaces.map(workspace => [workspace.path, workspace.workspaceId]))
     const paths = [...keysByPath.keys()]
-    return new Map<string, WorkspaceId | undefined>(workspaces.map((workspace) => {
+    return new Map<string, WorkspaceId | undefined>(projectWorkspaces.map((workspace) => {
       const path = owningParentFolder(workspace.path, paths)
       return [workspace.workspaceId, path === undefined ? undefined : keysByPath.get(path)]
     }))
-  }, [nestWorkspaces, workspaces])
+  }, [nestWorkspaces, workspaces, trailingWorkspaceIds])
   const currentAncestors = useMemo(() => {
     const keys = new Set<string>()
     for (let key = currentGroup === undefined ? undefined : parents.get(currentGroup); key !== undefined; key = parents.get(key)) {
@@ -337,8 +340,9 @@ function SessionTree({
     () => deriveGroups(list, workspaces, rowState, statuses, {
       expandedGroups,
       ungroupedOrder: ungroupedSessionIds,
-    }),
-    [list, workspaces, rowState, statuses, expandedGroups, ungroupedSessionIds],
+    }).sort((a, b) => Number(a.workspaceId !== undefined && trailingWorkspaceIds.includes(a.workspaceId))
+      - Number(b.workspaceId !== undefined && trailingWorkspaceIds.includes(b.workspaceId))),
+    [list, workspaces, rowState, statuses, expandedGroups, ungroupedSessionIds, trailingWorkspaceIds],
   )
   useEffect(() => {
     for (let key = revealGroup; key !== undefined; key = parents.get(key)) {
@@ -378,7 +382,9 @@ function SessionTree({
     workspaceDropCommitted.current = true
     setWorkspaceDrag(null)
     const owner = parents.get(activeDrag.workspaceId)
-    const siblings = workspaces.filter(workspace => parents.get(workspace.workspaceId) === owner)
+    const siblings = workspaces.filter(workspace =>
+      !trailingWorkspaceIds.includes(workspace.workspaceId) && parents.get(workspace.workspaceId) === owner,
+    )
     const rowIndex = siblings.findIndex(workspace => workspace.workspaceId === over.id)
     if (rowIndex === -1) return
     const anchor = over.half === 'before' ? over.id : siblings[rowIndex + 1]?.workspaceId
@@ -415,7 +421,8 @@ function SessionTree({
   const renderGroup = (group: GroupNode, depth: number): ReactNode => {
     const workspaceId = group.workspaceId
     const children = childrenByParent.get(group.key) ?? []
-    const compatibleDrag = workspaceDrag !== null && parents.get(workspaceDrag.workspaceId) === parents.get(group.key)
+    const trailing = workspaceId !== undefined && trailingWorkspaceIds.includes(workspaceId)
+    const compatibleDrag = !trailing && workspaceDrag !== null && parents.get(workspaceDrag.workspaceId) === parents.get(group.key)
     const collapsed = collapsedSessionRows(group.sessions)
     const visible = collapsedSessionRows(group.sessions, sessionLimits[group.key])
     const sessionsExpanded = visible.hiddenCount === 0
@@ -427,7 +434,7 @@ function SessionTree({
     const workspaceMarker = workspaceId !== undefined && workspaceDrag?.over?.id === workspaceId
       ? workspaceDrag.over.half
       : null
-    const workspaceDragProps = workspaceId === undefined ? undefined : {
+    const workspaceDragProps = workspaceId === undefined || trailing ? undefined : {
       start: () => {
         workspaceDropCommitted.current = false
         setWorkspaceDrag({ workspaceId, over: null })
@@ -857,6 +864,7 @@ export function WorkspaceBrowser({
   useHostInfo,
   useShortcuts,
   useWorkspaceShortcuts,
+  useTrailingWorkspaceIds,
   requestSearch,
   requestAddWorkspace,
   closeAddWorkspace,
@@ -866,6 +874,7 @@ export function WorkspaceBrowser({
   t,
 }: WorkspaceBrowserProps) {
   const home = useHostInfo(info => info.home)
+  const trailingWorkspaceIds = useTrailingWorkspaceIds(ids => ids)
   const shortcuts = useShortcuts(rows => rows)
   const searchShortcut = shortcuts.find(row => row.id === 'session.search')
   const addShortcut = shortcuts.find(row => row.id === 'workspace.add')
@@ -1400,6 +1409,7 @@ export function WorkspaceBrowser({
                 onSessionRenameRequest={requestSessionRename}
                 renderSlot={renderSlot}
                 workspaces={orderedWorkspaces}
+                trailingWorkspaceIds={trailingWorkspaceIds}
                 ungroupedSessionIds={orderedUngroupedSessionIds}
                 workspaceReady={workspaceReady}
                 nestWorkspaces={groupBy === 'workspace-tree'}

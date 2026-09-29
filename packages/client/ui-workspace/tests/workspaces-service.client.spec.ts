@@ -302,6 +302,25 @@ function bench(options: BenchOptions = {}) {
 }
 
 describe('UiWorkspaceService', () => {
+  it('deduplicates trailing registrations and releases placement without mutating Workspaces', async () => {
+    const b = bench()
+    const before = b.workspaces.list.getSnapshot()
+    const stopFirst = b.uiWorkspace.registerTrailingWorkspace(wid('scratch'))
+    const first = b.uiWorkspace.trailingWorkspaceIds.getSnapshot()
+    const stopSecond = b.uiWorkspace.registerTrailingWorkspace(wid('scratch'))
+    expect(b.uiWorkspace.trailingWorkspaceIds.getSnapshot()).toBe(first)
+    expect(first).toEqual([wid('scratch')])
+    stopFirst()
+    expect(b.uiWorkspace.trailingWorkspaceIds.getSnapshot()).toBe(first)
+    stopSecond()
+    expect(b.uiWorkspace.trailingWorkspaceIds.getSnapshot()).toEqual([])
+    b.uiWorkspace.registerTrailingWorkspace(wid('scratch'))
+    await b.ctx.fiber.dispose()
+    expect(b.uiWorkspace.trailingWorkspaceIds.getSnapshot()).toEqual([])
+    expect(b.workspaces.list.getSnapshot()).toBe(before)
+    expect(b.sessions.create).not.toHaveBeenCalled()
+  })
+
   it('prepares and selects the default Workspace after both startup baselines', async () => {
     const b = bench({ configureWorkspaces: (workspaces) => {
       workspaces.initializeDefault.mockImplementation(async () => {

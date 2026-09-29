@@ -40,25 +40,37 @@
           - text: 模型目录 已自定义模型目录
           - button "恢复默认模型"
           - button "获取可用模型"
+          - text: 模型 ID
           - textbox "模型 ID 1":
             - /placeholder: 模型 ID
             - text: acme-large
+          - text: 显示名称
           - textbox "显示名称 1":
-            - /placeholder: 显示名称
+            - /placeholder: 留空时使用模型 ID
           - button "模型选项 1" [expanded]
           - button "删除模型 1"
+          - group "输入类型 1":
+            - text: 输入类型
+            - paragraph: 当前模型声明
+            - checkbox "文本" [checked]
+            - text: 文本
+            - checkbox "图片" [checked]
+            - text: 图片
+            - paragraph: 端点支持识图时再勾选图片。此声明决定图片附件的传递方式，不会让纯文本模型获得识图能力。
           - text: 上下文窗口
           - textbox "上下文窗口 1":
             - /placeholder: 256K
           - text: 最大输出 token 数
           - textbox "最大输出 token 数 1":
             - /placeholder: 32K
-          - group "输入类型 1":
-            - text: 输入类型
-            - checkbox "文本" [checked]
-            - text: 文本
-            - checkbox "图片" [checked]
-            - text: 图片
+          - group "思考能力":
+            - text: 思考能力 能力声明
+            - combobox "能力声明 1":
+              - option "继承识别结果" [selected]
+              - option "不声明可选思考能力"
+              - option "自定义支持档位"
+            - paragraph: 仅声明的档位可用；降低最高档会移除更高条目，不改变默认档和会话选择。能力声明不等于端点实测。
+            - paragraph: 该模型没有可继承的思考能力声明。
           - button "添加模型"
       - button "取消"
       - button "保存"

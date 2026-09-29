@@ -1,20 +1,20 @@
 # DeepSeek Harness 使用统计
 
-独立、可卸载的 Harness Bundle。统计功能最初从 Desktop 0.5.10 拆分，当前 0.2.0 已适配 Harness 0.1.7-rc.2。安装并启用后，从「更多 → 设置 → 使用统计」打开。
+独立、可卸载的 Harness Bundle。统计功能最初从 Desktop 0.5.10 拆分，当前本地候选 **0.2.1-local.3** 适配 **DSH 0.2.0-rc.1**。安装并启用后，从「更多 → 设置 → 使用统计」打开。
 
 - 累计 Token、峰值每日 Token、最长会话有效耗时、当前/最长连续聊天天数。
-- 最近 53 周的每日、每周和累计 Token 活动图，支持悬停查看日期与用量。
+- 最近 53 周的每日、每周和累计 Token 颗粒活动图，支持悬停查看日期与用量。保留原布局和交互，仅调整颜色：无用量颗粒透明，有用量按单色从淡到深。
 - 缓存命中率、常用模型、常用推理强度、技能数、工具调用数和聊天天数。
 - Skill 与工具排行，以及不可读取会话、缺失用量记录的明确提示。
 - 中文/英文、宿主浅色/深色主题、加载/失败重试及上次结果缓存。
 
 ## 兼容与安装
 
-本版本适配 **Harness / Desktop 0.1.7-rc.2**。实际验证记录见 `VALIDATION.md`。旧插件 0.1.0 仅适配 Desktop 0.5.10 / Harness 0.1.5-rc.2，原安装包仍可使用；当前目录已升级为 0.2.0。版本检查保持启用，未声明兼容其他宿主版本。
+本候选精确适配 **DSH 0.2.0-rc.1**。实际验证记录见 [VALIDATION.md](VALIDATION.md)。插件 0.2.0 对应 DSH 0.1.7-rc.2；插件 0.1.0 对应 Desktop 0.5.10 / DSH 0.1.5-rc.2。版本检查保持启用，不为旧包添加豁免，也不声明兼容尚未验证的宿主版本。
 
-参见 [INSTALL.md](INSTALL.md)。预编译包包含 Host、Client、Typert 通信描述和 Bundle 配置，不需要安装时构建。没有依赖旧 Desktop Enhancement 增强包。
+参见 [INSTALL.md](INSTALL.md)。本轮交付隔离构建的 `missher-dsh-usage-statistics-0.2.1-local.3.tgz`，包含 Host、Client、Typert 通信描述和 Bundle 配置，不需要安装时构建。维护目录的 `lib` 保留原字节，不能将此源码目录直接作为本轮候选安装。插件没有新增兼容包或其他插件依赖。
 
-插件通过自己的 `usageStatistics` Remote 服务读取宿主 `sessionPersistence`，在自己的 `missher_usage_statistics` 缓存中保存可重建的聚合数据。0.1.7-rc.2 没有内置统计页面，插件新增一个「使用统计」入口；移除插件后撤销页面和服务。插件不直接写入会话日志、模型设置或凭据。
+插件通过自己的 `usageStatistics` Remote 服务读取宿主 `sessionPersistence`，在自己的 `missher_usage_statistics` 缓存中保存可重建的聚合数据。插件新增自己的「使用统计」入口；移除插件后撤销页面和服务。插件不直接写入会话日志、模型设置或凭据。本次适配保留原统计实现、缓存域版本 1、行格式版本 3 和浏览器快照缓存键，不迁移或清空已有统计数据。
 
 ## 数据口径
 
@@ -35,11 +35,13 @@ Token 来源为宿主持久化服务返回的供应商用量，非缓存输入�
 | 页面内容 | 总量、活动、常用模型/推理强度和工具/技能排行 | 当前窗口占用、有效内容截面、逐次回复和本会话累计用量 |
 | 继承记录 | 排除继承前缀，避免跨会话重复归账 | 沿用选定会话的宿主投影口径，不作为跨会话去重结果 |
 
-两者的「累计」作用域不同，不要求数字相等，也不建立相互运行依赖。当前 DSH 0.1.7-rc.2 的宿主累计投影会计入已报告用量的重试；context-manager 的逐次回复列表只列已追加的回复，与累计投影不是同一个列表。独立摘要调用未形成这些主请求用量事件时，两者均不会凭估算补入。模型能力设置、详情默认展开分别由模型设置与 context-manager 负责；context-manager 已授权的官方峰谷提示保持原归属。
+两者的「累计」作用域不同，不要求数字相等，也不建立相互运行依赖。统计会计入已报告用量的重试；逐次回复列表与累计用量不是同一个列表。独立摘要调用未形成这些主请求用量事件时，不会凭估算补入。模型能力设置、详情默认展开分别由模型设置与 context-manager 负责；使用统计不接管模型服务的峰谷提示。
 
 ## 开发
 
-开发依赖固定在 `package.json`，本目录的 `pnpm-workspace.yaml` 引用统一仓库内的 SDK。先构建宿主，再按[开发指南](https://github.com/Missher12/Deepseek-harness-Cordis/blob/main/docs/cookbook/build-cordis-plugins.zh.md)完成本插件依赖安装、类型检查、测试、构建与打包。真实隔离 profile 验证脚本是 `scripts/verify-profile.mjs`，它要求 `DSH_SOURCE_DIR` 指向已构建的对应宿主，并单独生成合成数据，不以日常 profile 为测试目标。
+开发依赖固定在 `package.json`，本目录的 `pnpm-workspace.yaml` 引用统一仓库内的 SDK。先构建匹配的 DSH 0.2.0-rc.1 宿主，再按[开发指南](https://github.com/Missher12/Deepseek-harness-Cordis/blob/main/docs/cookbook/build-cordis-plugins.zh.md)完成本插件依赖安装、类型检查、测试、构建与打包。本轮全部构建和测试在隔离副本中运行；也可用 `node scripts/link-dev.mjs /path/to/built-sdk` 只读链接 SDK 中精确匹配的依赖。隔离副本须保留 `vitest.config.ts` 对 `../../vitest.shared.ts` 的引用关系，指向相同 SDK 的共享配置。
+
+真实隔离 profile 验证脚本是 `scripts/verify-profile.mjs`，要求 `DSH_SOURCE_DIR` 指向已构建的对应宿主，并检查运行时和 SDK 固定的 pnpm 版本（本次为 11.7.0）。脚本通过实际 CLI 安装候选、启动 Host、读取统计、重启、卸载及重装，比较会话和缓存原始字节；单独生成合成数据，不以日常 profile 为测试目标。不运行历史的 `native-snapshot.mjs` 来代替当前宿主的页面验收。
 
 发布包不包含开发依赖或本机绝对路径。Cordis、Schemastery 和 DSH 服务由宿主提供，作为精确版本的 peer 声明，不下载另一份宿主。`provenance.json` 记录最初拆分来源和原文件校验值。MIT 许可证及上游授权保存在 `LICENSE`、`licenses/`；Client 内包含的 Zod 4.4.3 许可证见 `licenses/zod-MIT.txt`。
 

@@ -6,6 +6,13 @@ export const NS = 'trajectory'
 /** Simplified Chinese dictionary (the key-set source of truth). */
 export const zh = {
   'view.trajectory': '轨迹',
+  'charts.title': '用量图表',
+  'charts.requests': '逐次输入与输出',
+  'charts.cumulative': '已报告累计用量',
+  'charts.request': '请求 {number} · 输入 {input} · 输出 {output}',
+  'charts.cache': '其中缓存读取 {value}',
+  'charts.scope': '展示最近 24 次请求；累计覆盖已加载记录及压缩请求。缺失用量不补零，推理不重复计入输出。',
+  'charts.partialScope': '还有历史未加载。图表展示最近 24 次请求，累计仅含已加载记录中报告的用量；缺失值不补零。',
   'toolbar.aria': '轨迹工具栏',
   'toolbar.duration': '时长',
   'toolbar.useActualDuration': '使用实际时长',
@@ -216,6 +223,13 @@ export type TrajectoryTranslate =
 /** English dictionary, checked complete against the Chinese source of truth. */
 export const en: Record<TrajectoryKey, string> = {
   'view.trajectory': 'Trajectory',
+  'charts.title': 'Usage charts',
+  'charts.requests': 'Input and output by request',
+  'charts.cumulative': 'Cumulative reported usage',
+  'charts.request': 'Request {number} · Input {input} · Output {output}',
+  'charts.cache': 'Includes {value} cache reads',
+  'charts.scope': 'Last 24 requests; totals cover loaded records including compaction. Missing usage is not zero; reasoning is included in output only once.',
+  'charts.partialScope': 'Older history is not loaded. Charts show the last 24 requests; totals include only usage reported by loaded records. Missing values are not zero.',
   'toolbar.aria': 'Trajectory toolbar',
   'toolbar.duration': 'Duration',
   'toolbar.useActualDuration': 'Use actual duration',

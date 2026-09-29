@@ -3,9 +3,23 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ModelInputTypes } from '../src/client/ModelInputTypes.tsx'
+import { ModelRow } from '../src/client/ModelRow.tsx'
 import { en } from '../src/client/locales.ts'
 
 afterEach(cleanup)
+
+it('edits image capability before opening model options and preserves other fields', () => {
+  const onChange = vi.fn()
+  const model = { id: 'vision', input: ['text'], reasoningEfforts: { high: 'high' } }
+  const capacity = { value: '', placeholder: '', onChange: vi.fn() }
+  render(<ModelRow model={model} position={1} inputField="input" expanded={false}
+    disabled={false} t={key => en[key]} contextWindow={capacity} maxTokens={capacity}
+    onChange={onChange} onFieldChange={vi.fn()} onToggle={vi.fn()} onRemove={vi.fn()} />)
+  expect(screen.getByText(en.modelInputDeclared)).toBeTruthy()
+  expect(screen.queryByRole('textbox', { name: `${en.contextWindow} 1` })).toBeNull()
+  fireEvent.click(screen.getByRole('checkbox', { name: en.modelInputImage }))
+  expect(onChange).toHaveBeenCalledWith({ ...model, input: ['text', 'image'] })
+})
 
 describe.each(['inputModalities', 'input'] as const)('%s input types', (field) => {
   it('edits the inherited selection without losing its image capability', () => {

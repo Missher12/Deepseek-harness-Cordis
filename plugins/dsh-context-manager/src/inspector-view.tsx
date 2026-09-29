@@ -4,7 +4,9 @@ import type { ConfigForm } from '@deepseek-ai/dsh-client-ui-settings/client'
 import { budget, type Policy } from './policy.ts'
 import { categories, defaultQuery, type Category, type ContentPage, type ContentRow, type Inspection, type InspectorApi, type InspectQuery } from './inspector-types.ts'
 import css from './inspector.css'
+import { PressureTrend, UsageComposition } from './inspector-charts.tsx'
 import { useReadonlyView } from './readonly-view.ts'
+import type { IdleStatus } from './idle-types.ts'
 
 export interface ContextViewInjected {
   target: string
@@ -18,6 +20,33 @@ const label = (category: Category) => categories.find(item => item.id === catego
 const errors = (error: unknown) => error instanceof Error ? error.message : '暂时无法读取，请重试。'
 
 function Empty({ children }: { children: React.ReactNode }) { return <div className="cmi-empty">{children}</div> }
+
+/** Small live status reads; transcript inspection and body pagination are not polled. */
+function IdleStatusLine({ target, api, revision, settingsRevision, retry }: { target: string; api: InspectorApi; revision: unknown; settingsRevision: number | undefined; retry: number }) {
+  const [state, setState] = useState<{ target: string; value: IdleStatus } | null>(null)
+  const [error, setError] = useState(false)
+  useEffect(() => {
+    const abort = new AbortController()
+    let timer: ReturnType<typeof setTimeout>
+    async function read() {
+      try {
+        const value = await api.idleStatus({ sessionId: target }, abort.signal)
+        if (abort.signal.aborted) return
+        setState({ target, value }); setError(false)
+        // Task completion may not change the pressure projection. Keep this tiny
+        // status read live while the panel is open, including waiting/skipped.
+        if (value.status !== 'off') timer = setTimeout(() => { void read() }, value.status === 'compacting' ? 1000 : 5000)
+      } catch { if (!abort.signal.aborted) setError(true) }
+    }
+    void read()
+    return () => { abort.abort(); clearTimeout(timer) }
+  }, [target, api, revision, settingsRevision, retry])
+  const value = state?.target === target ? state.value : null
+  const countdown = value?.status === 'scheduled' && value.dueAt !== null ? `约 ${Math.max(1, Math.ceil((value.dueAt - Date.now()) / 60000))} 分钟后检查` : value?.message
+  return <div className="cmi-data-status" role="status" aria-label="闲置自动压缩状态"><span>闲置整理：{error ? '状态读取失败，请刷新' : countdown ?? '正在读取…'}</span>
+    {value?.beforeTokens !== undefined && value.afterTokens !== undefined && <span>整个上下文 ≈ {number(value.beforeTokens)} → {number(value.afterTokens)} Token</span>}
+  </div>
+}
 function PartList({ data, onCategory }: { data: Inspection; onCategory: (category: Category) => void }) {
   const [expanded, setExpanded] = useState(false)
   const total = data.parts.reduce((sum, part) => sum + part.tokens, 0)
@@ -44,12 +73,12 @@ function Overview({ data, policy, stale, onCategory }: { data: Inspection; polic
     </article><article className="cmi-card"><span className="cmi-note">下一次请求</span><h3 className="cmi-status">{status}</h3><p className="cmi-note" title="执行器会在完整请求组装后再次检查。">{gate ? `检查线 ${number(gate.admission)} Token` : data.historical ? '历史截面不推测窗口占用' : '等待窗口和输出预留参数'}</p></article>
       <article className="cmi-card"><span className="cmi-note">最近请求输入</span><div className="cmi-small-number">{number(pressure?.input)}<small>Token</small></div><p className="cmi-note">模型回报 · 含缓存输入</p></article></div>
     <div className="cmi-meta"><span title={data.model ? `${data.model.provider} / ${data.model.model}` : '尚无请求'}>{data.model ? `${data.model.provider} / ${data.model.model}` : '尚无模型记录'}</span><span>有效内容 {number(data.activeCount)} 项</span><span>触发 {policy ? `${policy.triggerPercent}%` : '—'} → 目标 {policy ? `${policy.targetPercent}%` : '—'}</span></div>
-    <div className="cmi-columns cmi-summary"><PartList data={data} onCategory={onCategory}/><Compactions data={data}/></div>
+    <PressureTrend key={data.sessionId} data={data}/><div className="cmi-columns cmi-summary"><PartList data={data} onCategory={onCategory}/><Compactions data={data}/></div>
   </>
 }
 
 function SessionFacts({ data }: { data: Inspection }) {
-  return <article className="cmi-card"><h3>模型与累计用量</h3><dl className="cmi-facts"><dt>推理级别</dt><dd>{data.model?.effort ?? '未记录'}</dd><dt>输出预留</dt><dd>{number(data.model?.maxTokens)}</dd><dt>已替换内容</dt><dd>{number(data.archivedCount)} 项</dd><dt>累计输入</dt><dd>{number(data.usage?.input)}</dd><dt>累计输出</dt><dd>{number(data.usage?.output)}</dd><dt>缓存读取</dt><dd>{number(data.usage?.cacheRead)}</dd><dt>缓存读取占输入</dt><dd>{data.usage?.input ? `${(data.usage.cacheRead / data.usage.input * 100).toFixed(1)}%` : '—'}</dd></dl>
+  return <article className="cmi-card"><h3>模型与累计用量</h3><UsageComposition data={data}/><dl className="cmi-facts"><dt>推理级别</dt><dd>{data.model?.effort ?? '未记录'}</dd><dt>输出预留</dt><dd>{number(data.model?.maxTokens)}</dd><dt>已替换内容</dt><dd>{number(data.archivedCount)} 项</dd><dt>累计输入</dt><dd>{number(data.usage?.input)}</dd><dt>累计输出</dt><dd>{number(data.usage?.output)}</dd><dt>缓存读取</dt><dd>{number(data.usage?.cacheRead)}</dd><dt>缓存读取占输入</dt><dd>{data.usage?.input ? `${(data.usage.cacheRead / data.usage.input * 100).toFixed(1)}%` : '—'}</dd></dl>
     <p className="cmi-note">组成按有效内容估算，与模型回报的窗口占用分别计量。累计消耗不代表当前窗口；独立摘要调用不在宿主主请求累计范围内。</p>
     {data.official && <details className="cmi-reference"><summary>宿主原始组成口径</summary><p className="cmi-note">系统 {number(data.official.system)} · 工具定义 {number(data.official.tools)} · 消息与工具结果 {number(data.official.messages)} Token</p><p className="cmi-note">先前系统片段归入注入内容。图片保留引用，实际图像用量由模型路由决定。</p></details>}
   </article>
@@ -92,10 +121,12 @@ function Trend({ data, onHistory }: { data: Inspection; onHistory: (seq: number)
   const [selected, setSelected] = useState<number | null>(null)
   const shown = data.requests.slice(-40)
   const point = shown.find(request => request.seq === selected) ?? shown.at(-1)
-  const maximum = Math.max(1, ...shown.map(request => request.input ?? 0))
-  return <article className="cmi-card"><div className="cmi-section-title"><h3>上下文如何变化</h3><Tag>{number(data.requestCount)} 次回复记录</Tag></div><p className="cmi-note">最近 {shown.length} 次回复回报的输入用量，包含缓存；未知用量留空。摘要调用与失败重试不在此图中。</p>
-    {!point ? <Empty>模型返回回复后，这里会显示记录。</Empty> : <><div className="cmi-chart" role="group" aria-label="逐次回复的输入 Token"><span className="cmi-chart-max">{number(maximum)}</span>{shown.map((request, i) => <button key={request.seq} className={point.seq === request.seq ? 'cmi-chart-selected' : ''} onClick={() => setSelected(request.seq)} aria-pressed={point.seq === request.seq} aria-label={`记录 ${request.seq}，输入 ${number(request.input)} Token`} title={`第 ${request.turn} 轮 / 步骤 ${request.step} · ${number(request.input)} Token`}><span style={{ height: request.input === null ? 0 : `${Math.max(1, request.input / maximum * 100)}%` }}/><small>{request.input === null ? '?' : i === 0 || i === shown.length - 1 || i % 5 === 0 ? i + Math.max(0, data.requestCount - shown.length) + 1 : ''}</small></button>)}</div>
-      <div className="cmi-request"><div><strong>第 {point.turn} 轮 · 步骤 {point.step}</strong><p className="cmi-note">{point.provider} / {point.model} · {time(point.time)}</p></div><dl className="cmi-facts"><dt>输入</dt><dd>{number(point.input)}</dd><dt>输出</dt><dd>{number(point.output)}</dd><dt>缓存读取</dt><dd>{number(point.cacheRead)}</dd></dl><Button size="sm" variant="outline" onClick={() => onHistory(point.seq)}>查看这次回复后的上下文</Button></div>
+  const maximum = Math.max(1, ...shown.flatMap(request => [request.input ?? 0, request.output ?? 0]))
+  const previous = point ? data.requests[data.requests.findIndex(item => item.seq === point.seq) - 1] : undefined
+  const delta = point?.input != null && previous?.input != null ? point.input - previous.input : null
+  return <article className="cmi-card"><div className="cmi-section-title"><h3>上下文如何变化</h3><Tag>{number(data.requestCount)} 次回复记录</Tag></div><p className="cmi-note">最近 {shown.length} 次回复回报的输入与输出；输入包含缓存，未知用量留空。摘要调用与失败重试不在此图中。</p>
+    {!point ? <Empty>模型返回回复后，这里会显示记录。</Empty> : <><div className="cmi-chart" role="group" aria-label="逐次回复的输入与输出 Token"><span className="cmi-chart-max">{number(maximum)}</span>{shown.map((request, i) => <button key={request.seq} className={point.seq === request.seq ? 'cmi-chart-selected' : ''} onClick={() => setSelected(request.seq)} aria-pressed={point.seq === request.seq} aria-label={`记录 ${request.seq}，输入 ${number(request.input)}，输出 ${number(request.output)} Token`} title={`第 ${request.turn} 轮 / 步骤 ${request.step} · ${number(request.input)} Token`}><span data-usage="uncached" style={{ height: request.input === null ? 0 : `${request.input / maximum * 100}%` }}/><span data-usage="output" style={{ height: request.output === null ? 0 : `${request.output / maximum * 100}%` }}/><small>{request.input === null ? '?' : i === 0 || i === shown.length - 1 || i % 5 === 0 ? i + Math.max(0, data.requestCount - shown.length) + 1 : ''}</small></button>)}</div>
+      <div className="cmi-chart-legend"><span><i data-usage="uncached"/>输入（含缓存）</span><span><i data-usage="output"/>输出</span></div><div className="cmi-request"><div><strong>第 {point.turn} 轮 · 步骤 {point.step}</strong><p className="cmi-note">{point.provider} / {point.model} · {time(point.time)}</p></div><dl className="cmi-facts"><dt>输入</dt><dd>{number(point.input)}</dd><dt>较前次输入</dt><dd>{delta === null ? '—' : `${delta > 0 ? '+' : delta < 0 ? '−' : ''}${number(Math.abs(delta))}`}</dd><dt>输出</dt><dd>{number(point.output)}</dd><dt>缓存读取</dt><dd>{number(point.cacheRead)}</dd></dl><Button size="sm" variant="outline" onClick={() => onHistory(point.seq)}>查看这次回复后的上下文</Button></div>
       <details className="cmi-request-table"><summary>查看最近 {data.requests.length} 条回复记录</summary><div><table><thead><tr><th>轮 / 步骤</th><th>输入</th><th>输出</th><th>缓存读取</th><th>时间</th></tr></thead><tbody>{[...data.requests].reverse().map(request => <tr key={request.seq}><td><button onClick={() => onHistory(request.seq)}>{request.turn} / {request.step}</button></td><td>{number(request.input)}</td><td>{number(request.output)}</td><td>{number(request.cacheRead)}</td><td>{time(request.time)}</td></tr>)}</tbody></table></div></details></>}
   </article>
 }
@@ -105,7 +136,7 @@ function Compactions({ data }: { data: Inspection }) {
   const entries = [...data.compactions].reverse()
   const shown = expanded ? entries : entries.slice(0, 2)
   const names = { running: '正在压缩', completed: '已完成', failed: '失败', interrupted: '已中断', unapplied: '未确认替换' }
-  return <article className="cmi-card"><div className="cmi-section-title"><h3>最近压缩</h3><span className="cmi-note">{entries.length} 条记录</span></div>{!data.compactions.length ? <Empty>当前截面还没有压缩或裁剪记录。</Empty> : <ol className="cmi-events">{shown.map(entry => <li key={entry.id}><div className="cmi-between"><strong>{entry.kind === 'prune' ? '裁剪' : entry.manual ? '手动压缩' : '任务内压缩'}</strong><Tag tone={entry.status === 'completed' ? 'success' : entry.status === 'failed' ? 'warning' : 'neutral'}>{names[entry.status]}</Tag></div><p className="cmi-note">{time(entry.startedAt)}{entry.endedAt === undefined ? '' : ` · ${((entry.endedAt - entry.startedAt) / 1000).toFixed(1)} 秒`}</p>{entry.applied && entry.beforeTokens !== undefined && entry.afterTokens !== undefined && <p>被替换内容 ≈ {number(entry.beforeTokens)} → {number(entry.afterTokens)} Token{entry.beforeTokens > entry.afterTokens ? `，减少约 ${number(entry.beforeTokens - entry.afterTokens)}` : '，未缩减'}</p>}{entry.status === 'failed' && entry.applied && <p>内容已替换，但收尾失败，不能视为回滚。</p>}{entry.error && <p className="cmi-note">{entry.error}</p>}</li>)}</ol>}<div className="cmi-between cmi-card-footer"><span className="cmi-note">前后值仅指被替换片段</span>{entries.length > 2 && <Button size="sm" variant="ghost" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? '收起记录' : `全部 ${entries.length} 条`}</Button>}</div></article>
+  return <article className="cmi-card"><div className="cmi-section-title"><h3>最近压缩</h3><span className="cmi-note">{entries.length} 条记录</span></div>{!data.compactions.length ? <Empty>当前截面还没有压缩或裁剪记录。</Empty> : <ol className="cmi-events">{shown.map(entry => <li key={entry.id}><div className="cmi-between"><strong>{entry.kind === 'prune' ? '裁剪' : entry.manual ? '会话间压缩' : '任务内压缩'}</strong><Tag tone={entry.status === 'completed' ? 'success' : entry.status === 'failed' ? 'warning' : 'neutral'}>{names[entry.status]}</Tag></div><p className="cmi-note">{time(entry.startedAt)}{entry.endedAt === undefined ? '' : ` · ${((entry.endedAt - entry.startedAt) / 1000).toFixed(1)} 秒`}</p>{entry.applied && entry.beforeTokens !== undefined && entry.afterTokens !== undefined && <p>被替换内容 ≈ {number(entry.beforeTokens)} → {number(entry.afterTokens)} Token{entry.beforeTokens > entry.afterTokens ? `，减少约 ${number(entry.beforeTokens - entry.afterTokens)}` : '，未缩减'}</p>}{entry.kind === 'compact' && <p className="cmi-note">摘要用量：{entry.inputTokens === undefined ? '未回报' : `输入 ${number(entry.inputTokens)} / 输出 ${number(entry.outputTokens)} Token`}</p>}{entry.status === 'failed' && entry.applied && <p>内容已替换，但收尾失败，不能视为回滚。</p>}{entry.error && <p className="cmi-note">{entry.error}</p>}</li>)}</ol>}<div className="cmi-between cmi-card-footer"><span className="cmi-note">前后值仅指被替换片段</span>{entries.length > 2 && <Button size="sm" variant="ghost" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? '收起记录' : `全部 ${entries.length} 条`}</Button>}</div></article>
 }
 
 /** Mounted only as the selected, Session-scoped conversation.view entry. */
@@ -149,6 +180,7 @@ export function ContextInspectorView({ target, form, api, pulse }: ContextViewIn
     <style data-plugin="dsh-context-manager" data-plugin-css="dsh-context-manager/inspector">{css}</style>
     <div className="cmi-inner"><header className="cmi-header"><div className="cmi-section-title"><h2>上下文</h2><span className="cmi-note">只读</span></div><Button size="sm" variant="outline" disabled={loading} onClick={() => setRetry(retry + 1)}>刷新数据</Button></header>
       <div className="cmi-data-status"><span>{loading ? '正在读取…' : error ? '读取失败' : safeData ? `更新于 ${time(safeData.sampledAt)}` : '等待数据'}</span><span>压缩参数：设置 → 上下文管理</span></div>
+      {effective.atSeq === null && <IdleStatusLine target={target} api={api} revision={automatic} settingsRevision={accepted.revision} retry={retry}/>}
       {effective.atSeq !== null && <div className="cmi-notice"><div><strong>历史截面 · 截至记录 {effective.atSeq}</strong><p>重放这次回复之后的有效内容，包含该回复；不是当次模型请求原文。</p></div><Button size="sm" onClick={() => change({ ...defaultQuery })}>返回当前上下文</Button></div>}
       {error && <div className="cmi-notice" role="alert"><div><strong>{error}</strong>{safeData && <p>以下保留上次成功读取的数据。</p>}</div><Button size="sm" onClick={() => setRetry(retry + 1)}>重试</Button></div>}
       {!safeData ? <Empty>{loading ? '正在读取这段会话的上下文…' : '没有可用数据。'}</Empty> : <>

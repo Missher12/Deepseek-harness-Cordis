@@ -4,19 +4,30 @@ import type {} from '@deepseek-ai/dsh-session-query'
 import type { SessionObservation } from '@deepseek-ai/dsh-session-query'
 import type {} from '@deepseek-ai/dsh-token-meter/client'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
+import { pressureHistory } from './pressure-history.ts'
+export { pressureHistory } from './pressure-history.ts'
 import { indexContext, MAX_EVENTS } from './inspector-fold.ts'
 import { inspectQuerySchema, contentQuerySchema } from './inspector-wire.ts'
 import type { InspectQuery, Inspection, ContentQuery, ContentPage } from './inspector-types.ts'
+import type { IdleStatus } from './idle-types.ts'
+import type {} from './index.ts'
+import { idleQuerySchema } from './inspector-wire.ts'
 
 declare module '@deepseek-ai/cordis' { interface Context { contextInspector: ContextInspector } }
 
 /** Read-only observations; no Agent activation, persistence writes, or model calls. */
 export class ContextInspector extends TypertRemoteService {
-  static inject = ['sessionQuery', 'sessions']
+  static inject = ['sessionQuery', 'sessions', 'contextManager', 'sessionProjections']
   private readonly lifetime = new AbortController()
   constructor(ctx: Context) {
     super(ctx, 'contextInspector')
     ctx.effect(() => () => this.lifetime.abort())
+  }
+  @Remote('idleStatus')
+  async idleStatus(input: { sessionId: string }, signal: AbortSignal): Promise<IdleStatus> {
+    signal.throwIfAborted()
+    const query = idleQuerySchema().parse(input)
+    return this.ctx.contextManager.idleStatus(query.sessionId)
   }
   private async read<T>(sessionId: string, atSeq: number | null, signal: AbortSignal, mode: 'all' | 'none', use: (observation: SessionObservation, cut: number, index: ReturnType<typeof indexContext>) => T): Promise<T> {
     const cancel = AbortSignal.any([signal, this.lifetime.signal, AbortSignal.timeout(12000)])
@@ -48,8 +59,9 @@ export class ContextInspector extends TypertRemoteService {
       return { sessionId: query.sessionId, cursor: observation.cursor, cutSeq: cut, sampledAt: Date.now(), historical: query.atSeq !== null,
         pressure: query.atSeq === null && typeof pressure?.projectedTokens === 'number' && typeof pressure.pressureTokens === 'number' ? { projected: pressure.projectedTokens, input: pressure.pressureTokens, window: pressure.contextWindow ?? null } : null,
         official: query.atSeq === null && official ? { system: official.systemTokens, tools: official.toolsTokens, messages: official.messageTokens } : null,
-        usage: query.atSeq === null && usage ? { input: usage.uncachedInputTokens + usage.cacheReadTokens + usage.cacheWriteTokens, output: usage.outputTokens, cacheRead: usage.cacheReadTokens } : null,
+        usage: query.atSeq === null && usage ? { input: usage.uncachedInputTokens + usage.cacheReadTokens + usage.cacheWriteTokens, output: usage.outputTokens, cacheRead: usage.cacheReadTokens, uncached: usage.uncachedInputTokens, cacheWrite: usage.cacheWriteTokens } : null,
         model: config ? { provider: config.provider, model: config.model, effort: config.reasoningEffort === undefined ? null : String(config.reasoningEffort), maxTokens: typeof config.maxTokens === 'number' && Number.isFinite(config.maxTokens) && config.maxTokens >= 0 ? config.maxTokens : null } : null,
+        pressureHistory: pressureHistory(this.ctx.sessionProjections, observation, cut, signal),
         parts: index.parts, rows: matched.slice(query.offset, query.offset + 50), total: matched.length, offset: query.offset, pageSize: 50,
         activeCount: index.indexed.filter(item => item.row.current).length, archivedCount: index.indexed.filter(item => !item.row.current).length,
         requests: index.requests, requestCount: index.requestCount, compactions: index.diagnostics.compactions }

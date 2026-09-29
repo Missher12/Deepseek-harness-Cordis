@@ -28,6 +28,13 @@ interface MainSelection {
 /** Workspace archive and directory operations consumed by Client UI domains. */
 export interface UiWorkspace {
   /**
+   * Show an existing Workspace after ordinary groups in the sidebar's scrolling list.
+   * This changes presentation only; titles, membership and Host order stay intact.
+   * @param workspaceId - authoritative Workspace identity, never a display title.
+   * @returns release this registration; also released with the caller's Context.
+   */
+  registerTrailingWorkspace(workspaceId: WorkspaceId): () => void
+  /**
    * Select a Session and show its Conversation as one UI navigation action.
    * @param target - known Session identity or durable direct-parent subagent address to display.
    */
@@ -125,6 +132,9 @@ export class DirectoryBrowseError extends Error {
 
 /** Implements Workspace archive and directory UI operations. */
 class UiWorkspaceService extends Service implements UiWorkspace {
+  private readonly trailingRegistrations = new Map<symbol, WorkspaceId>()
+  /** Workspace IDs whose groups follow the ordinary groups in the shared browser list. */
+  readonly trailingWorkspaceIds = createSnapshotStore<readonly WorkspaceId[]>([])
   private readonly connecting = new Map<WorkspaceId, Promise<SessionId>>()
   private readonly lifetime = new AbortController()
   private readonly selection = createSnapshotStore<MainSelection>(
@@ -159,6 +169,26 @@ class UiWorkspaceService extends Service implements UiWorkspace {
         reference?.release()
       }
     }, 'ui-workspace: Workspace navigation policy')
+  }
+
+  registerTrailingWorkspace(workspaceId: WorkspaceId): () => void {
+    const dispose = this.ctx.effect(() => {
+      const key = Symbol()
+      const publish = (): void => {
+        const ids = [...new Set(this.trailingRegistrations.values())]
+        const previous = this.trailingWorkspaceIds.getSnapshot()
+        if (ids.length !== previous.length || ids.some((id, index) => id !== previous[index])) {
+          this.trailingWorkspaceIds.set(ids)
+        }
+      }
+      this.trailingRegistrations.set(key, workspaceId)
+      publish()
+      return () => {
+        this.trailingRegistrations.delete(key)
+        publish()
+      }
+    }, 'ui-workspace: trailing placement')
+    return () => { void dispose() }
   }
 
   async connectWorkspace(workspaceId: WorkspaceId): Promise<SessionId> {

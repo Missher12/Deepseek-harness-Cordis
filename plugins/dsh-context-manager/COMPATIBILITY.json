@@ -1,6 +1,6 @@
 {
-  "harnessVersion": "0.1.7-rc.2",
-  "sourceSha": "e3409377ac873963595b76c0eb9afd8a8aa241af",
+  "harnessVersion": "0.2.0-rc.1",
+  "sourceSha": "c7c457e5e07fa11a04bf8764d5f89585d789f258",
   "sources": [
     {
       "path": "packages/bundle/web-app/presets/standard.patch.yml",

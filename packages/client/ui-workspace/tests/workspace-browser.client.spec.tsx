@@ -122,6 +122,7 @@ function mount(overrides: Partial<WorkspaceBrowserProps> = {}) {
     useSessionRetainInfo: () => undefined,
     usePanelInfo, useResource,
     useWorkspaces: hook(workspaceState([])),
+    useTrailingWorkspaceIds: hook([]),
     useStore: bindSnapshotSelector(store),
     actions: store.actions,
     startSession: vi.fn(),
@@ -151,6 +152,84 @@ function rerender(b: ReturnType<typeof mount>, overrides: Partial<WorkspaceBrows
 }
 
 describe('WorkspaceBrowser', () => {
+  it.each(['workspace', 'workspace-tree', 'flat'] as const)('keeps all rows in one scrolling list in %s view', (mode) => {
+    const b = mount({
+      useSessions: hook(sessionState([summary('scratch-session', 3), summary('project-session', 2), summary('loose-session', 1)])),
+      useWorkspaces: hook(workspaceState([
+        workspace('scratch', ['scratch-session'], 'Renamed scratch'),
+        workspace('project', ['project-session'], '不在工作区'),
+      ])),
+      useTrailingWorkspaceIds: hook([wid('scratch')]),
+    })
+    act(() => {
+      b.store.actions.setGroupBy(mode)
+      for (const id of ['scratch', 'project', UNGROUPED_KEY]) b.store.actions.setGroupExpanded(id, true)
+    })
+    const groupKeys = () => [...b.view.container.querySelectorAll('[data-row-key^="workspace:"]')]
+      .map(row => row.getAttribute('data-row-key'))
+    const tree = screen.getByRole('tree')
+    expect(within(tree).getAllByText('scratch-session')).toHaveLength(1)
+    expect(within(tree).getByText('project-session')).toBeTruthy()
+    expect(within(tree).getByText('loose-session')).toBeTruthy()
+    if (mode === 'flat') {
+      expect(groupKeys()).toEqual([])
+    } else {
+      expect(groupKeys()).toEqual(['workspace:project', `workspace:${UNGROUPED_KEY}`, 'workspace:scratch'])
+      expect(within(tree).getByText('Renamed scratch')).toBeTruthy()
+      expect(within(tree).getByText('不在工作区')).toBeTruthy()
+      expect(tree.querySelector('[data-row-key="workspace:scratch"]')?.getAttribute('draggable')).toBe('false')
+    }
+    act(() => { b.store.actions.setOrderBy('updated', {}) })
+    if (mode !== 'flat') expect(groupKeys().at(-1)).toBe('workspace:scratch')
+    expect(screen.getAllByRole('tree')).toHaveLength(1)
+    expect(b.props.insertWorkspaceBefore).not.toHaveBeenCalled()
+    expect(b.props.renameWorkspace).not.toHaveBeenCalled()
+    // Removing placement restores the Host's original Workspace order.
+    rerender(b, { useTrailingWorkspaceIds: hook([]) })
+    if (mode !== 'flat') expect(groupKeys()[0]).toBe('workspace:scratch')
+    expect(screen.getAllByRole('tree')).toHaveLength(1)
+  })
+
+  it('places a nested scratch identity after ordinary root groups', () => {
+    const b = mount({
+      useWorkspaces: hook(workspaceState([
+        { ...workspace('scratch', []), path: '/projects/parent/scratch' },
+        workspace('parent', []),
+        { ...workspace('child', []), path: '/projects/parent/child' },
+      ])),
+      useTrailingWorkspaceIds: hook([wid('scratch')]),
+    })
+    act(() => {
+      b.store.actions.setGroupBy('workspace-tree')
+      b.store.actions.setGroupExpanded('parent', true)
+    })
+    const parent = screen.getByText('parent').closest('[role="treeitem"]')!
+    const scratch = screen.getByText('scratch').closest('[role="treeitem"]')!
+    const child = screen.getByText('child').closest('[role="treeitem"]')!
+    expect(parent.closest('[role=group]')).toBeNull()
+    expect(scratch.closest('[role=group]')).toBeNull()
+    expect(child.closest('[role=group]')).not.toBeNull()
+    expect(screen.getAllByRole('treeitem').map(row => row.getAttribute('data-row-key')))
+      .toEqual(['workspace:parent', 'workspace:child', 'workspace:scratch'])
+  })
+
+  it('uses normal archive filtering and search without a second scratch header or row', async () => {
+    const b = mount({
+      useSessions: hook(sessionState([summary('scratch-session', 1)])),
+      useWorkspaces: hook(workspaceState([workspace('scratch', ['scratch-session'], 'Renamed scratch')])),
+      useTrailingWorkspaceIds: hook([wid('scratch')]),
+    })
+    act(() => { b.store.actions.setGroupExpanded('scratch', true) })
+    fireEvent.click(screen.getByRole('button', { name: '仅显示已归档' }))
+    expect(screen.queryByText('Renamed scratch')).toBeNull()
+    expect(screen.queryByText('scratch-session')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '仅显示已归档' }))
+    fireEvent.change(screen.getByPlaceholderText(t('search.placeholder')), { target: { value: 'scratch-session' } })
+    await waitFor(() => { expect(screen.getAllByText('scratch-session')).toHaveLength(1) })
+    expect(screen.getAllByRole('tree')).toHaveLength(1)
+    expect(b.view.container.querySelector('[data-row-key="workspace:scratch"]')).toBeNull()
+  })
+
   it('toggles archived-only rows from the header without changing workspace membership', () => {
     const b = mount({
       useSessions: hook(sessionState([summary('live', 2), summary('archived', 1)])),
@@ -2144,6 +2223,7 @@ describe('WorkspaceBrowser', () => {
     const b = mount({
       useSessions: hook(sessions),
       useWorkspaces: hook(workspaceState([])),
+      useTrailingWorkspaceIds: hook([]),
     })
     fireEvent.click(screen.getByText('未分组'))
 
@@ -2177,6 +2257,7 @@ describe('WorkspaceBrowser', () => {
     const restored = mount({
       useSessions: hook(sessions),
       useWorkspaces: hook(workspaceState([])),
+      useTrailingWorkspaceIds: hook([]),
     })
     expect(restored.store.getSnapshot().sessionOrderByAccount[UNGROUPED_KEY]).toEqual(['two', 'three', 'one'])
     expect(screen.getAllByRole('treeitem').slice(1).map(row => row.textContent)).toEqual([

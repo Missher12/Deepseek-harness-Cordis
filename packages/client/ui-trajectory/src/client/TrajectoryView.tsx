@@ -15,6 +15,7 @@ import {
 } from './TrajectoryTable.tsx'
 import { TrajectoryToolbar } from './TrajectoryToolbar.tsx'
 import { TrajectoryTimeline } from './TrajectoryTimeline.tsx'
+import { TrajectoryUsageCharts } from './TrajectoryUsageCharts.tsx'
 import {
   appendTrajectoryPartialLayout, deriveTrajectoryLayout,
   type TrajectoryTurnModel,
@@ -528,6 +529,7 @@ export function TrajectoryView({
         onSearchQueryChange={setSearchQuery}
         t={t}
       />
+      <TrajectoryUsageCharts requests={requestNumbers} hasOlder={sessionHasOlderHistory} t={t} />
       <TrajectoryTimeline
         t={t}
         turns={timelineTurns}

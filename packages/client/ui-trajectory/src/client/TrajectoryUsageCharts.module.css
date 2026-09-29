@@ -1,0 +1,35 @@
+.root {
+  flex: none;
+  padding: 8px 12px;
+  border-bottom: 0.5px solid var(--dsw-alias-border-l3);
+  max-height: min(240px, 32vh);
+  overflow: auto;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.summary { cursor: pointer; color: var(--dsw-alias-label-secondary); }
+.summary > span { margin-left: 8px; font-variant-numeric: tabular-nums; }
+.summary:focus-visible { outline: 2px solid var(--dsw-alias-state-business-primary); outline-offset: 2px; }
+.charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 8px; }
+.panel { min-width: 0; padding: 8px; border-radius: var(--dsw-radius-md); background: var(--dsw-alias-bg-module-platform); }
+.heading { display: flex; gap: 8px; flex-wrap: wrap; justify-content: space-between; color: var(--dsw-alias-label-secondary); }
+.legend { display: inline-flex; align-items: center; gap: 4px; }
+.legend > i { width: 8px; height: 8px; border-radius: 2px; }
+.input { background: var(--dsw-alias-state-business-primary); }
+.output { background: var(--dsw-alias-state-success-primary); }
+.bars { display: flex; height: 94px; gap: 2px; align-items: stretch; }
+.bar { flex: 1; min-width: 0; padding: 2px; border: 0; background: transparent; color: var(--dsw-alias-label-tertiary); border-radius: var(--dsw-radius-xs); cursor: pointer; font: inherit; }
+.bar:hover, .selected { background: var(--dsw-alias-interactive-bg-hover); }
+.bar:focus-visible { outline: 2px solid var(--dsw-alias-state-business-primary); outline-offset: -2px; }
+.columns { display: flex; position: relative; height: 70px; align-items: end; justify-content: center; gap: 1px; }
+.columns > i { display: block; width: 38%; height: var(--usage-height); border-radius: 2px 2px 0 0; }
+.number { display: block; overflow: hidden; font-size: 10px; line-height: 18px; font-variant-numeric: tabular-nums; }
+.missing { align-self: center; }
+.lineChart { width: 100%; height: 94px; display: block; }
+.line { fill: none; stroke: var(--dsw-alias-state-business-primary); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.dot { fill: var(--dsw-alias-state-business-primary); }
+.axis { stroke: var(--dsw-alias-border-l3); stroke-width: 0.5; }
+.caption, .scope, .empty { margin: 4px 0 0; color: var(--dsw-alias-label-tertiary); }
+.caption { font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .charts { grid-template-columns: minmax(0, 1fr); } }

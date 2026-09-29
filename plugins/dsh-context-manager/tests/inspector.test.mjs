@@ -61,7 +61,9 @@ test('registered message projections, explicit skill attribution and tool frame 
 
 async function service(events, projections) {
   const ctx = new Context(); const reads = []; let disposals = 0
+  ctx.provide('contextManager', { idleStatus: () => ({ status: 'waiting', dueAt: null, message: '等待任务完成' }) })
   ctx.provide('sessions', { messageProjections: [] })
+  ctx.provide('sessionProjections', { restore: () => ({ snapshot: { values: {} }, checkpoint: {} }) })
   ctx.provide('sessionQuery', { async observeSession(sessionId, options) {
     reads.push({ sessionId, ...options })
     return { cursor: events.length - 1, events, projections,
@@ -95,6 +97,18 @@ test('RPC uses exact Session cuts, paginates all entries, keeps historical press
   } finally { await ctxDispose(f.ctx) }
 })
 async function ctxDispose(ctx) { await ctx.fiber.dispose() }
+
+test('idle status RPC validates the wire shape without observing or activating a Session', async () => {
+  const f = await service([])
+  try {
+    const status = await f.ctx.contextInspector.idleStatus({ sessionId: 'unloaded' }, new AbortController().signal)
+    assert.equal(status.status, 'waiting')
+    assert.deepEqual(resultCodec('idleStatus').parse(status), status)
+    assert.equal(f.reads.length, 0)
+    const abort = new AbortController(); abort.abort()
+    await assert.rejects(f.ctx.contextInspector.idleStatus({ sessionId: 'unloaded' }, abort.signal), { name: 'AbortError' })
+  } finally { await ctxDispose(f.ctx) }
+})
 
 test('large bodies are read in bounded pages without splitting emoji; usage history is bounded separately', async () => {
   const { events, add } = log()

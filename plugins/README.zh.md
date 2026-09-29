@@ -14,7 +14,7 @@
 | --- | --- | --- | --- |
 | 上下文管理 | 请求前压缩、当前上下文、正文、逐次变化、本会话累计 | 会话 → 上下文；设置 → 上下文管理 | [说明](dsh-context-manager/README.md) · [源码](dsh-context-manager/src/) · [包信息](dsh-context-manager/package.json) |
 | 使用统计 | 跨会话用量、活动图、模型/工具/技能排行 | 设置 → 使用统计 | [说明](dsh-usage-statistics/README.md) · [源码](dsh-usage-statistics/src/) · [包信息](dsh-usage-statistics/package.json) |
-| 输出外观 | 四种助手输出布局、完整思考、工具详情及流式动效 | 设置 → 输出外观 | [说明](dsh-output-renderer/README.md) · [源码](dsh-output-renderer/src/) · [包信息](dsh-output-renderer/package.json) |
+| 输出外观 | 三种单栏助手输出布局、完整思考、工具详情及流式动效 | 设置 → 输出外观 | [说明](dsh-output-renderer/README.md) · [源码](dsh-output-renderer/src/) · [包信息](dsh-output-renderer/package.json) |
 | 会话桥接 | 会话 ID、跨会话投递与临时工作区 | 会话标题栏；新会话 → 工作区选择器 | [说明](dsh-session-bridge/README.md) · [源码](dsh-session-bridge/src/) · [包信息](dsh-session-bridge/package.json) |
 
 包名和版本以链接中的 manifest 为准，[cordis-repositories.json](../cordis-repositories.json) 记录导入包清单。历史验证报告各有自己的日期和范围，不能直接当作新安装的通过证明。
@@ -34,7 +34,7 @@
 
 ## 独立项目
 
-[Media@Missher](https://github.com/Missher12/media-missher) 与[思考强度](https://github.com/Missher12/dsh-reasoning-effort)继续私有，访问需要仓库权限。[MSE Learning](https://github.com/Missher12/mse-learning) 是独立公开产品。这些源码不包含在这里，具体见[归属与隐私边界](../CORDIS.md#独立项目)。
+[Reasoning Effort](https://github.com/Missher12/dsh-reasoning-effort) 已公开，包含思考深度滑块与点阵设计。[Media@Missher](https://github.com/Missher12/media-missher) 继续私有，需要仓库访问权限。[MSE Learning](https://github.com/Missher12/mse-learning) 是独立公开产品。这些源码不包含在这里，具体见[归属与隐私边界](../CORDIS.md#独立项目)。
 
 ## 下一步
 

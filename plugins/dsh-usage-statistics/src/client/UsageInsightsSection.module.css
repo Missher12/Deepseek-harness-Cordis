@@ -348,23 +348,27 @@
   height: 100%;
   min-width: 0;
   border-radius: 2px;
-  background: var(--dsw-alias-bg-skeleton);
+  background: transparent;
 }
 
 .day[data-level='1'] {
-  background: color-mix(in srgb, var(--dsw-alias-state-business-primary) 24%, var(--dsw-alias-bg-skeleton));
+  background: oklch(from var(--dsw-alias-state-business-primary) .94 calc(c * .2) h);
 }
 
 .day[data-level='2'] {
-  background: color-mix(in srgb, var(--dsw-alias-state-business-primary) 43%, var(--dsw-alias-bg-skeleton));
+  background: oklch(from var(--dsw-alias-state-business-primary) .86 calc(c * .4) h);
 }
 
 .day[data-level='3'] {
-  background: color-mix(in srgb, var(--dsw-alias-state-business-primary) 68%, var(--dsw-alias-bg-skeleton));
+  background: oklch(from var(--dsw-alias-state-business-primary) .78 calc(c * .6) h);
 }
 
 .day[data-level='4'] {
-  background: var(--dsw-alias-state-business-primary);
+  background: oklch(from var(--dsw-alias-state-business-primary) .70 calc(c * .8) h);
+}
+
+.day[data-level='5'] {
+  background: oklch(from var(--dsw-alias-state-business-primary) .62 c h);
 }
 
 .months {

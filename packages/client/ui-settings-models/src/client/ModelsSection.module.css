@@ -460,14 +460,15 @@
 .modelEntry {
   border: 0.5px solid var(--dsw-alias-border-l4);
   border-radius: var(--dsw-radius-lg);
-  padding: 6px;
+  padding: 12px;
+  background: var(--dsw-alias-settings-card-fill);
 }
 
 .modelRow {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 6px;
+  align-items: end;
+  gap: 8px;
 }
 
 /* Square, label-free affordances: the row's own inputs carry the meaning, so
@@ -505,8 +506,10 @@
 .modelAdvanced {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  padding: 8px 4px 2px;
+  gap: 12px;
+  padding: 12px 0 0;
+  margin-top: 12px;
+  border-top: 0.5px solid var(--dsw-alias-border-l3);
 }
 
 .modelField {
@@ -520,8 +523,9 @@
   grid-column: 1 / -1;
   min-width: 0;
   margin: 0;
-  padding: 0;
+  padding: 8px 0 0;
   border: none;
+  margin-top: 12px;
 }
 
 .modelInputTypes legend {
@@ -723,7 +727,41 @@ select.input {
   text-align: center;
 }
 
-.reasoningFields { border: 1px solid var(--dsw-alias-border-l3); border-radius: var(--dsw-radius-sm); padding: 12px; min-width: 0; }
+.reasoningFields {
+  grid-column: 1 / -1;
+  margin: 0;
+  border: 0.5px solid var(--dsw-alias-border-l3);
+  border-radius: var(--dsw-radius-lg);
+  padding: 12px;
+  min-width: 0;
+  background: var(--dsw-alias-bg-module-platform);
+}
+
+.reasoningFields legend {
+  padding: 0 4px;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.inputSource,
+.inputHint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.inputSource { color: var(--dsw-alias-state-business-primary); }
+.inputHint { margin-top: 4px; }
+
+@media (max-width: 540px) {
+  .modelRow { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .modelRow > label { grid-column: 1 / -1; }
+  .modelRow > button:first-of-type { grid-column: 2; }
+  .modelAdvanced { grid-template-columns: minmax(0, 1fr); }
+}
 .reasoningLevel { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
 .reasoningLevel > label { display: inline-flex; align-items: center; gap: 4px; }
 .reasoningLevel > input { flex: 1; min-width: 100px; }

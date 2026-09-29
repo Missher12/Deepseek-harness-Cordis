@@ -11,6 +11,8 @@ import type { SessionCopyKind, SessionListReader } from './session-menu.js'
 
 import { createSessionDeleteActions, SessionDeleteMenuItem, SessionDeleteDialog } from './session-delete.js'
 import type { ArchiveSource } from './session-delete.js'
+import { trackScratchPlacement } from './scratch-placement.js'
+import type { WorkspacePlacementSource } from './scratch-placement.js'
 
 export { createSessionDeleteActions } from './session-delete.js'
 export { createSessionCopyActions } from './session-menu.js'
@@ -162,8 +164,12 @@ export interface ClientContextLike {
       readonly inject?: () => Injected
     }, component: unknown): () => void
   }
-  readonly uiWorkspace: { pickDirectory(): Promise<string | null> }
-  readonly workspaces: { readonly list: ArchiveSource; create(input: { readonly path: string }): Promise<{ readonly workspaceId: string }> }
+  readonly uiWorkspace: {
+    pickDirectory(): Promise<string | null>
+    /** Optional on older Hosts; the picker remains usable without sidebar placement. */
+    registerTrailingWorkspace?(workspaceId: string): () => void
+  }
+  readonly workspaces: { readonly list: ArchiveSource & WorkspacePlacementSource; create(input: { readonly path: string }): Promise<{ readonly workspaceId: string }> }
   readonly sessions: SessionListReader
   effect(disposer: () => unknown, label?: string): void
 }
@@ -217,6 +223,11 @@ function installStyles(): () => void {
  * @param ctx - client root context.
  */
 export function apply(ctx: ClientContextLike): void {
+  const picker = scratchPickerInjected(ctx)
+  const registerTrailing = ctx.uiWorkspace.registerTrailingWorkspace?.bind(ctx.uiWorkspace)
+  if (registerTrailing !== undefined) {
+    ctx.effect(() => trackScratchPlacement(ctx.workspaces.list, picker.findScratchWorkspace, registerTrailing), 'session-bridge: trailing workspace placement')
+  }
   const copyActions = createSessionCopyActions(ctx.sessions)
   const deleteActions = createSessionDeleteActions(ctx.workspaces.list)
   ctx.effect(() => () => { deleteActions.dispose() }, 'session-bridge: deletion confirmation')
@@ -237,7 +248,7 @@ export function apply(ctx: ClientContextLike): void {
     id: HERO_PICKER_ID,
     priority: HERO_PICKER_PRIORITY,
     locale: NS,
-    inject: () => scratchPickerInjected(ctx),
+    inject: () => picker,
   }, ScratchWorkspacePicker))
   const menu = 'sidebar.workspaces.session.menu.item'
   for (const [index, kind] of (['id', 'cwd', 'bridge'] as const).entries()) {

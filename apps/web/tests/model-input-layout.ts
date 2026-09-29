@@ -1,4 +1,4 @@
-/** Model input types stay below both capacity fields across editor widths. */
+/** Model input types stay above both capacity fields across editor widths. */
 import type { Locator, Page } from 'playwright'
 import { expect } from 'vitest'
 
@@ -22,7 +22,7 @@ export async function assertModelInputLayout(page: Page, editor: Locator): Promi
       expect(types).not.toBeNull()
       if (context === null || output === null || types === null) throw new Error('Expanded model fields are not visible')
       expect(Math.abs(context.y - output.y)).toBeLessThan(1)
-      expect(types.y).toBeGreaterThanOrEqual(Math.max(context.y + context.height, output.y + output.height))
+      expect(types.y + types.height).toBeLessThanOrEqual(Math.min(context.y, output.y))
       expect(types.width).toBeGreaterThan(context.width)
     }
   } finally {

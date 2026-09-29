@@ -1,0 +1,186 @@
+{
+  "requirement": "UI-04 latest user correction: original particle layout, colors only",
+  "version": "0.2.1-local.3",
+  "dsh": "0.2.0-rc.1",
+  "head": "c7c457e5e07fa11a04bf8764d5f89585d789f258",
+  "artifact": ".verification/ui-20260929-color-only/candidate/dist/missher-dsh-usage-statistics-0.2.1-local.3.tgz",
+  "sha256": "2639539a4169da5573980e0b6fd813a75a04a5197b4ba1e30cd61be2c8933900",
+  "supersedes": {
+    "version": "0.2.1-local.2",
+    "sha256": "02797b88232b95e6cbd569431c1ff20da89fef2f4fa9eea603ba259b749ce51d",
+    "status": "withdrawn; preserved, never installed into daily profile"
+  },
+  "typecheck": true,
+  "build": true,
+  "tests": {
+    "passed": 22,
+    "total": 22,
+    "files": 4
+  },
+  "scope": {
+    "changedSinceUiBaseline": [
+      "AGENTS.md",
+      "INSTALL.md",
+      "PROJECT_CONTEXT.md",
+      "README.md",
+      "VALIDATION.md",
+      "package.json",
+      "src/client/UsageInsightsSection.module.css",
+      "src/client/charts.ts",
+      "tests/client/charts.client.spec.ts",
+      "tests/client/styles.client.spec.ts"
+    ],
+    "productSourceChanges": [
+      "src/client/UsageInsightsSection.module.css",
+      "src/client/charts.ts"
+    ],
+    "originalComponentLocalesBuildAndDependenciesRestored": true,
+    "previousCompatibilityEditsPreserved": true,
+    "protectedFilesUnchanged": true,
+    "oldFrozenArtifactsUnchanged": true,
+    "artifactSha256": "2639539a4169da5573980e0b6fd813a75a04a5197b4ba1e30cd61be2c8933900",
+    "artifactSize": 99415,
+    "artifactFileCount": 12
+  },
+  "ui": {
+    "artifactSha256": "2639539a4169da5573980e0b6fd813a75a04a5197b4ba1e30cd61be2c8933900",
+    "baselineArtifactSha256": "f8d33ed4057bfe8d2a3e4062f96987a9228ff46c474576e98f17dc15197c9aed",
+    "surface": "IAB connected to isolated DSH 0.2.0-rc.1",
+    "synthetic": true,
+    "modes": {
+      "daily": {
+        "textUnchanged": true,
+        "structureAndGeometryUnchanged": true,
+        "particleGeometryAndValuesUnchanged": true,
+        "particleCount": 371,
+        "blankParticles": 366,
+        "allBlankTransparent": true
+      },
+      "weekly": {
+        "textUnchanged": true,
+        "structureAndGeometryUnchanged": true,
+        "particleGeometryAndValuesUnchanged": true,
+        "particleCount": 371,
+        "blankParticles": 357,
+        "allBlankTransparent": true
+      },
+      "cumulative": {
+        "textUnchanged": true,
+        "structureAndGeometryUnchanged": true,
+        "particleGeometryAndValuesUnchanged": true,
+        "particleCount": 371,
+        "blankParticles": 362,
+        "allBlankTransparent": true
+      }
+    },
+    "lightLevels": [
+      {
+        "tokens": 6000,
+        "level": 1,
+        "background": "oklch(0.94 0.0358645 263.024)"
+      },
+      {
+        "tokens": 12000,
+        "level": 2,
+        "background": "oklch(0.86 0.0717291 263.024)"
+      },
+      {
+        "tokens": 18000,
+        "level": 3,
+        "background": "oklch(0.78 0.107594 263.024)"
+      },
+      {
+        "tokens": 24000,
+        "level": 4,
+        "background": "oklch(0.7 0.143458 263.024)"
+      },
+      {
+        "tokens": 30000,
+        "level": 5,
+        "background": "oklch(0.62 0.179323 263.024)"
+      }
+    ],
+    "darkLevels": [
+      {
+        "tokens": 6000,
+        "level": 1,
+        "background": "oklch(0.94 0.0268375 261.264)"
+      },
+      {
+        "tokens": 12000,
+        "level": 2,
+        "background": "oklch(0.86 0.0536749 261.264)"
+      },
+      {
+        "tokens": 18000,
+        "level": 3,
+        "background": "oklch(0.78 0.0805124 261.264)"
+      },
+      {
+        "tokens": 24000,
+        "level": 4,
+        "background": "oklch(0.7 0.10735 261.264)"
+      },
+      {
+        "tokens": 30000,
+        "level": 5,
+        "background": "oklch(0.62 0.134187 261.264)"
+      }
+    ],
+    "darkIdleTransparent": true,
+    "originalTabsClickAndArrowNavigation": true,
+    "originalTooltip": "9月29日 使用了 3万 个 Token",
+    "tooltipClearedOnExit": true,
+    "consoleErrors": []
+  },
+  "profile": {
+    "runtime": "0.2.0-rc.1",
+    "pnpmVersion": "11.7.0",
+    "version": "0.2.1-local.3",
+    "installKind": "tarball",
+    "artifactSha256": "2639539a4169da5573980e0b6fd813a75a04a5197b4ba1e30cd61be2c8933900",
+    "install": true,
+    "loaderBoot": true,
+    "hostSnapshotRead": true,
+    "syntheticTokens": 30000,
+    "cacheHitRate": 0.76,
+    "uninstallRestoresBase": true,
+    "pluginServiceRemoved": true,
+    "sessionBytesUnchanged": true,
+    "cacheDomainVersion": 1,
+    "cacheRowVersion": 3,
+    "cacheBytesUnchangedAfterRestartRemoveReinstall": true,
+    "reinstallRestoresStatistics": true,
+    "realModel": false
+  },
+  "originalUiProfileSessionAndCacheFilesUnchanged": 13,
+  "sdkUnchanged": true,
+  "limits": {
+    "nativeElectron": "not run",
+    "multiPlugin": "Passed according to coordinator report; not independently rerun by this owner",
+    "dailyInstallation": "not performed",
+    "realModel": "not called",
+    "gitWrites": "none"
+  },
+  "coordinatorReport": {
+    "sourceThread": "01a0e391-fa91-7f20-9706-09a20e7c95f2",
+    "bundles": 4,
+    "loaderEntries": 193,
+    "enabledActive": 163,
+    "usagePackageFilesMatched": 12,
+    "particleCountPerMode": 371,
+    "zeroBackgroundTransparent": true,
+    "removedLabelsAbsent": true,
+    "browserWarningErrorCount": 0
+  },
+  "screenshots": {
+    "before-light-cumulative.png": "8ea1edbd539703ee1ff5ba801620fd1e20c97eb1382dea31451a80f534e23a86",
+    "before-light-weekly.png": "5161365e7cc2bfeb7ff5a09f9150226d554348fa2fc8bf809341b7e7e6accdbe",
+    "after-light-daily.png": "97a04083676b3aa61b65da14a21332dc3cc68b7410ca8d561edc7c4e0f85ec40",
+    "before-light-daily.png": "7092e5accc551fcdc669f7c5b38c43974246ac72c85b03e188ec70b073b70c71",
+    "after-dark-daily.png": "4cf8c5047d10d6bb9abd8739c6a6bff8181ab1fa012dae674eb9adb2db893156",
+    "after-light-weekly.png": "f765cea11849f92e68688dbef54698b1728f99933614db7fd5855080413b7f10",
+    "after-light-cumulative.png": "65c01e64daebbe8563c3dd9af1b1409c85fdff1f9a92dcb39f6acfa8ddc02b57"
+  },
+  "temporaryHostsStopped": true
+}

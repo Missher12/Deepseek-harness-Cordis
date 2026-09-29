@@ -7,6 +7,7 @@ import { buildSync } from 'esbuild'
 import { JSDOM } from 'jsdom'
 import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'
+import { Simulate } from 'react-dom/test-utils'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { defaults } from '../lib/policy.js'
 
@@ -14,8 +15,8 @@ const require = createRequire(import.meta.url)
 // Render the host's actual control implementations. Their CSS modules are
 // compiled here; visual/theme acceptance runs separately in the real Web host.
 const primitivesBuild = buildSync({
-  stdin: { contents: ['Button', 'Input', 'Switch', 'SegmentedTabs', 'Tag', 'Tooltip', 'settings-form/SettingsForm'].map(name =>
-    `export { ${name.split('/').at(-1)} } from ${JSON.stringify(require.resolve(`@deepseek-ai/dsh-client-ui-primitives/src/${name}.tsx`))}`).join('\n'), resolveDir: process.cwd() },
+  stdin: { contents: ['Button', 'Input', 'Switch', 'SegmentedTabs', 'Tag', 'Tooltip', 'MenuSurface', 'useAnchoredPosition', 'useDismissOnOutsidePointer', 'icons/index', 'settings-form/SettingsForm', 'settings-form/fields'].map(name =>
+    `export { ${name === 'settings-form/fields' ? 'SettingsValueField' : name === 'icons/index' ? 'IconClockOutlineRegular' : name.split('/').at(-1)} } from ${JSON.stringify(require.resolve(`@deepseek-ai/dsh-client-ui-primitives/src/${name}.${name.startsWith('use') ? 'ts' : 'tsx'}`))}`).join('\n'), resolveDir: process.cwd() },
   outfile: '/virtual/context-manager-primitives.cjs', bundle: true, platform: 'node', format: 'cjs',
   external: ['react', 'react/*', 'react-dom', 'react-dom/*'], loader: { '.css': 'local-css' }, jsx: 'automatic',
   tsconfigRaw: { compilerOptions: { target: 'ES2022' } }, write: false,
@@ -51,14 +52,16 @@ test('settings section contains only policy controls and does not read any sessi
     assert.equal(document.querySelectorAll('[role="tab"]').length, 0)
     assert.equal(document.querySelectorAll('select').length, 0)
     await click('提前整理 · 70%')
-    assert.equal(document.querySelector('[aria-label="上下文用到多少时压缩"]').value, '70')
+    assert.equal(document.querySelector('#context-manager-triggerPercent').value, '70')
   } finally { await act(async () => root.unmount()); dom.window.close(); delete globalThis.window; delete globalThis.document }
 })
-const primitivesScope = { module: { exports: {} }, require }
+const primitivesScope = { module: { exports: {} }, require, setTimeout, clearTimeout }
+for (const name of ['window', 'document', 'Node']) Object.defineProperty(primitivesScope, name, { get: () => name === 'Node' ? globalThis.window?.Node : globalThis[name] })
+primitivesScope.getComputedStyle = element => globalThis.window.getComputedStyle(element)
 vm.runInNewContext(primitivesBuild.outputFiles.find(file => file.path.endsWith('.cjs')).text, primitivesScope)
 let client
 vm.runInNewContext(readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8'), {
-  AbortController, setTimeout, clearTimeout,
+  AbortController, setTimeout: (callback, delay) => setTimeout(callback, delay), clearTimeout: timer => clearTimeout(timer),
   window: { __ModuleLoader__: { load: module => { client = module.factory(name =>
     name === '@deepseek-ai/dsh-client-ui-primitives' ? primitivesScope.module.exports : require(name)) } } },
 })
@@ -95,7 +98,7 @@ test('tariff indicator shares the picker default without history or usage and fo
   try {
     await act(async () => root.render(React.createElement(client.PeakIndicator, { directory })))
     assert.ok(document.querySelector('[aria-label^="DeepSeek 官方计费"]'), 'fresh default official model displays before first request or usage reading')
-    assert.equal(document.querySelector('.cmi-peak a').href, 'https://api-docs.deepseek.com/zh-cn/quick_start/pricing/')
+    assert.equal(document.querySelector('.cmi-peak a'), null, 'indicator opens a local panel without navigation')
     assert.equal(document.querySelector('.cmi-peak style').dataset.plugin, 'dsh-context-manager')
     await publish({ pending: { provider: 'third-party', model: 'deepseek-flash' } })
     assert.ok(document.querySelector('.cmi-peak'), 'pending switch keeps the currently displayed model')
@@ -121,7 +124,7 @@ test('inspector cancels stale Session reads, never flashes another Session and r
   const state = { status: 'ready', writable: true, revision: 1, value: { policy: defaults } }
   const form = { subscribe: () => () => {}, getSnapshot: () => state }
   const pulse = { subscribe: cb => { listeners.add(cb); return () => listeners.delete(cb) }, getSnapshot: () => 1 }
-  const api = { inspect: (query, signal) => new Promise(resolve => calls.push({ query, signal, resolve })), content: () => { throw new Error('content is lazy') } }
+  const api = { idleStatus: async () => ({ status: 'off', dueAt: null, message: '闲置自动压缩已关闭' }), inspect: (query, signal) => new Promise(resolve => calls.push({ query, signal, resolve })), content: () => { throw new Error('content is lazy') } }
   const snapshot = sessionId => ({ sessionId, cursor: 1, cutSeq: 1, sampledAt: 1000, historical: false,
     pressure: null, official: null, usage: null, model: { provider: 'fixture', model: sessionId, effort: null, maxTokens: null },
     parts: [], rows: [], total: 0, offset: 0, pageSize: 50, activeCount: 0, archivedCount: 0, requests: [], requestCount: 0, compactions: [] })
@@ -159,7 +162,7 @@ test('read-only view hides only its own composer, restores drafts and reads only
   const categories = ['system', 'tools', 'user', 'inject', 'skill', 'assistant', 'tool']
   const row = { id: 'body', seq: 1, title: 'test body', category: 'user', current: true, source: 'test', tokens: 20, images: 0 }
   let reads = 0
-  const api = { inspect: async query => ({ ...query, cursor: 1, cutSeq: 1, sampledAt: 1000, historical: false, pressure: null, official: null, usage: null, model: null,
+  const api = { idleStatus: async () => ({ status: 'off', dueAt: null, message: '闲置自动压缩已关闭' }), inspect: async query => ({ ...query, cursor: 1, cutSeq: 1, sampledAt: 1000, historical: false, pressure: null, official: null, usage: null, model: null,
     parts: categories.map((category, i) => ({ category, tokens: 70 - i * 10 })), rows: [row], total: 1, pageSize: 50, activeCount: 1, archivedCount: 0,
     requests: [], requestCount: 0, compactions: [1, 2, 3, 4].map(id => ({ id: String(id), kind: 'compact', status: 'completed', startedAt: 1000, applied: true, beforeTokens: 20, afterTokens: 10 })) }),
     content: async query => { reads++; return { ...query, text: 'read-only content', totalChars: 17, nextOffset: null } } }
@@ -204,7 +207,7 @@ test('details reopen for each visit or target, stay collapsed on refresh, and ca
   const pulse = { subscribe: cb => { listeners.add(cb); return () => listeners.delete(cb) }, getSnapshot: () => revision }
   const inspections = []; const bodies = []
   const rows = Array.from({ length: 51 }, (_, seq) => ({ id: `event:${seq}`, seq, title: `item ${seq}`, category: 'user', current: true, source: 'fixture', tokens: 20, images: 0 }))
-  const api = {
+  const api = { idleStatus: async () => ({ status: 'off', dueAt: null, message: '闲置自动压缩已关闭' }),
     inspect: async query => {
       inspections.push(query)
       return { ...query, cursor: 100, cutSeq: 100, sampledAt: 1000, historical: false, pressure: null, official: null,
@@ -283,18 +286,147 @@ test('settings UI stages edits, validates them and saves the complete policy wit
   try {
     await act(async () => root.render(React.createElement(client.ContextSettings, { form })))
     assert.equal(document.querySelector('style').dataset.plugin, 'dsh-context-manager')
-    assert.match(document.body.textContent, /79\.9%/)
+    assert.match(document.body.textContent, /新消息会计入检查/)
+    assert.equal(document.querySelector('#context-manager-idleMinutes').value, '15')
+    assert.equal(document.querySelector('#context-manager-idleMinPercent').value, '65')
     const buttons = () => [...document.querySelectorAll('button')]
     await act(async () => buttons().find(b => b.textContent === '提前整理 · 70%').click())
     assert.equal(writes.length, 0)
-    assert.equal(document.querySelector('[aria-label="上下文用到多少时压缩"]').value, '70')
+    assert.equal(document.querySelector('#context-manager-triggerPercent').value, '70')
     await act(async () => buttons().find(b => b.textContent === '保存设置').click())
     assert.equal(writes.length, 1); assert.equal(writes[0].revision, 4)
     assert.equal(writes[0].ops[0].value.triggerPercent, 70)
     assert.equal(writes[0].ops[0].value.targetPercent, 40)
     assert.match(document.body.textContent, /已保存/)
     await act(async () => document.querySelector('[role="switch"]').click())
-    assert.match(document.body.textContent, /自动压缩已关闭/)
+    assert.equal(document.querySelector('#context-manager-idleMinutes').disabled, true)
     assert.equal(writes.length, 1, 'toggling the native switch still only stages an edit')
+  } finally { await act(async () => root.unmount()); dom.window.close(); delete globalThis.window; delete globalThis.document }
+})
+
+test('settings: idle fields preserve invalid drafts, save focus, and handle stale or read-only documents', async () => {
+  const dom = new JSDOM('<div id="root"></div>', { url: 'http://localhost' })
+  globalThis.window = dom.window; globalThis.document = dom.window.document; globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  let snapshot = { status: 'ready', writable: true, mode: 'host', revision: 9, value: { policy: { ...defaults } } }
+  const listeners = new Set(); const writes = []; let accept = false
+  const form = { subscribe: cb => { listeners.add(cb); return () => listeners.delete(cb) }, getSnapshot: () => snapshot,
+    async mutate(ops, revision) { writes.push({ ops, revision }); return accept } }
+  const root = createRoot(document.getElementById('root'))
+  const save = () => [...document.querySelectorAll('button')].find(b => b.textContent === '保存设置')
+  const edit = async (key, value) => act(async () => Simulate.change(document.getElementById(`context-manager-${key}`), { target: { value } }))
+  try {
+    await act(async () => root.render(React.createElement(client.ContextSettings, { form })))
+    await edit('idleMinutes', '1x')
+    assert.equal(document.getElementById('context-manager-idleMinutes').value, '1x')
+    assert.equal(save().disabled, true)
+    await edit('idleMinutes', '30'); await edit('idleMinPercent', '70'); await edit('summaryInstructions', '保留用户约束与验收命令')
+    await act(async () => { snapshot = { ...snapshot, revision: 10 }; listeners.forEach(cb => cb()) })
+    await act(async () => save().click())
+    assert.equal(writes[0].revision, 9, 'dirty draft retains its original revision')
+    assert.match(document.body.textContent, /未保存/)
+    assert.equal(writes[0].ops[0].value.idleMinutes, 30)
+    assert.equal(writes[0].ops[0].value.idleMinPercent, 70)
+    assert.equal(writes[0].ops[0].value.summaryInstructions, '保留用户约束与验收命令')
+    await act(async () => { snapshot = { ...snapshot, writable: false }; listeners.forEach(cb => cb()) })
+    assert.equal(document.getElementById('context-manager-idleMinutes').disabled, true)
+    assert.equal(save().disabled, true)
+    assert.match(document.body.textContent, /不支持保存/)
+  } finally { await act(async () => root.unmount()); dom.window.close(); delete globalThis.window; delete globalThis.document }
+})
+
+test('idle status refreshes after task completion even without a pressure change; it never polls transcript bodies', async t => {
+  const dom = new JSDOM('<div id="root"></div>', { url: 'http://localhost' })
+  globalThis.window = dom.window; globalThis.document = dom.window.document; globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const state = { status: 'ready', writable: true, revision: 1, value: { policy: defaults } }
+  const form = { subscribe: () => () => {}, getSnapshot: () => state }
+  const pulse = { subscribe: () => () => {}, getSnapshot: () => 1 }
+  let inspections = 0; const reads = []
+  const api = {
+    idleStatus: async (_query, signal) => { reads.push(signal); return reads.length === 1
+      ? { status: 'waiting', dueAt: null, message: '等待任务结束' }
+      : { status: 'scheduled', dueAt: Date.now() + 60000, message: '已开始计时' } },
+    inspect: async query => { inspections++; return { ...query, cursor: 1, cutSeq: 1, sampledAt: 1000, historical: false,
+      pressure: null, official: null, usage: null, model: null, parts: [], rows: [], total: 0, pageSize: 50,
+      activeCount: 0, archivedCount: 0, requests: [], requestCount: 0, compactions: [] } },
+    content: async () => { throw new Error('empty history has no body') },
+  }
+  const root = createRoot(document.getElementById('root'))
+  try {
+    await act(async () => root.render(React.createElement(client.ContextInspectorView, { target: 'test', form, api, pulse })))
+    await act(async () => t.mock.timers.tick(250))
+    assert.match(document.body.textContent, /等待任务结束/)
+    await act(async () => t.mock.timers.tick(5000))
+    assert.match(document.body.textContent, /分钟后检查/)
+    assert.equal(inspections, 1); assert.equal(reads.length, 2)
+    await act(async () => root.render(null)); t.mock.timers.tick(5000)
+    assert.equal(reads.length, 2); assert.ok(reads.every(signal => signal.aborted))
+  } finally { await act(async () => root.unmount()); dom.window.close(); delete globalThis.window; delete globalThis.document }
+})
+
+test('native price popover stays local, calculates entered usage, dismisses, and handles unpriced official models', async () => {
+  const dom = new JSDOM('<div id="root"></div><button id="outside">Outside</button>', { url: 'http://localhost' })
+  globalThis.window = dom.window; globalThis.document = dom.window.document; globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  const listeners = new Set()
+  let snapshot = { current: { provider: 'deepseek-official', model: 'deepseek-flash' } }
+  const directory = { subscribe: cb => { listeners.add(cb); return () => listeners.delete(cb) }, getSnapshot: () => snapshot }
+  const root = createRoot(document.getElementById('root'))
+  const trigger = () => document.querySelector('.cmi-peak button')
+  try {
+    await act(async () => root.render(React.createElement(client.PeakIndicator, { directory })))
+    await act(async () => trigger().click())
+    const dialog = document.querySelector('[role="dialog"]')
+    assert.ok(dialog); assert.equal(dialog.parentNode, document.body, 'escapes clipping ancestors')
+    assert.ok(dialog.querySelector('[data-menu-material]') || dialog.matches('[data-menu-material]'))
+    assert.equal(window.location.href, 'http://localhost/')
+    assert.deepEqual([...dialog.querySelectorAll('input')].map(input => input.value), ['', '', ''])
+    assert.equal(dialog.querySelector('.cmi-price-totals').textContent, '高峰预估—低谷预估—')
+    for (const input of dialog.querySelectorAll('input')) await act(async () => Simulate.change(input, { target: { value: '1000000' } }))
+    assert.match(dialog.querySelector('.cmi-price-totals').textContent, /¥10.04.*¥5.02/)
+    assert.match(dialog.textContent, /不是实际账单/)
+    await act(async () => Simulate.change(dialog.querySelector('input'), { target: { value: '-2' } }))
+    assert.equal(dialog.querySelector('input').getAttribute('aria-invalid'), 'true')
+    assert.match(dialog.querySelector('[role="alert"]').textContent, /非负整数/)
+    await act(async () => document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })))
+    assert.equal(document.querySelector('[role="dialog"]'), null); assert.equal(document.activeElement, trigger())
+    await act(async () => trigger().click())
+    await act(async () => document.getElementById('outside').dispatchEvent(new window.Event('pointerdown', { bubbles: true })))
+    assert.equal(document.querySelector('[role="dialog"]'), null)
+    await act(async () => { snapshot = { current: { provider: 'deepseek-account', model: 'future-model' } }; listeners.forEach(cb => cb()) })
+    await act(async () => trigger().click())
+    assert.match(document.querySelector('[role="dialog"]').textContent, /价格尚未收录/)
+    assert.equal(document.querySelector('[role="dialog"] input'), null)
+    assert.equal(document.querySelector('[role="dialog"] a').href, 'https://api-docs.deepseek.com/zh-cn/quick_start/pricing/')
+    await act(async () => { snapshot = { current: { provider: 'other', model: 'deepseek-flash' } }; listeners.forEach(cb => cb()) })
+    assert.equal(document.querySelector('[role="dialog"]'), null); assert.equal(trigger(), null)
+  } finally { await act(async () => root.unmount()); dom.window.close(); delete globalThis.window; delete globalThis.document }
+})
+
+test('context charts keep projection gaps, disjoint cache buckets, step changes and empty usage honest', async () => {
+  const dom = new JSDOM('<div id="root"></div>', { url: 'http://localhost' })
+  globalThis.window = dom.window; globalThis.document = dom.window.document; globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  const snapshot = { sessionId: 'charts', cursor: 9, cutSeq: 9, sampledAt: 1000, historical: false,
+    pressure: null, official: null, usage: { input: 110, uncached: 30, cacheRead: 70, cacheWrite: 10, output: 90 }, model: null,
+    parts: [], rows: [], total: 0, offset: 0, pageSize: 50, activeCount: 0, archivedCount: 0,
+    requests: [{ seq: 1, time: 1000, turn: 1, step: 1, provider: 'fixture', model: 'offline', input: 900, output: 30, cacheRead: 0 }, { seq: 3, time: 2000, turn: 2, step: 1, provider: 'fixture', model: 'offline', input: 400, output: 60, cacheRead: 0 }],
+    requestCount: 2, compactions: [], pressureHistory: [{ seq: 1, time: 1000, kind: 'reply', tokens: 900, window: 1000 }, { seq: 2, time: 2000, kind: 'reply', tokens: null, window: null }, { seq: 3, time: 3000, kind: 'replace', tokens: 300, window: 1000 }] }
+  const formValue = { revision: 1, value: { policy: defaults } }
+  const form = { subscribe: () => () => {}, getSnapshot: () => formValue }
+  const pulse = { subscribe: () => () => {}, getSnapshot: () => 1 }
+  const api = { idleStatus: async () => ({ status: 'off', dueAt: null, message: '' }), inspect: async () => snapshot }
+  const root = createRoot(document.getElementById('root'))
+  try {
+    await act(async () => root.render(React.createElement(client.ContextInspectorView, { target: 'charts', form, api, pulse })))
+    await act(async () => new Promise(resolve => setTimeout(resolve, 230)))
+    const path = document.querySelector('.cmi-pressure-line').getAttribute('d')
+    assert.equal((path.match(/M/g) ?? []).length, 2, 'unknown gap breaks the path')
+    assert.equal((path.match(/L/g) ?? []).length, 0)
+    assert.equal(document.querySelector('.cmi-usage-stack [data-usage="cache"]').style.width, '35%')
+    assert.equal(document.querySelector('.cmi-usage-stack [data-usage="write"]').style.width, '5%')
+    assert.match(document.querySelector('.cmi-request').textContent, /较前次输入−500/)
+    assert.equal(document.querySelectorAll('.cmi-chart [data-usage="output"]').length, 2)
+    await act(async () => document.querySelector('.cmi-pressure-point[data-unknown="true"]').click())
+    assert.match(document.querySelector('.cmi-pressure-caption').textContent, /占用未知/)
+    assert.equal(document.querySelectorAll('[role="tab"]').length, 0)
   } finally { await act(async () => root.unmount()); dom.window.close(); delete globalThis.window; delete globalThis.document }
 })

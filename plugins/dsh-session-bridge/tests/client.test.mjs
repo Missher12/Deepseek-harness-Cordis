@@ -132,6 +132,7 @@ it('owns its stylesheet before insertion and disposes only its own generation', 
     exports.apply({
       effect(start) { disposers.push(start()) },
       locale: { register: () => () => {} },
+      uiWorkspace: {},
       slots: { inject() {} },
       sessions: { list: { getSnapshot: () => ({ byId: {} }) } },
       workspaces: { list: { getSnapshot: () => ({ archivedSessionIds: [] }), subscribe: () => () => {} } },
