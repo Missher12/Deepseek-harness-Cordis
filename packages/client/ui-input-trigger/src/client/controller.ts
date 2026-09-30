@@ -220,6 +220,7 @@ export class InputTriggerController {
     const group = state.groups.find(g => g.source === source)
     const candidate = group !== undefined && group.status === 'ready' ? group.items[index] : undefined
     if (candidate === undefined) return
+    if (state.category !== undefined && candidate.category !== state.category) return
     const src = this.deps.roster.sources(hit.trigger).find(s => s.name === source)
     if (src === undefined) return
     this.settle(src, candidate, hit, action)
@@ -255,6 +256,15 @@ export class InputTriggerController {
   }
 
   /**
+   * Filter @ candidates without changing the draft or fetching another query.
+   * @param category - reference category, or undefined for all candidates.
+   */
+  selectCategory(category: MenuState['category']): void {
+    if (this.disposed) return
+    this.reduce({ type: 'category', category })
+  }
+
+  /**
    * Keyboard arbitration while the menu is open.
    * @param key - intercepted key.
    * @param composing - inside IME composition: everything passes.
@@ -287,7 +297,7 @@ export class InputTriggerController {
         return 'consumed'
       }
       case 'enter': {
-        if (state.highlight === null) return 'pass'
+        if (state.highlight === null) return state.category === undefined ? 'pass' : 'consumed'
         // Refinement keeps the previous rows and highlight visible while the
         // next fetch is pending; Enter then neither picks the stale row nor
         // falls through to submit — an explicit no-op until the group is ready.

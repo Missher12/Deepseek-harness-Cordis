@@ -16,7 +16,7 @@ export const zh = {
   'section.plugins': '插件',
   'section.files': '文件与文件夹',
   'section.subagents': '子智能体',
-  'section.sessions': '对话',
+  'section.sessions': '会话',
   'candidate.noCwd': '（无工作目录）',
   'crumb.root': '工作区',
   'time.now': '刚刚',

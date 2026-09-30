@@ -93,6 +93,7 @@ describe('apply', () => {
     injected.onCrumb('command', 0)
     expect(controller.menu.getSnapshot().open).toBe(false)
     // The hover face routes into the controller too (closed menu → no-op).
+    injected.onCategory('plugin')
     injected.onHover('command', 0)
     expect(controller.menu.getSnapshot().open).toBe(false)
     // The dismiss face routes into the controller too (closed menu → no-op).

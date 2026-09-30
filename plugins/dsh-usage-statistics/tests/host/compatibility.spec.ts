@@ -5,15 +5,13 @@ import {evaluatePluginCompatibility, getDshRuntimeVersion} from '@deepseek-ai/ds
 const manifest = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'))
 
 describe('real Host compatibility guard', () => {
-  it('admits this Bundle on 0.2.0-rc.1 without any version exemption', () => {
-    expect(getDshRuntimeVersion()).toBe('0.2.0-rc.1')
+  it('admits this Bundle on the supported Host without any version exemption', () => {
+    expect(['0.2.0-rc.1', '0.2.0-rc.2']).toContain(getDshRuntimeVersion())
     expect(evaluatePluginCompatibility(manifest)).toBeUndefined()
   })
 
-  it.each(['0.1.7-rc.2', '0.2.0', '0.2.1-rc.1'])('rejects the unvalidated runtime %s', runtime => {
-    expect(evaluatePluginCompatibility(manifest, {}, runtime)).toMatchObject({
-      name: manifest.name, version: manifest.version, runtimeVersion: runtime, exempted: false,
-    })
+  it.each(['0.1.7-rc.2', '0.2.0', '0.2.1-rc.1'])('does not reject runtime %s by version alone', runtime => {
+    expect(evaluatePluginCompatibility(manifest, {}, runtime)).toBeUndefined()
   })
 
   it('still rejects the previous release manifest on the new Host', () => {
@@ -23,7 +21,7 @@ describe('real Host compatibility guard', () => {
       '@deepseek-ai/dsh-session-persistence': '0.1.7-rc.2',
     }}
     expect(evaluatePluginCompatibility(previous)).toMatchObject({
-      name: manifest.name, version: '0.2.0', runtimeVersion: '0.2.0-rc.1', exempted: false,
+      name: manifest.name, version: '0.2.0', runtimeVersion: getDshRuntimeVersion(), exempted: false,
     })
   })
 })

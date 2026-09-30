@@ -1,6 +1,10 @@
 # DSH 上下文管理
 
-面向 **DeepSeek Harness 0.2.0-rc.1** 的独立 Bundle，当前本地升级候选为 **0.5.0-local.1**。在会话原有的 **对话 / 轨迹** 后增加 **上下文** 页签；**设置 → 上下文管理** 只放压缩参数。源码参考目标与预设文件摘要见 `COMPATIBILITY.json`。
+自家插件不再限制 DSH 宿主版本号；运行时按实际接口能力工作。开发依赖版本用于复现构建，不是安装门槛。本轮验证基线为 0.2.0-rc.1 与 0.2.0-rc.2，其他版本尚未验证。
+
+DSH 当前包名：`@missher/dsh-context-manager`。2026-09-29 统一命名；仓库与源码目录、配置键及数据目录保持原有值。旧包升级需替换旧依赖与 Bundle 引用，不应同时启用新旧包。
+
+面向 **DeepSeek Harness 0.2.0-rc.1 / 0.2.0-rc.2** 的独立 Bundle，当前本地升级候选为 **0.5.0-local.3**。在会话原有的 **对话 / 轨迹** 后增加 **上下文** 页签；**设置 → 上下文管理** 只放压缩参数。源码参考目标与预设文件摘要见 `COMPATIBILITY.json`。
 
 上下文页采用紧凑的单面板布局：摘要展示 3 个关键指标、占用最多的 3 类内容和最近 2 条压缩记录，其余分类及记录可展开。外层“详细内容与记录”首次进入、重新打开及切换会话时默认展开，正文、逐次变化、本会话累计用量连续显示；本次访问中手动收起后，普通刷新保持收起。正文仍只读取选中条目的当前段落，列表和正文继续分页，不预加载所有历史。仍只有外层“对话 / 轨迹 / 上下文”页签。
 
@@ -90,7 +94,7 @@
 
 Bundle 关闭根 Basic 自动控制器，插入一个根 ContextEngine；Standard、PTC、Cordis 的隔离 compaction group 则各换成同一个派生实现。Minimal 使用根实现。`auto: false` 在构造时确定，不修改已有实例的私有监听器。手动 `/compact` 仍由官方命令与事务实现处理。
 
-当前 Loader 的 patch **按 id 替换整个 config**，不能只替换嵌套 provider 名称。因此 `cordis.patch.yml` 从本次已核验版本的官方预设自动生成，只改变 compaction provider，保留其他字段与条件表达式；原文件 hash 可检查。更新 Harness 后必须重新核对生成。用户已经保存的预设配置属于后置覆盖层，仍然优先；自定义/被覆盖预设需要显式将其 `@deepseek-ai/dsh-compaction-basic` 改为 `dsh-context-manager/engine`。不声称安装即可接管所有自定义预设。
+当前 Loader 的 patch **按 id 替换整个 config**，不能只替换嵌套 provider 名称。因此 `cordis.patch.yml` 从本次已核验版本的官方预设自动生成，只改变 compaction provider，保留其他字段与条件表达式；原文件 hash 可检查。更新 Harness 后必须重新核对生成。用户已经保存的预设配置属于后置覆盖层，仍然优先；自定义/被覆盖预设需要显式将其 `@deepseek-ai/dsh-compaction-basic` 改为 `@missher/dsh-context-manager/engine`。不声称安装即可接管所有自定义预设。
 
 已运行 Agent 可能仍持有旧预设实例。安装或卸载后按宿主规定重启目标 profile，再验证新实例。插件停用不删除会话数据。
 

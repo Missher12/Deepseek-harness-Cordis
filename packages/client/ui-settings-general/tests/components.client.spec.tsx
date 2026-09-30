@@ -74,6 +74,23 @@ describe('Desktop collapsed update badge', () => {
   })
 })
 
+it('keeps a manual system-update entry visible while idle and prevents duplicate checks', () => {
+  vi.stubEnv('DSH_CLIENT_VERSION', '0.2.0-rc.1')
+  const update = createSnapshotStore<DesktopUpdateView>({ failed: false, opening: false, presentation: { phase: 'idle' } })
+  const openDesktopUpdate = vi.fn()
+  const props = { ...kit, t, desktop: true, openDesktopUpdate, useDesktopUpdate: bindSnapshotSelector(update) }
+  const view = render(<CurrentVersionRow {...props} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Check for updates' }))
+  expect(openDesktopUpdate).toHaveBeenCalledOnce()
+  view.rerender(<CurrentVersionRow {...props} desktop={false} />)
+  expect(screen.queryByRole('button')).toBeNull()
+  const busy = createSnapshotStore<DesktopUpdateView>({ failed: false, opening: true })
+  view.rerender(<CurrentVersionRow {...props} useDesktopUpdate={bindSnapshotSelector(busy)} />)
+  expect(screen.getByRole('button').hasAttribute('disabled')).toBe(true)
+  fireEvent.click(screen.getByRole('button'))
+  expect(openDesktopUpdate).toHaveBeenCalledOnce()
+})
+
 it('toggles developer tools using the accepted setting and disables duplicate writes', async () => {
   const state = createSnapshotStore(false)
   let finish!: () => void

@@ -28,16 +28,16 @@ export function inspectionSchema() { return z.object({
 }) }
 export function contentPageSchema() { return z.object({ sessionId: sessionId(), cutSeq: seq(), id: z.string(), text: z.string().max(16000), offset: count(), totalChars: count(), nextOffset: count().nullable() }) }
 export const TYPERT_REMOTE = {
-  package: 'dsh-context-manager',
+  package: '@missher/dsh-context-manager',
   descriptors: [
-    { id: 'dsh-context-manager#contextInspector/idleStatus', service: 'contextInspector', namespace: 'contextInspector', method: 'idleStatus', invocation: { kind: 'direct' },
-      parameters: [{ name: 'query', wire: 'query', source: 'json', codec: { mode: 'strict', typeSymbol: 'dsh-context-manager#IdleQuery', create: idleQuerySchema } }],
-      cancellation: { parameter: 'signal' }, result: { mode: 'strict', typeSymbol: 'dsh-context-manager#IdleStatus', create: idleStatusSchema } },
-    { id: 'dsh-context-manager#contextInspector/inspect', service: 'contextInspector', namespace: 'contextInspector', method: 'inspect', invocation: { kind: 'direct' },
-      parameters: [{ name: 'query', wire: 'query', source: 'json', codec: { mode: 'strict', typeSymbol: 'dsh-context-manager#InspectQuery', create: inspectQuerySchema } }],
-      cancellation: { parameter: 'signal' }, result: { mode: 'strict', typeSymbol: 'dsh-context-manager#Inspection', create: inspectionSchema } },
-    { id: 'dsh-context-manager#contextInspector/content', service: 'contextInspector', namespace: 'contextInspector', method: 'content', invocation: { kind: 'direct' },
-      parameters: [{ name: 'query', wire: 'query', source: 'json', codec: { mode: 'strict', typeSymbol: 'dsh-context-manager#ContentQuery', create: contentQuerySchema } }],
-      cancellation: { parameter: 'signal' }, result: { mode: 'strict', typeSymbol: 'dsh-context-manager#ContentPage', create: contentPageSchema } },
+    { id: '@missher/dsh-context-manager#contextInspector/idleStatus', service: 'contextInspector', namespace: 'contextInspector', method: 'idleStatus', invocation: { kind: 'direct' },
+      parameters: [{ name: 'query', wire: 'query', source: 'json', codec: { mode: 'strict', typeSymbol: '@missher/dsh-context-manager#IdleQuery', create: idleQuerySchema } }],
+      cancellation: { parameter: 'signal' }, result: { mode: 'strict', typeSymbol: '@missher/dsh-context-manager#IdleStatus', create: idleStatusSchema } },
+    { id: '@missher/dsh-context-manager#contextInspector/inspect', service: 'contextInspector', namespace: 'contextInspector', method: 'inspect', invocation: { kind: 'direct' },
+      parameters: [{ name: 'query', wire: 'query', source: 'json', codec: { mode: 'strict', typeSymbol: '@missher/dsh-context-manager#InspectQuery', create: inspectQuerySchema } }],
+      cancellation: { parameter: 'signal' }, result: { mode: 'strict', typeSymbol: '@missher/dsh-context-manager#Inspection', create: inspectionSchema } },
+    { id: '@missher/dsh-context-manager#contextInspector/content', service: 'contextInspector', namespace: 'contextInspector', method: 'content', invocation: { kind: 'direct' },
+      parameters: [{ name: 'query', wire: 'query', source: 'json', codec: { mode: 'strict', typeSymbol: '@missher/dsh-context-manager#ContentQuery', create: contentQuerySchema } }],
+      cancellation: { parameter: 'signal' }, result: { mode: 'strict', typeSymbol: '@missher/dsh-context-manager#ContentPage', create: contentPageSchema } },
   ],
 } satisfies TypertRemoteContribution

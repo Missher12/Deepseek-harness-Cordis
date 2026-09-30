@@ -24,14 +24,18 @@ export class DesktopUpdateSource {
     })
   }
 
-  /** Invoke one user action; subsequent clicks join the shell-owned operation. */
-  open(): void {
+  /**
+   * Invoke one user action; subsequent clicks join the shell-owned operation.
+   * @param manual - Check metadata and confirm downloads instead of selecting the status action.
+   */
+  open(manual = false): void {
     if (!this.live || this.bridge === undefined) return
     const state = this.store.getSnapshot()
     if (state.opening || (state.presentation !== undefined
       && ['checking', 'downloading', 'verifying', 'installing'].includes(state.presentation.phase))) return
     this.store.set({ ...state, opening: true })
-    void this.bridge.open().catch(() => {
+    const action = manual && this.bridge.check !== undefined ? this.bridge.check() : this.bridge.open()
+    void action.catch(() => {
       if (this.live) this.store.set({ ...this.store.getSnapshot(), failed: true })
     }).finally(() => {
       if (this.live) this.store.set({ ...this.store.getSnapshot(), opening: false })

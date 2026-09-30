@@ -24,6 +24,8 @@ export interface DesktopUpdatePresentation {
 export interface DesktopUpdateBridge {
   status(): Promise<DesktopUpdatePresentation>
   open(): Promise<void>
+  /** Manual metadata check; older Desktop carriers fall back to open. */
+  check?(): Promise<void>
   subscribe(listener: (state: DesktopUpdatePresentation) => void): () => void
 }
 

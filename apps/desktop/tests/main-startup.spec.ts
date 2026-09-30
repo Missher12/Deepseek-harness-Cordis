@@ -335,6 +335,7 @@ vi.mock('../src/update-coordinator.ts', () => ({ DesktopUpdateCoordinator: class
     harness.publishUpdate = publish
   }
   get state() { return harness.updateState }
+  get hasInstallerSource() { return true }
   readonly check = harness.updateCheck
   readonly download = harness.updateDownload
   readonly install = harness.updateInstall
@@ -1288,6 +1289,25 @@ describe('desktop main startup', () => {
     await host.stopping.promise
     host.exited.resolve()
     await harness.quitCompleted.promise
+  })
+
+  it('checks community releases without attempting installation when the build has no feed', async () => {
+    const { DesktopUpdateCoordinator } = await import('../src/update-coordinator.ts')
+    const { net } = await import('electron')
+    vi.spyOn(DesktopUpdateCoordinator.prototype, 'hasInstallerSource', 'get').mockReturnValue(false)
+    vi.mocked(net).fetch.mockResolvedValueOnce(Response.json([{ tag_name: 'dsh-v1.0.1-rc.2', draft: false }]))
+    await readyWorkspace()
+    harness.dialog.showMessageBox.mockResolvedValueOnce({ response: 1 })
+    await invoke(DESKTOP_IPC.updatesCheck, 'app')
+    const options = harness.dialog.showMessageBox.mock.calls.at(-1)![0] as MessageBoxOptions
+    expect(options).toMatchObject({
+      message: 'New upstream version: 1.0.1-rc.2',
+      buttons: [en.communityUpdateNotes, en.later],
+    })
+    expect(options.detail).toContain(en.communityUpdateDetail)
+    expect(harness.updateDownload).not.toHaveBeenCalled()
+    expect(harness.updateInstall).not.toHaveBeenCalled()
+    expect(harness.openExternal).not.toHaveBeenCalled()
   })
 
   it('defers the downloaded-update confirmation until the hidden window is shown again', async () => {

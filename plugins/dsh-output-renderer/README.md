@@ -1,6 +1,8 @@
 # DSH 输出外观
 
-独立、可卸载的 DeepSeek Harness Bundle。适配 **DSH 0.2.0-rc.1**。
+自家插件不再限制 DSH 宿主版本号；运行时按实际接口能力工作。开发依赖版本用于复现构建，不是安装门槛。本轮验证基线为 0.2.0-rc.1 与 0.2.0-rc.2，其他版本尚未验证。
+
+独立、可卸载的 DeepSeek Harness Bundle。适配 **DSH 0.2.0-rc.1 / 0.2.0-rc.2**。
 
 安装后进入 **设置 → 输出外观**，布局和动效可以独立选择并自动保存。
 
@@ -30,18 +32,18 @@
 
 公共流程、独立测试 profile 和常见错误见[安装指南](https://github.com/Missher12/Deepseek-harness-Cordis/blob/main/docs/cookbook/install-cordis-plugins.zh.md)。
 
-桌面版：进入 **插件 → 添加插件**，在“包名或地址”中粘贴本地 `missher-dsh-output-renderer-0.1.2-rc.1.tgz` 的完整路径，然后点“安装”。安装后进入 **设置 → 输出外观**。桌面版的 `desktop` profile 由 Electron 专管，不能通过 CLI 安装。
+桌面版：进入 **插件 → 添加插件**，在“包名或地址”中粘贴本地 `missher-dsh-output-renderer-0.1.2-rc.2.tgz` 的完整路径，然后点“安装”。安装后进入 **设置 → 输出外观**。桌面版的 `desktop` profile 由 Electron 专管，不能通过 CLI 安装。
 
 Web 或自建 profile 也可以用目标 DSH 的官方 CLI：
 
 ```sh
-dsh plugin --profile <目标配置名称> add /完整路径/missher-dsh-output-renderer-0.1.2-rc.1.tgz
+dsh plugin --profile <目标配置名称> add /完整路径/missher-dsh-output-renderer-0.1.2-rc.2.tgz
 dsh plugin --profile <目标配置名称> remove @missher/dsh-output-renderer
 ```
 
 使用独立命名空间 `output-renderer` 保存设置，默认“清晰阅读 + 新增文字淡入”。移除后恢复原生渲染，不删除会话、附件或其他插件设置。
 
-这是针对 0.2.0-rc.1 的实现，升级宿主前应重新验证聊天布局的数据属性与公开插槽。包不携带测试模型、API 凭据或运行数据。
+这是针对 0.2.0-rc.1 / 0.2.0-rc.2 的实现，升级宿主前应重新验证聊天布局的数据属性与公开插槽。包不携带测试模型、API 凭据或运行数据。
 
 ## 开发
 

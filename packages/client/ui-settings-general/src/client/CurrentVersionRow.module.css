@@ -1,7 +1,17 @@
 .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
   padding: 16px 0;
   color: var(--dsw-alias-label-primary);
   font-size: 14px;
   line-height: 22px;
   overflow-wrap: anywhere;
+}
+
+.title {
+  font-weight: 500;
+  margin-bottom: 4px;
 }

@@ -50,26 +50,33 @@ const closed = (state: MenuState): MenuState =>
     : state
 
 /** First item of the first non-empty ready group, or null. */
-function firstHighlight(groups: MenuState['groups']): MenuState['highlight'] {
+function firstHighlight(groups: MenuState['groups'], category?: MenuState['category']): MenuState['highlight'] {
   for (const g of groups) {
-    if (g.status === 'ready' && g.items.length > 0) return { source: g.source, index: 0 }
+    if (g.status !== 'ready') continue
+    const index = g.items.findIndex(item => category === undefined || item.category === category)
+    if (index >= 0) return { source: g.source, index }
   }
   return null
 }
 
 /** The highlight itself when it still points at a ready item, else null. */
-function validHighlight(highlight: MenuState['highlight'], groups: MenuState['groups']): MenuState['highlight'] {
+function validHighlight(
+  highlight: MenuState['highlight'], groups: MenuState['groups'], category?: MenuState['category'],
+): MenuState['highlight'] {
   if (!highlight) return null
   const g = groups.find(x => x.source === highlight.source)
-  return g && g.status === 'ready' && highlight.index < g.items.length ? highlight : null
+  const item = g?.status === 'ready' ? g.items[highlight.index] : undefined
+  return item !== undefined && (category === undefined || item.category === category) ? highlight : null
 }
 
 /** Flatten ready items into (source, index) positions in group order. */
-function positions(groups: MenuState['groups']): { source: string; index: number }[] {
+function positions(groups: MenuState['groups'], category?: MenuState['category']): { source: string; index: number }[] {
   const out: { source: string; index: number }[] = []
   for (const g of groups) {
     if (g.status !== 'ready') continue
-    for (let i = 0; i < g.items.length; i++) out.push({ source: g.source, index: i })
+    for (const [index, item] of g.items.entries()) {
+      if (category === undefined || item.category === category) out.push({ source: g.source, index })
+    }
   }
   return out
 }
@@ -99,6 +106,7 @@ export const menuReduce: MenuReduce = (state, ev) => {
         open: true,
         hit: ev.hit,
         generation: state.generation + 1,
+        ...(ev.hit.trigger === '@' && !ev.hit.quoted && state.category !== undefined ? { category: state.category } : {}),
         // Items and highlight survive the refinement (stale-while-revalidate):
         // the previous query's candidates stay rendered with the highlight
         // parked where it was while the new fetch runs, and the settled
@@ -116,7 +124,7 @@ export const menuReduce: MenuReduce = (state, ev) => {
       const groups = state.groups.map((g, i) =>
         i === idx ? { ...g, status: 'ready' as const, items } : g)
       if (allReadyEmpty(groups)) return closed(state)
-      const highlight = validHighlight(state.highlight, groups) ?? firstHighlight(groups)
+      const highlight = validHighlight(state.highlight, groups, state.category) ?? firstHighlight(groups, state.category)
       return { ...state, groups, highlight }
     }
     case 'source-failed': {
@@ -124,12 +132,12 @@ export const menuReduce: MenuReduce = (state, ev) => {
       if (!state.groups.some(g => g.source === ev.source)) return state
       const groups = state.groups.filter(g => g.source !== ev.source)
       if (groups.length === 0 || allReadyEmpty(groups)) return closed(state)
-      const highlight = validHighlight(state.highlight, groups) ?? firstHighlight(groups)
+      const highlight = validHighlight(state.highlight, groups, state.category) ?? firstHighlight(groups, state.category)
       return { ...state, groups, highlight }
     }
     case 'move': {
       if (!state.open) return state
-      const pos = positions(state.groups)
+      const pos = positions(state.groups, state.category)
       if (pos.length === 0) return state
       const hl = state.highlight
       const at = hl ? pos.findIndex(p => p.source === hl.source && p.index === hl.index) : -1
@@ -142,11 +150,15 @@ export const menuReduce: MenuReduce = (state, ev) => {
     }
     case 'hover': {
       if (!state.open) return state
-      const target = validHighlight({ source: ev.source, index: ev.index }, state.groups)
+      const target = validHighlight({ source: ev.source, index: ev.index }, state.groups, state.category)
       if (target === null) return state
       const hl = state.highlight
       if (hl && hl.source === target.source && hl.index === target.index) return state
       return { ...state, highlight: target }
+    }
+    case 'category': {
+      if (!state.open || state.hit?.trigger !== '@' || state.category === ev.category) return state
+      return { ...state, category: ev.category, highlight: firstHighlight(state.groups, ev.category) }
     }
     case 'close':
       return closed(state)

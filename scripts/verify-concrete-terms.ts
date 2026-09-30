@@ -16,6 +16,7 @@ const bundleManifestReferences = new Set([
   'plugins/dsh-usage-statistics/package.json',
   'plugins/dsh-usage-statistics/README.md',
   'plugins/dsh-usage-statistics/VALIDATION.md',
+  'plugins/dsh-usage-statistics/verification/upgrade-020.json',
 ])
 
 /** One blocked term occurrence in a tracked path or text line. */

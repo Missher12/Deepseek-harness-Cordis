@@ -113,7 +113,7 @@ it('owns its stylesheet before insertion and disposes only its own generation', 
     },
     head: { appendChild(sheet) {
       if (sheet.id === 'dsh-session-bridge-styles') {
-        assert.equal(sheet.dataset.plugin, 'dsh-session-bridge')
+        assert.equal(sheet.dataset.plugin, '@missher/dsh-session-bridge')
         assert.equal(sheet.dataset.pluginCss, sheet.id)
       }
       sheets.push(sheet)

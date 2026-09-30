@@ -6,7 +6,7 @@ if (!source) throw new Error('Usage: node scripts/link-harness.mjs /path/to/buil
 const root = resolve(source)
 const manifest = JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8'))
 const local = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
-const expected = local.peerDependencies['@deepseek-ai/dsh-agent']
+const expected = local.devDependencies['@deepseek-ai/dsh-agent']
 if (manifest.version !== expected) throw new Error(`Expected Harness ${expected}, got ${manifest.version}`)
 async function link(name, target) {
   const dest = resolve('node_modules', name)

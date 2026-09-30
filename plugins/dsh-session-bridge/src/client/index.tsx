@@ -210,7 +210,7 @@ function installStyles(): () => void {
   style.id = STYLE_ID
   // Effects run after factory materialization; declare ownership before a
   // later plugin can claim this sheet and delete it during its own unload.
-  style.dataset.plugin = 'dsh-session-bridge'
+  style.dataset.plugin = '@missher/dsh-session-bridge'
   style.dataset.pluginCss = STYLE_ID
   style.textContent = STYLES
   document.head.appendChild(style)

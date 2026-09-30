@@ -24,6 +24,8 @@ export interface MenuViewInjected {
    * @param index - candidate index within the group.
    */
   onHover: (source: string, index: number) => void
+  /** Select a reference category, or show all candidates when absent. */
+  onCategory: (category: MenuState['category']) => void
   /**
    * Pointer pick on one header crumb, routed back through the source's drill path.
    * @param source - source (group) name.

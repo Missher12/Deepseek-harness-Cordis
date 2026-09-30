@@ -241,6 +241,7 @@ function fileCandidate(
     ...(withLocation && parent !== '' ? { description: parent } : {}),
     icon: directory ? 'folder' as const : 'file' as const,
     section: t('section.files'),
+    category: 'file' as const,
     value: JSON.stringify(value),
     ...(directory ? { drill: true } : {}),
   }]
@@ -271,6 +272,7 @@ function sessionCandidate(
     name: label,
     description: location === undefined ? age : `${location} · ${age}`,
     icon: 'session' as const,
+    category: 'session' as const,
     section,
     value: JSON.stringify(value),
   }

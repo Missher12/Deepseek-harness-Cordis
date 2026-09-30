@@ -6,11 +6,11 @@ import { execFileSync } from 'node:child_process'
 import { load, dump, DEFAULT_SCHEMA, Type } from 'js-yaml'
 const root = resolve(process.argv[2] ?? '')
 const pkg = JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8'))
-const expected = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8')).peerDependencies['@deepseek-ai/dsh-agent']
+const expected = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8')).devDependencies['@deepseek-ai/dsh-agent']
 if (pkg.version !== expected) throw new Error(`Expected Harness ${expected}, got ${pkg.version}`)
 const schema = DEFAULT_SCHEMA.extend([new Type('tag:yaml.org,2002:js', { kind: 'scalar', construct: text => ({ __jsExpr: text }) })])
 const patches = [{ id: 'compaction-basic', name: '@deepseek-ai/dsh-compaction-basic', disabled: true }, {
-  insert: [{ id: 'context-manager', name: 'dsh-context-manager' }, { id: 'context-manager-engine', name: 'dsh-context-manager/engine' }, { id: 'context-manager-inspector', name: 'dsh-context-manager/inspector' }],
+  insert: [{ id: 'context-manager', name: '@missher/dsh-context-manager' }, { id: 'context-manager-engine', name: '@missher/dsh-context-manager/engine' }, { id: 'context-manager-inspector', name: '@missher/dsh-context-manager/inspector' }],
 }]
 const sources = []
 for (const preset of ['standard', 'ptc', 'cordis']) {
@@ -21,7 +21,7 @@ for (const preset of ['standard', 'ptc', 'cordis']) {
   if (!row) throw new Error('Missing expected preset: ' + preset)
   let changes = 0
   const visit = entries => { for (const entry of entries) {
-    if (entry.name === '@deepseek-ai/dsh-compaction-basic') { entry.name = 'dsh-context-manager/engine'; changes++ }
+    if (entry.name === '@deepseek-ai/dsh-compaction-basic') { entry.name = '@missher/dsh-context-manager/engine'; changes++ }
     if (entry.group && Array.isArray(entry.config)) visit(entry.config)
   } }
   visit(row.config.plugins)
@@ -30,4 +30,4 @@ for (const preset of ['standard', 'ptc', 'cordis']) {
   sources.push({ path, sha256: createHash('sha256').update(raw).digest('hex'), replacedBackends: changes })
 }
 await writeFile('cordis.patch.yml', `# Generated for Harness ${pkg.version}; profile/user overrides remain later layers.\n` + dump(patches, { lineWidth: -1, noRefs: true }))
-await writeFile('COMPATIBILITY.json', JSON.stringify({ harnessVersion: pkg.version, sourceSha: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), sources, customPresets: 'Replace the compaction-basic provider with dsh-context-manager/engine explicitly. Saved preset overrides take precedence.' }, null, 2) + '\n')
+await writeFile('COMPATIBILITY.json', JSON.stringify({ harnessVersion: pkg.version, verifiedHarnessVersions: ['0.2.0-rc.1', '0.2.0-rc.2'], sourceSha: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), sources, customPresets: 'Replace the compaction-basic provider with @missher/dsh-context-manager/engine explicitly. Saved preset overrides take precedence.' }, null, 2) + '\n')

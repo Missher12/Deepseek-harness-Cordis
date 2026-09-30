@@ -9,7 +9,7 @@ import assert from 'node:assert/strict'
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
 const source = process.env.DSH_SOURCE_DIR
-if (!source) throw new Error('Set DSH_SOURCE_DIR to a built Harness 0.2.0-rc.1 source tree')
+if (!source) throw new Error('Set DSH_SOURCE_DIR to a built Harness 0.2.0-rc.1 or 0.2.0-rc.2 source tree')
 const cli = resolve(source, 'apps/cli/lib/bin.js')
 const manifest = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'))
 const runtime = JSON.parse(await readFile(join(source, 'apps/cli/package.json'), 'utf8')).version

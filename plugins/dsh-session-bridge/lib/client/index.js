@@ -1,5 +1,5 @@
 window.__ModuleLoader__.load({
-  id: "dsh-session-bridge",
+  id: "@missher/dsh-session-bridge",
   factory: (require) => {
     var module = { exports: {} };
     var exports = module.exports;
@@ -475,30 +475,28 @@ function ScratchWorkspacePicker({
     }
     onPick(id);
   };
-  const workspaceItems = workspaces.map((workspace) => ({
+  const scratch = workspaces.find((workspace) => workspace.workspaceId === scratchWorkspaceId);
+  const workspaceItems = workspaces.filter((workspace) => workspace.workspaceId !== scratchWorkspaceId).map((workspace) => ({
     id: workspace.workspaceId,
     label: workspace.title,
     icon: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_dsh_client_ui_primitives.IconFolderCloseRegular, { size: 16 }),
     disabled: busy
   }));
-  const scratchListed = workspaces.some((workspace) => workspace.workspaceId === scratchWorkspaceId);
   const addEntries = [
     {
       id: ADD_WORKSPACE,
       label: text2(t, "picker.addWorkspace"),
       icon: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_dsh_client_ui_primitives.IconPlusOutlineRegular, { size: 16 }),
       disabled: busy
-    },
-    ...!lookingUpScratch && !scratchListed ? [{
-      id: SCRATCH,
-      label: busy ? text2(t, "picker.starting") : text2(t, "picker.scratch"),
-      icon: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_dsh_client_ui_primitives.IconSparkleRegular, { size: 16 }),
-      disabled: busy
-    }] : []
+    }
   ];
-  const pinAdd = workspaces.length > 0;
-  const items = pinAdd ? workspaceItems : addEntries;
-  const menuIsEmpty = items.length === 0;
+  const scratchEntries = !lookingUpScratch ? [{
+    id: scratch?.workspaceId ?? SCRATCH,
+    label: scratch?.title ?? (busy ? text2(t, "picker.starting") : text2(t, "picker.scratch")),
+    icon: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_dsh_client_ui_primitives.IconSparkleRegular, { size: 16 }),
+    disabled: busy
+  }] : [];
+  const items = [...workspaceItems, ...addEntries, ...scratchEntries];
   const closeModal = () => {
     setError(null);
   };
@@ -506,10 +504,9 @@ function ScratchWorkspacePicker({
     /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
       import_dsh_client_ui_primitives.Menu,
       {
-        open: open && !menuIsEmpty,
+        open,
         anchor: null,
         items,
-        ...pinAdd ? { footer: addEntries } : {},
         selectedId,
         onSelect: handleSelect,
         onClose,
@@ -518,7 +515,7 @@ function ScratchWorkspacePicker({
         getAnchorRect
       }
     ),
-    open && !menuIsEmpty && (snapshot.phase === "pending" || lookingUpScratch) && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "dsh-sbp-status", role: "status", children: text2(t, "picker.loading") }),
+    open && (snapshot.phase === "pending" || lookingUpScratch) && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "dsh-sbp-status", role: "status", children: text2(t, "picker.loading") }),
     /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
       import_dsh_client_ui_primitives.Modal,
       {
@@ -530,7 +527,7 @@ function ScratchWorkspacePicker({
         children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { role: "alert", children: error })
       }
     ),
-    open && !pinAdd && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "dsh-sbp-hint", role: "note", children: text2(t, "picker.scratchHint") })
+    open && workspaces.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "dsh-sbp-hint", role: "note", children: text2(t, "picker.scratchHint") })
   ] });
 }
 
@@ -683,7 +680,21 @@ function createSessionDeleteActions(archive, send = fetch) {
 function SessionDeleteMenuItem({ sessionId, archive, deleteActions, useMenuOpenState, t }) {
   const [, setMenuOpen] = useMenuOpenState();
   const snapshot = (0, import_react4.useSyncExternalStore)(archive.subscribe, archive.getSnapshot);
-  if (!snapshot.archivedSessionIds.includes(sessionId)) return null;
+  const archived = snapshot.archivedSessionIds.includes(sessionId);
+  const [supported, setSupported] = (0, import_react4.useState)(false);
+  (0, import_react4.useEffect)(() => {
+    if (!archived) return;
+    const abort = new AbortController();
+    void fetch(SESSION_DELETE_PATH.slice(1), { credentials: "same-origin", cache: "no-store", signal: abort.signal }).then(async (response) => response.ok ? await response.json() : null).then((result) => {
+      if (!abort.signal.aborted) setSupported(result?.supported === true);
+    }).catch(() => {
+      if (!abort.signal.aborted) setSupported(false);
+    });
+    return () => {
+      abort.abort();
+    };
+  }, [archived]);
+  if (!archived || !supported) return null;
   return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_dsh_client_ui_primitives3.MenuItemButton, { danger: true, separatorBefore: true, onSelect: () => {
     setMenuOpen(false);
     deleteActions.request(sessionId);
@@ -714,6 +725,44 @@ function SessionDeleteDialog({ deleteActions, t }) {
       ]
     }
   );
+}
+
+// src/client/scratch-placement.ts
+function trackScratchPlacement(workspaces, find, register) {
+  let generation;
+  let release;
+  let registered = null;
+  let previous;
+  const place = (id) => {
+    if (registered === id) return;
+    release?.();
+    release = void 0;
+    registered = id;
+    if (id !== null) release = register(id);
+  };
+  const refresh = () => {
+    const snapshot = workspaces.getSnapshot();
+    const ids = snapshot.items.map((item) => item.workspaceId);
+    const key = JSON.stringify([ids, snapshot.phase, snapshot.state]);
+    if (key === previous) return;
+    previous = key;
+    generation?.abort();
+    const controller = new AbortController();
+    generation = controller;
+    if (registered !== null && !ids.includes(registered)) place(null);
+    void find(controller.signal).then((id) => {
+      if (!controller.signal.aborted) place(id !== null && ids.includes(id) ? id : null);
+    }).catch((reason) => {
+      if (!controller.signal.aborted) console.warn("session-bridge: scratch placement lookup failed", reason);
+    });
+  };
+  const unsubscribe = workspaces.subscribe(refresh);
+  refresh();
+  return () => {
+    generation?.abort();
+    unsubscribe();
+    place(null);
+  };
 }
 
 // src/client/index.tsx
@@ -832,7 +881,7 @@ function installStyles() {
   if (existing !== null) existing.remove();
   const style = document.createElement("style");
   style.id = STYLE_ID;
-  style.dataset.plugin = "dsh-session-bridge";
+  style.dataset.plugin = "@missher/dsh-session-bridge";
   style.dataset.pluginCss = STYLE_ID;
   style.textContent = STYLES;
   document.head.appendChild(style);
@@ -841,6 +890,11 @@ function installStyles() {
   };
 }
 function apply(ctx) {
+  const picker = scratchPickerInjected(ctx);
+  const registerTrailing = ctx.uiWorkspace.registerTrailingWorkspace?.bind(ctx.uiWorkspace);
+  if (registerTrailing !== void 0) {
+    ctx.effect(() => trackScratchPlacement(ctx.workspaces.list, picker.findScratchWorkspace, registerTrailing), "session-bridge: trailing workspace placement");
+  }
   const copyActions = createSessionCopyActions(ctx.sessions);
   const deleteActions = createSessionDeleteActions(ctx.workspaces.list);
   ctx.effect(() => () => {
@@ -862,7 +916,7 @@ function apply(ctx) {
     id: HERO_PICKER_ID,
     priority: HERO_PICKER_PRIORITY,
     locale: NS,
-    inject: () => scratchPickerInjected(ctx)
+    inject: () => picker
   }, ScratchWorkspacePicker));
   const menu = "sidebar.workspaces.session.menu.item";
   for (const [index, kind] of ["id", "cwd", "bridge"].entries()) {

@@ -32,6 +32,7 @@ export function pluginReferenceSource(ctx: Context, sessions: ISessions, section
           name: candidate.label,
           description: [candidate.moduleName, candidate.entryId, candidate.description].filter(Boolean).join(' · '),
           section: section(),
+          category: 'plugin' as const,
           value: candidate.mention,
         }))
       })

@@ -15,7 +15,7 @@ const read = name => execFileSync('tar', ['-xOzf', archive, `package/${name}`], 
 assert.ok(entries.every(name => name.startsWith('package/') && !name.split('/').includes('..')))
 assert.ok(entries.every(name => !/dsh-context-manager|(^|\/)node_modules\/|(^|\/)verification\/|\.tgz$|\.patch$/.test(name)))
 const manifest = JSON.parse(read('package.json'))
-assert.equal(manifest.name, 'dsh-session-bridge')
+assert.equal(manifest.name, '@missher/dsh-session-bridge')
 assert.deepEqual(manifest.dependencies ?? {}, {}, 'Bridge must not acquire runtime dependencies')
 assert.deepEqual(manifest.peerDependencies ?? {}, {})
 for (const name of Object.keys(manifest.scripts ?? {})) {

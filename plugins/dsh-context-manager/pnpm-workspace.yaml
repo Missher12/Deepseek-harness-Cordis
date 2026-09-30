@@ -32,5 +32,6 @@ overrides:
   '@deepseek-ai/dsh-settings': 'link:../../packages/settings/settings'
   '@deepseek-ai/dsh-token-meter': 'link:../../packages/llm/token-meter'
   '@deepseek-ai/dsh-tools': 'link:../../packages/core/tools'
+  '@deepseek-ai/dsh-workspace': 'link:../../packages/workspace/workspace'
   '@deepseek-ai/dsh-typert-protocol': 'link:../../packages/typert/protocol'
   '@deepseek-ai/schemastery': 'link:../../vendor/schemastery'

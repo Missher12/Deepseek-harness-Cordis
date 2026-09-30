@@ -4,7 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 const source = process.env.DSH_SOURCE_DIR
-if (!source) throw new Error('DSH_SOURCE_DIR must identify the verified built 0.2.0-rc.1 tree')
+if (!source) throw new Error('DSH_SOURCE_DIR must identify the verified built 0.2.0-rc.1 or 0.2.0-rc.2 tree')
 const app = process.env.DSH_OUTPUT_TEST_APP
 const root = resolve('.')
 const work = resolve('verification', process.env.DSH_OUTPUT_TEST_RUN ?? 'runtime')

@@ -50,6 +50,7 @@ describe('plugin reference source', () => {
     expect(rows[0]?.value).not.toBe(rows[1]?.value)
     for (const row of rows) {
       const pick = source.onPick({ candidate: row } as InputTriggerPick)
+      expect(row.category).toBe('plugin')
       expect(pick).toMatchObject({ insert: { source: 'plugin-reference', label: row.name, ref: row.value, clipboardText: row.value } })
       expect(await source.codec!.serialize(row.value!, request.signal)).toBe(row.value)
       expect(source.codec!.clipboardText(row.value!)).toBe(row.value)

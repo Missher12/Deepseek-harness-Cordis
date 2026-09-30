@@ -44,7 +44,7 @@ function optionId(source: string, index: number): string {
  * @param props - injected face (the menu store and the pick route); `t` rides the standard locale seat.
  * @returns the dropdown while open; null while closed.
  */
-export function MenuView({ menu, headers, onPick, onCrumb, onHover, onDismiss, t }: MenuViewProps) {
+export function MenuView({ menu, headers, onPick, onCrumb, onHover, onCategory, onDismiss, t }: MenuViewProps) {
   const state = useSyncExternalStore(
     fn => menu.subscribe(fn),
     () => menu.getSnapshot(),
@@ -91,6 +91,13 @@ export function MenuView({ menu, headers, onPick, onCrumb, onHover, onDismiss, t
     return () => { document.removeEventListener('pointerdown', onPointerDown, true) }
   }, [state.open, onDismiss])
   if (!state.open) return null
+  const groups = state.groups.map(group => ({
+    ...group,
+    entries: group.items.map((item, index) => ({ item, index }))
+      .filter(({ item }) => state.category === undefined || item.category === state.category),
+  }))
+  const emptyCategory = state.category !== undefined
+    && groups.every(group => group.status === 'ready' && group.entries.length === 0)
   return (
     // The listbox role sits on the scrolling viewport, not this shell: a
     // breadcrumb header is not an option, and a listbox may not carry one.
@@ -101,6 +108,22 @@ export function MenuView({ menu, headers, onPick, onCrumb, onHover, onDismiss, t
       data-trigger-menu=""
       data-overflow-below={hasOverflowBelow || undefined}
     >
+      {state.hit?.trigger === '@' && !state.hit.quoted && crumbs.size === 0 && (
+        <div className={css.categories} role="group" aria-label={t('categories.aria')}>
+          {([undefined, 'plugin', 'session', 'file'] as const).map(category => (
+            <button
+              key={category ?? 'all'}
+              type="button"
+              className={css.category}
+              aria-pressed={state.category === category}
+              onMouseDown={(event) => { event.preventDefault() }}
+              onClick={() => { onCategory(category) }}
+            >
+              {t(`category.${category ?? 'all'}`)}
+            </button>
+          ))}
+        </div>
+      )}
       {state.groups.map((group) => {
         const trail = crumbs.get(group.source)
         return trail === undefined ? null : (
@@ -134,28 +157,28 @@ export function MenuView({ menu, headers, onPick, onCrumb, onHover, onDismiss, t
         aria-activedescendant={highlight !== null ? optionId(highlight.source, highlight.index) : undefined}
         onScroll={updateOverflowHint}
       >
-        {state.groups.map(group => (group.status === 'ready' && group.items.length === 0)
+        {groups.map(group => (group.status === 'ready' && group.entries.length === 0)
           ? null
           : (
             <Fragment key={group.source}>
               {/* Source names key the dictionary open-endedly: the lookup chain
                   returns an unknown key verbatim, so an unregistered source
                   shows its raw name — hence the cast past the typed key union. */}
-              {group.showGroupTitle === false || group.items.some(item => item.section !== undefined)
+              {group.showGroupTitle === false || group.entries.some(({ item }) => item.section !== undefined)
                 ? null
                 : <div className={css.groupTitle} role="presentation" data-source={group.source}>{t(group.source as MenuKey)}</div>}
-              {group.status === 'pending' && group.items.length === 0
+              {group.status === 'pending' && group.entries.length === 0
                 ? (
                   <div role="status" aria-label={t('loading')} data-source={group.source}>
                     <div className={css.skeletonRow}><span className={css.skeletonBar} style={{ width: '32%' }} /></div>
                     <div className={css.skeletonRow}><span className={css.skeletonBar} style={{ width: '48%' }} /></div>
                   </div>
                 )
-                : group.items.map((item, index) => {
+                : group.entries.map(({ item, index }, visibleIndex) => {
                   const active = highlight !== null && highlight.source === group.source && highlight.index === index
                   return (
                     <Fragment key={optionId(group.source, index)}>
-                      {item.section !== undefined && item.section !== group.items[index - 1]?.section
+                      {item.section !== undefined && item.section !== group.entries[visibleIndex - 1]?.item.section
                         ? <div className={css.sectionTitle} role="presentation">{item.section}</div>
                         : null}
                       <button
@@ -217,6 +240,7 @@ export function MenuView({ menu, headers, onPick, onCrumb, onHover, onDismiss, t
             </Fragment>
           ))}
       </div>
+      {emptyCategory && <div className={css.emptyCategory} role="status">{t('category.empty')}</div>}
     </MenuSurface>
   )
 }

@@ -35,6 +35,8 @@ export interface MenuState {
   readonly hit: TriggerHit | null
   /** Monotonic per-hit generation; stale source settlements are dropped. */
   readonly generation: number
+  /** Selected @ reference category; absent means all candidates. Cleared when the menu closes. */
+  readonly category?: InputTriggerCandidate['category']
   readonly groups: readonly {
     readonly source: string
     /** False when candidate section rows own all visible group labeling. */
@@ -52,6 +54,7 @@ export type MenuEvent =
   | { readonly type: 'source-failed'; readonly generation: number; readonly source: string }
   | { readonly type: 'move'; readonly dir: 1 | -1 }
   | { readonly type: 'hover'; readonly source: string; readonly index: number }
+  | { readonly type: 'category'; readonly category: InputTriggerCandidate['category'] }
   | { readonly type: 'close' }
 
 /** Pure menu reducer; returns the same reference when the event is stale or a no-op. */

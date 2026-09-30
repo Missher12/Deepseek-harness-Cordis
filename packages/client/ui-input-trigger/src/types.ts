@@ -62,6 +62,8 @@ export interface InputTriggerCandidate {
   readonly hint?: string
   /** Optional visual heading shared by adjacent candidates; sectioned groups omit their source-title row. */
   readonly section?: string
+  /** Stable reference category used by the @ menu filters, independent of localized headings. */
+  readonly category?: 'plugin' | 'session' | 'file'
   /** Opaque source-owned pick payload. */
   readonly value?: string
   /**

@@ -1295,3 +1295,32 @@ describe('candidate availability invalidation', () => {
     expect(unsubscribe).toHaveBeenCalledOnce()
   })
 })
+
+
+describe('reference category selection', () => {
+  it('rejects hidden pointer picks and consumes Enter for an empty category', async () => {
+    const source = readySource('@', 'reference', [
+      { name: 'README.md', category: 'file' },
+      { name: 'Research', category: 'session' },
+    ])
+    const { controller } = controllerBench([source.source])
+    try {
+      controller.track('@', 1, { tier: 'plain' }, 1)
+      await tick()
+      controller.selectCategory('session')
+      controller.pick('reference', 0)
+      expect(source.picks).toEqual([])
+      expect(controller.arbitrate('enter', false)).toBe('pick-highlighted')
+      expect(source.picks.map(pick => pick.candidate.name)).toEqual(['Research'])
+      controller.track('@r', 2, { tier: 'plain' }, 2)
+      await tick()
+      controller.selectCategory('plugin')
+      expect(controller.arbitrate('enter', false)).toBe('consumed')
+      expect(source.picks).toHaveLength(1)
+      controller.selectCategory(undefined)
+      expect(controller.menu.getSnapshot().highlight).toEqual({ source: 'reference', index: 0 })
+    } finally {
+      controller.dispose()
+    }
+  })
+})

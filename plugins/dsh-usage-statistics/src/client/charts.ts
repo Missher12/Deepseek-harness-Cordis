@@ -11,7 +11,7 @@ export interface UsageParticle {
   date: string
   /** Tokens shown on hover for the selected scope. */
   tokens: number
-  /** Five color shades for the selected scope; zero remains a blank particle. */
+  /** Five color shades for the selected scope; zero uses the neutral idle colour. */
   level: 0 | 1 | 2 | 3 | 4 | 5
   /** Inclusive start of the hover scope. */
   periodStart: string

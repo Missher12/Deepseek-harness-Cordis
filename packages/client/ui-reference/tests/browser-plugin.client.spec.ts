@@ -279,6 +279,7 @@ describe('candidates', () => {
         name: 'src/',
         icon: 'folder',
         section: 'Files & folders',
+        category: 'file',
         value: JSON.stringify({ kind: 'file', fileKind: 'directory', label: 'src', mention: '@src/' }),
         drill: true,
       },
@@ -287,12 +288,14 @@ describe('candidates', () => {
         description: 'docs',
         icon: 'file',
         section: 'Files & folders',
+        category: 'file',
       }),
       expect.objectContaining({
         name: 'Research',
         description: '~/project · 1h',
         icon: 'session',
         section: 'Sessions',
+        category: 'session',
       }),
     ])
   })

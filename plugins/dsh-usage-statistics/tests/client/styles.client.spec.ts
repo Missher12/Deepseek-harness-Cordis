@@ -24,20 +24,13 @@ describe('usage heatmap styles', () => {
     expect(styles).toMatch(/\.detailsGrid\s*\{[^}]*margin-top:\s*44px/s)
   })
 
-  it('keeps the original 53 by 7 geometry and keeps idle particles readable', () => {
+  it('keeps the original 53 by 7 geometry with theme-aware idle particles', () => {
     expect(styles).toMatch(/\.heatmap\s*\{[^}]*grid-template-rows:\s*repeat\(7,/s)
     expect(styles).toMatch(/\.heatmap\s*\{[^}]*grid-auto-flow:\s*column/s)
-    expect(styles).toMatch(/\.heatmap\s*\{[^}]*aspect-ratio:\s*53\s*\/\s*7/s)
+    expect(styles).toMatch(/\.heatmap\s*\{[^}]*gap:\s*3px/s)
+    expect(styles).toMatch(/\.day\s*\{[^}]*aspect-ratio:\s*1/s)
     expect(styles).toMatch(/\.heatmapWeek\s*\{[^}]*display:\s*contents/s)
-    // A day without usage must still paint its cell. A transparent idle
-    // particle erases the seven-row grid, leaving only the days that have
-    // usage visible, which reads as a single stray dot.
-    expect(styles).toMatch(/\.day\s*\{[^}]*background:\s*color-mix\(in srgb,\s*var\(--dsw-alias-label-primary\)\s*10%,\s*transparent\)/s)
-    expect(styles).not.toMatch(/\.day\s*\{[^}]*background:\s*transparent/s)
-    // Every recorded level still overrides that idle fill with the accent ramp.
-    for (const level of [1, 2, 3, 4, 5]) {
-      expect(styles).toMatch(new RegExp(`\\.day\\[data-level='${level}'\\]\\s*\\{[^}]*background:\\s*oklch\\(`, 's'))
-    }
+    expect(styles).toMatch(/\.day\s*\{[^}]*background:\s*var\(--dsw-alias-bg-skeleton\)/s)
     expect(styles).not.toMatch(/\.weekly\s*\{/)
     expect(styles).not.toMatch(/\.cumulative\s*\{/)
     expect(styles).toMatch(/\.heatmapStage\s*\{[^}]*position:\s*relative/s)
@@ -45,28 +38,11 @@ describe('usage heatmap styles', () => {
     expect(styles).toMatch(/\.tooltip\s*\{[^}]*border-radius:\s*8px/s)
   })
 
-  it('reverses the ramp on the dark palette so brightness tracks usage', () => {
-    /** Lightness the rule for one level sets, within a given selector scope. */
-    const lightness = (scope: string, level: number): number => {
-      const pattern = new RegExp(
-        `${scope}\\.day\\[data-level='${level}'\\]\\s*\\{[^}]*`
-        + 'oklch\\(from var\\(--dsw-alias-state-business-primary\\)\\s+([0-9.]+)',
-        's',
-      )
-      const match = styles.match(pattern)
-      expect(match, `${scope || 'light'} level ${level} rule missing`).not.toBeNull()
-      return Number(match?.[1])
-    }
-    const DARK = 'body\\[data-ds-dark-theme\\] '
-    for (let level = 1; level < 5; level += 1) {
-      // Light surface: the ramp must darken as usage grows.
-      expect(lightness('', level), `light level ${level}`)
-        .toBeGreaterThan(lightness('', level + 1))
-      // Dark surface: the same ramp reversed, so the busiest day is brightest.
-      expect(lightness(DARK, level), `dark level ${level}`)
-        .toBeLessThan(lightness(DARK, level + 1))
-    }
-    // The dimmest dark step still has to clear its own empty cell.
-    expect(lightness(DARK, 1)).toBeGreaterThan(0.4)
+  it('darkens every higher usage level in both themes', () => {
+    const levels = [...styles.matchAll(/\.day\[data-level='([1-5])'\]\s*\{[^}]*background:\s*oklch\(from [^;]*?\s(\.\d+)\s/g)]
+    expect(levels).toHaveLength(5)
+    expect(levels.map(match => Number(match[1]))).toEqual([1, 2, 3, 4, 5])
+    const lightness = levels.map(match => Number(match[2]))
+    for (let i = 1; i < lightness.length; i++) expect(lightness[i]).toBeLessThan(lightness[i - 1]!)
   })
 })

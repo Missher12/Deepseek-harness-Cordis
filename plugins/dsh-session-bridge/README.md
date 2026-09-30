@@ -1,6 +1,10 @@
 # dsh-session-bridge
 
-DSH 会话功能插件。两件事：
+自家插件不再限制 DSH 宿主版本号；运行时按实际接口能力工作。开发依赖版本用于复现构建，不是安装门槛。本轮验证基线为 0.2.0-rc.1 与 0.2.0-rc.2，其他版本尚未验证。
+
+DSH 当前包名：`@missher/dsh-session-bridge`。2026-09-29 统一命名；仓库与源码目录、配置键及数据目录保持原有值。旧包升级需替换旧依赖与 Bundle 引用，不应同时启用新旧包。
+
+当前版本 **0.1.3-local.3**，适配 **DSH 0.2.0-rc.1 / 0.2.0-rc.2**。DSH 会话功能插件。两件事：
 
 1. **临时目录会话** —— 会话不必待在默认工作区。`session_scratch` 会在 `/tmp` 下开一个一次性目录（`/tmp/dsh-session-XXXXXX`），要么把新会话的 `cwd` 就放在那里（并注册成独立工作区，侧边栏里像一个普通项目），要么把目录路径交回给当前会话使用。
 2. **按会话 ID 跨会话沟通** —— `session_list` / `session_read` / `session_send` 让一个会话找到、读取、并给另一个会话发消息。发出去的消息在对方会话里是一条真实的 user-role 回合，来源标注为发送方，所以两边能来回对话。对方是冷会话时会先按 DSH 自己的 resume 路径唤醒。
@@ -27,7 +31,7 @@ Desktop 通过“插件 → 添加插件”安装已构建目录或 `.tgz`；CLI
 
 ```yaml
 - id: session-bridge
-  name: 'dsh-session-bridge'
+  name: '@missher/dsh-session-bridge'
   config:
     scratchRoot: /tmp
     scratchPrefix: dsh-session-

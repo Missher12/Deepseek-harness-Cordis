@@ -15,6 +15,7 @@ describe('concrete terminology policy', () => {
       'plugins/dsh-usage-statistics/package.json',
       'plugins/dsh-usage-statistics/README.md',
       'plugins/dsh-usage-statistics/VALIDATION.md',
+      'plugins/dsh-usage-statistics/verification/upgrade-020.json',
     ]) {
       expect(findConcreteTermViolations(file, `Read ${blockedTerm}.json`)).toEqual([])
       expect(findConcreteTermViolations(file, `Read ${blockedTerm}.json for ${blockedTerm}`)).toEqual([{ file, line: 1 }])

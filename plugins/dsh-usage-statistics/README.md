@@ -1,18 +1,22 @@
 # DeepSeek Harness 使用统计
 
-独立、可卸载的 Harness Bundle。统计功能最初从 Desktop 0.5.10 拆分，当前本地候选 **0.2.1-local.3** 适配 **DSH 0.2.0-rc.1**。安装并启用后，从「更多 → 设置 → 使用统计」打开。
+活动图按用量映射五级色阶：用量越高，颜色越深；零用量格保持淡色。每列七格和统计口径不变。
+
+自家插件不再限制 DSH 宿主版本号；运行时按实际接口能力工作。开发依赖版本用于复现构建，不是安装门槛。本轮验证基线为 0.2.0-rc.1 与 0.2.0-rc.2，其他版本尚未验证。
+
+独立、可卸载的 Harness Bundle。统计功能最初从 Desktop 0.5.10 拆分，当前本地候选 **0.2.1-local.6** 适配 **DSH 0.2.0-rc.1 / 0.2.0-rc.2**。安装并启用后，从「更多 → 设置 → 使用统计」打开。
 
 - 累计 Token、峰值每日 Token、最长会话有效耗时、当前/最长连续聊天天数。
-- 最近 53 周的每日、每周和累计 Token 颗粒活动图，支持悬停查看日期与用量。保留原布局和交互，仅调整颜色：无用量颗粒透明，有用量按单色从淡到深。
+- 最近 53 周的每日、每周和累计 Token 颗粒活动图，支持悬停查看日期与用量。保持 53 列、每列 7 个正方格，常规间距 3 px、窄屏 2 px：无用量颗粒使用淡色空格，有用量按单色从淡到深。
 - 缓存命中率、常用模型、常用推理强度、技能数、工具调用数和聊天天数。
 - Skill 与工具排行，以及不可读取会话、缺失用量记录的明确提示。
 - 中文/英文、宿主浅色/深色主题、加载/失败重试及上次结果缓存。
 
 ## 兼容与安装
 
-本候选精确适配 **DSH 0.2.0-rc.1**。实际验证记录见 [VALIDATION.md](VALIDATION.md)。插件 0.2.0 对应 DSH 0.1.7-rc.2；插件 0.1.0 对应 Desktop 0.5.10 / DSH 0.1.5-rc.2。版本检查保持启用，不为旧包添加豁免，也不声明兼容尚未验证的宿主版本。
+本候选验证基线为 **DSH 0.2.0-rc.1 / 0.2.0-rc.2**。实际验证记录见 [VALIDATION.md](VALIDATION.md)。插件 0.2.0 对应 DSH 0.1.7-rc.2；插件 0.1.0 对应 Desktop 0.5.10 / DSH 0.1.5-rc.2。使用正常安装流程，不需要版本豁免；旧交付包的限制保持原样。
 
-参见 [INSTALL.md](INSTALL.md)。本轮交付隔离构建的 `missher-dsh-usage-statistics-0.2.1-local.3.tgz`，包含 Host、Client、Typert 通信描述和 Bundle 配置，不需要安装时构建。维护目录的 `lib` 保留原字节，不能将此源码目录直接作为本轮候选安装。插件没有新增兼容包或其他插件依赖。
+参见 [INSTALL.md](INSTALL.md)。本轮交付隔离构建的 `missher-dsh-usage-statistics-0.2.1-local.6.tgz`，包含 Host、Client、Typert 通信描述和 Bundle 配置，不需要安装时构建。维护目录的 `lib` 保留原字节，不能将此源码目录直接作为本轮候选安装。插件没有新增兼容包或其他插件依赖。
 
 插件通过自己的 `usageStatistics` Remote 服务读取宿主 `sessionPersistence`，在自己的 `missher_usage_statistics` 缓存中保存可重建的聚合数据。插件新增自己的「使用统计」入口；移除插件后撤销页面和服务。插件不直接写入会话日志、模型设置或凭据。本次适配保留原统计实现、缓存域版本 1、行格式版本 3 和浏览器快照缓存键，不迁移或清空已有统计数据。
 
@@ -39,7 +43,7 @@ Token 来源为宿主持久化服务返回的供应商用量，非缓存输入�
 
 ## 开发
 
-开发依赖固定在 `package.json`，本目录的 `pnpm-workspace.yaml` 引用统一仓库内的 SDK。先构建匹配的 DSH 0.2.0-rc.1 宿主，再按[开发指南](https://github.com/Missher12/Deepseek-harness-Cordis/blob/main/docs/cookbook/build-cordis-plugins.zh.md)完成本插件依赖安装、类型检查、测试、构建与打包。本轮全部构建和测试在隔离副本中运行；也可用 `node scripts/link-dev.mjs /path/to/built-sdk` 只读链接 SDK 中精确匹配的依赖。隔离副本须保留 `vitest.config.ts` 对 `../../vitest.shared.ts` 的引用关系，指向相同 SDK 的共享配置。
+开发依赖固定在 `package.json`，本目录的 `pnpm-workspace.yaml` 引用统一仓库内的 SDK。先构建匹配的 DSH 0.2.0-rc.2 SDK，再按[开发指南](https://github.com/Missher12/Deepseek-harness-Cordis/blob/main/docs/cookbook/build-cordis-plugins.zh.md)完成本插件依赖安装、类型检查、测试、构建与打包。本轮全部构建和测试在隔离副本中运行；也可用 `node scripts/link-dev.mjs /path/to/built-sdk` 只读链接 SDK 中精确匹配的依赖。隔离副本须保留 `vitest.config.ts` 对 `../../vitest.shared.ts` 的引用关系，指向相同 SDK 的共享配置。
 
 真实隔离 profile 验证脚本是 `scripts/verify-profile.mjs`，要求 `DSH_SOURCE_DIR` 指向已构建的对应宿主，并检查运行时和 SDK 固定的 pnpm 版本（本次为 11.7.0）。脚本通过实际 CLI 安装候选、启动 Host、读取统计、重启、卸载及重装，比较会话和缓存原始字节；单独生成合成数据，不以日常 profile 为测试目标。不运行历史的 `native-snapshot.mjs` 来代替当前宿主的页面验收。
 

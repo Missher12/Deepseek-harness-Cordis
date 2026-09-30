@@ -177,3 +177,18 @@ it.each([
     expect((await screen.findByRole('tooltip')).textContent).toBe(label)
   } finally { f.view.unmount(); f.status.resolve({ phase: 'idle' }) }
 })
+
+it('routes a manual settings check through the explicit bridge action', async () => {
+  const check = vi.fn(async () => {})
+  const open = vi.fn(async () => {})
+  const source = new DesktopUpdateSource({
+    status: async () => ({ phase: 'idle' }), subscribe: () => () => {}, check, open,
+  })
+  try {
+    source.open(true)
+    source.open(true)
+    expect(check).toHaveBeenCalledOnce()
+    expect(open).not.toHaveBeenCalled()
+    await Promise.resolve()
+  } finally { source.dispose() }
+})

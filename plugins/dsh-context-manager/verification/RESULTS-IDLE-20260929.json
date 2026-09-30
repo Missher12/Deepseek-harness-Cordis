@@ -102,7 +102,7 @@
     "No live provider calls or summary quality/billing acceptance",
     "Electron native window not clicked; Web UI used the actual DSH host",
     "Idle scheduling is process-local and only starts after a newly observed successful turn",
-    "History labels null-turn compaction as between-turn; it does not invent durable idle provenance",
+    "History labels null-turn compaction as between-turn; it does not invent a durable idle trigger identity",
     "Idle compactNow follows the host safe prefix; target percentage is soft, not exact retention",
     "Final Web startup logged one connection-generation warning after 3 seconds, then settings loaded and persisted normally"
   ],

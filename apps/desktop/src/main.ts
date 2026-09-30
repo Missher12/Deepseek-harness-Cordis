@@ -34,6 +34,7 @@ import { readDeviceInfo } from './device-info.ts'
 import { desktopUpdateReadyConfirmation, formatDesktopMessage, resolveDesktopLocale, resolveDesktopStartupLocale } from './locale.ts'
 import { claimDesktopSingleInstance } from './single-instance.ts'
 import { DesktopUpdateCoordinator } from './update-coordinator.ts'
+import { checkCommunityRelease } from './community-update.ts'
 import { serveWebDocument, authenticateWebHost, forwardWebRequest } from './web-document.ts'
 import { DesktopFatalRecovery } from './fatal-recovery.ts'
 import { pruneCrashReports, RendererConsoleTail, writeCrashReport, type CrashReportSource } from './crash-report.ts'
@@ -766,6 +767,10 @@ async function main(): Promise<void> {
     assertProductSender(event)
     await openUpdatePrompt()
   })
+  ipcMain.handle(DESKTOP_IPC.updatesCheck, async (event) => {
+    assertProductSender(event)
+    await openUpdatePrompt(true)
+  })
 
   let promptOperation: Promise<void> | undefined
   let policyAuthenticationQueued = false
@@ -781,6 +786,17 @@ async function main(): Promise<void> {
       if (isMandatory()) {
         mandatoryUI?.focus()
         if (manual) await Promise.all([checkPolicyManually(), updateSchedule.check(true)])
+        return
+      }
+      if (!updates.hasInstallerSource) {
+        const latest = await checkCommunityRelease(app.getVersion(), (input, init) => net.fetch(input, init))
+        const result = await ordinaryMessageBox({ type: 'info', title: locale.messages.updateCheckTitle,
+          message: formatDesktopMessage(latest.newer ? locale.messages.communityUpdateAvailable : locale.messages.communityUpdateCurrent,
+            { version: latest.version }),
+          detail: `${formatDesktopMessage(locale.messages.updateCurrentDetail, { version: app.getVersion() })}\n\n${locale.messages.communityUpdateDetail}`,
+          buttons: [locale.messages.communityUpdateNotes, locale.messages.later], cancelId: 1,
+        })
+        if (result.response === 0) await shell.openExternal(latest.url)
         return
       }
       let controller: AbortController | undefined

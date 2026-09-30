@@ -17,6 +17,7 @@ import type {
   InputTriggerCrumb, MenuState, TriggerHit,
 } from '@deepseek-ai/dsh-client-ui-input-trigger/client'
 import { MenuView } from '../src/client/MenuView.tsx'
+import { menuReduce } from '../src/core/menu.ts'
 
 const hit: TriggerHit = {
   trigger: '/',
@@ -66,6 +67,9 @@ function mount(state: MenuState, crumbs: ReadonlyMap<string, readonly InputTrigg
   const onCrumb = vi.fn()
   const onHover = vi.fn()
   const onDismiss = vi.fn()
+  const onCategory = vi.fn((category: MenuState['category']) => {
+    menu.set(menuReduce(menu.getSnapshot(), { type: 'category', category }))
+  })
   const view = render(
     <MenuView
       menu={menu}
@@ -74,10 +78,11 @@ function mount(state: MenuState, crumbs: ReadonlyMap<string, readonly InputTrigg
       onCrumb={onCrumb}
       onHover={onHover}
       onDismiss={onDismiss}
+      onCategory={onCategory}
       t={t}
     />,
   )
-  return { menu, headers, onPick, onCrumb, onHover, onDismiss, view }
+  return { menu, headers, onPick, onCrumb, onHover, onCategory, onDismiss, view }
 }
 
 /** The bounded menu shell: it owns the height clamp, the listbox scrolls inside it. */
@@ -94,6 +99,44 @@ function titles(container: HTMLElement): string[] {
 }
 
 describe('MenuView', () => {
+  it('filters @ references without renumbering picks or taking composer focus', () => {
+    const { onPick } = mount(openState({
+      hit: { ...hit, trigger: '@', query: '' },
+      groups: [{ source: 'reference', showGroupTitle: false, status: 'ready', items: [
+        { name: 'README.md', category: 'file', section: '文件与文件夹' },
+        { name: 'Research', category: 'session', section: '会话' },
+        { name: 'Tools', category: 'plugin', section: '插件' },
+      ] }],
+    }))
+    expect(screen.getAllByRole('option')).toHaveLength(3)
+    const filter = screen.getByRole('button', { name: '插件', pressed: false })
+    expect(fireEvent.mouseDown(filter)).toBe(false)
+    fireEvent.click(filter)
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Tools'])
+    expect(screen.getByRole('listbox').getAttribute('aria-activedescendant')).toBe('dsh-slash-option-reference-2')
+    fireEvent.mouseDown(screen.getByRole('option', { name: 'Tools' }))
+    expect(onPick).toHaveBeenLastCalledWith('reference', 2)
+    fireEvent.click(screen.getByRole('button', { name: '会话' }))
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Research'])
+    fireEvent.click(screen.getByRole('button', { name: '全部' }))
+    expect(screen.getAllByRole('option')).toHaveLength(3)
+  })
+
+  it('keeps an empty category switchable and leaves slash menus unchanged', () => {
+    const { view } = mount(openState({
+      hit: { ...hit, trigger: '@' },
+      groups: [{ source: 'reference', status: 'ready', items: [{ name: 'README.md', category: 'file' }] }],
+    }))
+    fireEvent.click(screen.getByRole('button', { name: '插件' }))
+    expect(screen.queryAllByRole('option')).toHaveLength(0)
+    expect(screen.getByRole('status').textContent).toBe('此分类暂无匹配项')
+    fireEvent.click(screen.getByRole('button', { name: '文件' }))
+    expect(screen.getByRole('option').textContent).toBe('README.md')
+    view.unmount()
+    mount(openState())
+    expect(screen.queryByRole('group', { name: '引用分类' })).toBeNull()
+  })
+
   it('renders null while closed and appears when the store opens', () => {
     const { menu, view } = mount(CLOSED)
     expect(view.container.childElementCount).toBe(0)
@@ -296,6 +339,7 @@ describe('MenuView', () => {
           onCrumb={vi.fn()}
           onHover={vi.fn()}
           onDismiss={onDismiss}
+          onCategory={vi.fn()}
           t={t}
         />
         <button type="button" data-testid="composer-button" />

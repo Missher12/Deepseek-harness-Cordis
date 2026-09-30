@@ -247,3 +247,50 @@ describe('exactMatch', () => {
     expect(exactMatch(groups, 'ghost', 'goal')).toBeNull()
   })
 })
+
+
+describe('reference categories', () => {
+  const referenceHit = { ...hit(), trigger: '@' as const }
+  const mixed = () => menuReduce(open(['reference'], referenceHit), {
+    type: 'source-settled', generation: 1, source: 'reference', items: [
+      { name: 'README.md', category: 'file' },
+      { name: 'Research', category: 'session' },
+      { name: 'Tools', category: 'plugin' },
+      { name: 'Review', category: 'session' },
+    ],
+  })
+
+  it('restricts keyboard and pointer highlights to the chosen category', () => {
+    let state = menuReduce(mixed(), { type: 'category', category: 'session' })
+    expect(state.highlight).toEqual({ source: 'reference', index: 1 })
+    state = menuReduce(state, { type: 'move', dir: 1 })
+    expect(state.highlight).toEqual({ source: 'reference', index: 3 })
+    expect(menuReduce(state, { type: 'hover', source: 'reference', index: 2 })).toBe(state)
+    state = menuReduce(state, { type: 'move', dir: 1 })
+    expect(state.highlight).toEqual({ source: 'reference', index: 1 })
+    expect(menuReduce(state, { type: 'category', category: 'session' })).toBe(state)
+  })
+
+  it('retains filtering across async refinements and keeps an empty category open', () => {
+    let state = menuReduce(mixed(), { type: 'category', category: 'plugin' })
+    state = menuReduce(state, { type: 'hit', hit: { ...referenceHit, query: 'read' } })
+    state = menuReduce(state, { type: 'source-settled', generation: 2, source: 'reference', items: [
+      { name: 'README.md', category: 'file' },
+    ] })
+    expect(state.category).toBe('plugin')
+    expect(state.open).toBe(true)
+    expect(state.highlight).toBeNull()
+    state = menuReduce(state, { type: 'category', category: undefined })
+    expect(state.highlight).toEqual({ source: 'reference', index: 0 })
+  })
+
+  it('clears filtering on close, quoted paths and slash triggers', () => {
+    const state = menuReduce(mixed(), { type: 'category', category: 'plugin' })
+    expect(menuReduce(state, { type: 'close' }).category).toBeUndefined()
+    expect(menuReduce(state, { type: 'hit', hit: { ...referenceHit, quoted: true } }).category).toBeUndefined()
+    expect(menuReduce(state, { type: 'hit', hit: hit() }).category).toBeUndefined()
+    const slash = ready()
+    expect(menuReduce(slash, { type: 'category', category: 'plugin' })).toBe(slash)
+    expect(menuReduce(MENU_CLOSED, { type: 'category', category: 'plugin' })).toBe(MENU_CLOSED)
+  })
+})
