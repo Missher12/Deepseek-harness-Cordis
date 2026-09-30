@@ -11,7 +11,7 @@
     {
       "path": "plugins/dsh-context-manager",
       "name": "@missher/dsh-context-manager",
-      "version": "0.5.0-local.3",
+      "version": "0.6.0-local.1",
       "historyRepository": "Missher12/dsh-context-manager",
       "importedCommit": "c338afdcc41cb909219a8c70995a9d8379764174"
     },
@@ -32,7 +32,7 @@
     {
       "path": "plugins/dsh-usage-statistics",
       "name": "@missher/dsh-usage-statistics",
-      "version": "0.2.1-local.6",
+      "version": "0.2.1-local.7",
       "historyRepository": "Missher12/dsh-usage-statistics",
       "importedCommit": "4058457826ca5c7f3a618ab82cff8a872bb74d1a"
     }

@@ -7,8 +7,8 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED = {
-    "plugins/dsh-context-manager": "dsh-context-manager",
-    "plugins/dsh-session-bridge": "dsh-session-bridge",
+    "plugins/dsh-context-manager": "@missher/dsh-context-manager",
+    "plugins/dsh-session-bridge": "@missher/dsh-session-bridge",
     "plugins/dsh-output-renderer": "@missher/dsh-output-renderer",
     "plugins/dsh-usage-statistics": "@missher/dsh-usage-statistics",
 }
