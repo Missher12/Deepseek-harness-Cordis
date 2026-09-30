@@ -1,4 +1,6 @@
 import { useState, useEffect, useSyncExternalStore } from 'react'
+import type {} from '@deepseek-ai/dsh-client-locale/client'
+import { en, zh, type InspectorLocaleKey } from './inspector-locales.ts'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
@@ -31,8 +33,10 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
   }
 }
 
+declare module '@deepseek-ai/dsh-client-ui-slots' { interface LocaleNamespaceMap { 'context.manager': InspectorLocaleKey } }
+
 type Values = { policy: Policy }
-export const inject = ['slots', 'configForms', 'sessions', 'remote', 'remote.session', 'modelDirectories']
+export const inject = ['locale', 'slots', 'configForms', 'sessions', 'remote', 'remote.session', 'modelDirectories']
 
 // Page styles are mounted after the module factory. Explicit ownership keeps
 // another plugin's later materialization from claiming and removing them.
@@ -40,6 +44,8 @@ const STYLE_OWNER = 'dsh-context-manager'
 
 /** Native conversation tab plus a separate parameter-only settings section. */
 export async function apply(ctx: Context) {
+  ctx.effect(() => ctx.locale.register('context.manager', { zh, en }), 'context-manager: locale')
+  const t = ctx.locale.bind('context.manager')
   const form = ctx.configForms.get<Values>('context-manager')
   ctx.slots.inject('conversation.input.right', () => ctx.slots.register({
     name: 'conversation.input.right', id: 'context-manager-period', order: 100,
@@ -63,11 +69,11 @@ export async function apply(ctx: Context) {
       content: async (query, signal) => unwrap(await scope.remote.contextInspector.content(query, signal)),
     }
     scope.slots.inject('conversation.view', () => scope.slots.register({
-      name: 'conversation.view', id: 'context-manager', order: 20, label: '上下文',
+      name: 'conversation.view', id: 'context-manager', order: 20, label: () => t('title'), locale: 'context.manager',
       inject: (sessionId: SessionId): ContextViewInjected => {
         const session = scope.sessions.binding(sessionId)?.session
         if (!session) throw new Error('上下文管理：当前会话尚未就绪。')
-        return { target: sessionId, form, api, pulse: session.projections.faceOf('contextPressure') }
+        return { target: sessionId, form, api, locale: scope.locale.getLocale().active, pulse: session.projections.faceOf('contextPressure') }
       },
     }, ContextInspectorView))
   })

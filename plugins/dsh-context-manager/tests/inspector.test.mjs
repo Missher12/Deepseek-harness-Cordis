@@ -131,3 +131,24 @@ test('large bodies are read in bounded pages without splitting emoji; usage hist
     assert.equal(joined, body); assert.equal(f.disposals, f.reads.length)
   } finally { await ctxDispose(f.ctx) }
 })
+
+test('current summaries are identified by the host checkpoint marker and filtered as their own group', async () => {
+  const { events, add } = log()
+  add('user/message', user('old task'), 'append')
+  add('user/message', createUserMessage({ content: text('retained summary'), source: { kind: 'compact-checkpoint', compactionId: 'fixture-summary' } }), { op: 'replace', startSeq: 1, endSeq: 1 }, [1])
+  add('user/message', user('compact-checkpoint is merely text here'), 'append')
+  const index = indexContext(events)
+  assert.equal(index.indexed.find(item => item.row.seq === 2).row.category, 'summary')
+  assert.equal(index.indexed.find(item => item.row.seq === 3).row.category, 'user')
+  assert.equal(index.parts.find(part => part.category === 'summary').tokens, estimateMessage(events[2].data))
+  const f = await service(events)
+  try {
+    const result = await f.ctx.contextInspector.inspect({ ...query('summary'), group: 'summary' }, new AbortController().signal)
+    assert.equal(result.total, 1)
+    assert.equal(result.rows[0].category, 'summary')
+    assert.deepEqual(resultCodec('inspect').parse(result), result)
+    const messages = await f.ctx.contextInspector.inspect({ ...query('summary'), group: 'message' }, new AbortController().signal)
+    assert.equal(messages.total, 1)
+    assert.equal(messages.rows[0].seq, 3)
+  } finally { await ctxDispose(f.ctx) }
+})

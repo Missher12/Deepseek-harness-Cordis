@@ -3,20 +3,20 @@ import type { TypertRemoteContribution } from '@deepseek-ai/dsh-typert-protocol'
 
 const count = () => z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER)
 const seq = () => z.number().int().min(-1).max(Number.MAX_SAFE_INTEGER)
-const category = () => z.enum(['system', 'tools', 'user', 'inject', 'skill', 'assistant', 'tool'])
+const category = () => z.enum(['summary', 'system', 'tools', 'user', 'inject', 'skill', 'assistant', 'tool'])
 const sessionId = () => z.string().min(1).max(500)
 export function idleQuerySchema() { return z.object({ sessionId: sessionId() }).strict() }
 export function idleStatusSchema() { return z.object({
   status: z.enum(['off', 'waiting', 'scheduled', 'checking', 'compacting', 'completed', 'skipped', 'cancelled', 'failed']),
   dueAt: count().nullable(), message: z.string().max(300), beforeTokens: count().optional(), afterTokens: count().optional(),
 }) }
-export function inspectQuerySchema() { return z.object({ sessionId: sessionId(), atSeq: seq().nullable(), offset: count(), category: z.union([category(), z.literal('all')]), search: z.string().max(200), sort: z.enum(['size', 'position']), archived: z.boolean() }).strict() }
+export function inspectQuerySchema() { return z.object({ sessionId: sessionId(), atSeq: seq().nullable(), offset: count(), category: z.union([category(), z.literal('all')]), group: z.enum(['summary', 'tool', 'message', 'instruction']).optional(), search: z.string().max(200), sort: z.enum(['size', 'position']), archived: z.boolean() }).strict() }
 export function contentQuerySchema() { return z.object({ sessionId: sessionId(), cutSeq: seq(), id: z.string().min(1).max(100), offset: count() }).strict() }
 export function inspectionSchema() { return z.object({
   sessionId: sessionId(), cursor: seq(), cutSeq: seq(), sampledAt: count(), historical: z.boolean(),
   pressure: z.object({ projected: count(), input: count(), window: count().nullable() }).nullable(),
   model: z.object({ provider: z.string(), model: z.string(), effort: z.string().nullable(), maxTokens: count().nullable() }).nullable(),
-  parts: z.array(z.object({ category: category(), tokens: count(), count: count() })).max(7),
+  parts: z.array(z.object({ category: category(), tokens: count(), count: count() })).max(8),
   official: z.object({ system: count(), tools: count(), messages: count() }).nullable(),
   usage: z.object({ input: count(), output: count(), cacheRead: count(), uncached: count(), cacheWrite: count() }).nullable(),
   pressureHistory: z.array(z.object({ seq: seq(), time: count(), tokens: count().nullable(), window: count().nullable(), kind: z.enum(['reply', 'replace', 'current']) })).max(40),

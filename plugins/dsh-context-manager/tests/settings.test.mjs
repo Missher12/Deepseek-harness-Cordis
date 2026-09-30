@@ -15,7 +15,7 @@ const require = createRequire(import.meta.url)
 // Render the host's actual control implementations. Their CSS modules are
 // compiled here; visual/theme acceptance runs separately in the real Web host.
 const primitivesBuild = buildSync({
-  stdin: { contents: ['Button', 'Input', 'Switch', 'SegmentedTabs', 'Tag', 'Tooltip', 'MenuSurface', 'useAnchoredPosition', 'useDismissOnOutsidePointer', 'icons/index', 'settings-form/SettingsForm', 'settings-form/fields'].map(name =>
+  stdin: { contents: ['Button', 'Input', 'Switch', 'Checkbox', 'StateDot', 'SegmentedTabs', 'Tag', 'Tooltip', 'MenuSurface', 'useAnchoredPosition', 'useDismissOnOutsidePointer', 'icons/index', 'settings-form/SettingsForm', 'settings-form/fields'].map(name =>
     `export { ${name === 'settings-form/fields' ? 'SettingsValueField' : name === 'icons/index' ? 'IconClockOutlineRegular' : name.split('/').at(-1)} } from ${JSON.stringify(require.resolve(`@deepseek-ai/dsh-client-ui-primitives/src/${name}.${name.startsWith('use') ? 'ts' : 'tsx'}`))}`).join('\n'), resolveDir: process.cwd() },
   outfile: '/virtual/context-manager-primitives.cjs', bundle: true, platform: 'node', format: 'cjs',
   external: ['react', 'react/*', 'react-dom', 'react-dom/*'], loader: { '.css': 'local-css' }, jsx: 'automatic',
@@ -69,7 +69,7 @@ vm.runInNewContext(readFileSync(new URL('../lib/client.js', import.meta.url), 'u
 test('client registers the native conversation tab after trajectory and binds its actual Session', async () => {
   const slots = []
   const bindings = []; const directories = []; const pulse = {}; const directory = {}; const disposers = []
-  const ctx = { configForms: { get: () => ({}), whileServed: (_ns, callback) => callback() },
+  const ctx = { locale: { register: () => () => {}, bind: () => key => key === 'title' ? '上下文' : key, getLocale: () => ({ active: 'zh' }) }, configForms: { get: () => ({}), whileServed: (_ns, callback) => callback() },
     remote: { $mount: async () => () => {}, contextInspector: {} },
     sessions: { binding: id => { bindings.push(id); return { session: { projections: { faceOf: key => { assert.equal(key, 'contextPressure'); return pulse } } } } } },
     modelDirectories: { directoryFor: id => { directories.push(id); return { store: directory } } },
@@ -77,7 +77,7 @@ test('client registers the native conversation tab after trajectory and binds it
     effect: callback => { disposers.push(callback()) }, inject: (_keys, callback) => callback(ctx) }
   await client.apply(ctx)
   assert.deepEqual(slots.map(slot => slot.name), ['conversation.input.right', 'settings.section', 'conversation.view'])
-  assert.equal(slots[2].order, 20); assert.equal(slots[2].label, '上下文')
+  assert.equal(slots[2].order, 20); assert.equal(slots[2].label(), '上下文')
   const injected = slots[2].inject('visible-session')
   assert.equal(injected.target, 'visible-session'); assert.equal(injected.pulse, pulse)
   assert.deepEqual(bindings, ['visible-session'])
@@ -140,7 +140,7 @@ test('inspector cancels stale Session reads, never flashes another Session and r
     assert.match(document.body.textContent, /fixture \/ second-session/)
     assert.match(document.body.textContent, /等待完整参数/)
     assert.equal(document.querySelectorAll('[role="tab"]').length, 0, 'all context sections share one panel')
-    for (const title of ['上下文组成', '最近压缩', '收起详细内容与记录', '模型携带了哪些内容', '上下文如何变化', '模型与累计用量']) assert.ok(document.body.textContent.includes(title), title)
+    for (const title of ['当前上下文', '压缩前后', '收起当前有效内容', '当前有效内容', '占用变化', '本会话累计']) assert.ok(document.body.textContent.includes(title), title)
     assert.ok(document.querySelector('#cmi-content-panel'), 'details open on entering the view')
     assert.ok(!document.body.textContent.includes('预计可继续执行'))
     assert.equal(document.querySelectorAll('style:not([data-plugin="dsh-context-manager"])').length, 0)
@@ -176,15 +176,14 @@ test('read-only view hides only its own composer, restores drafts and reads only
     assert.ok(seat.hasAttribute('hidden') && seat.hasAttribute('inert'))
     assert.equal(other.getAttribute('style'), null); assert.equal(other.hasAttribute('hidden'), false)
     assert.equal(reads, 1, 'expanded details fetch only the selected body')
-    assert.equal(document.querySelectorAll('.cmi-parts > button').length, 3)
-    assert.equal(document.querySelectorAll('.cmi-events > li').length, 2)
-    await click('全部 7 类'); assert.equal(document.querySelectorAll('.cmi-parts > button').length, 7)
-    await click('全部 4 条'); assert.equal(document.querySelectorAll('.cmi-events > li').length, 4)
+    assert.equal(document.querySelectorAll('.cmv-legend > button').length, 4)
+    assert.equal(document.querySelectorAll('.cmv-events > li').length, 2)
+    await click('全部记录'); assert.equal(document.querySelectorAll('.cmv-events > li').length, 4)
     assert.match(document.querySelector('.cmi-body').textContent, /read-only content/)
-    await click('收起详细内容与记录'); assert.equal(document.querySelector('#cmi-content-panel'), null)
-    await click('展开详细内容与记录')
+    await click('收起当前有效内容'); assert.equal(document.querySelector('#cmi-content-panel'), null)
+    await click('展开当前有效内容')
     assert.equal(reads, 2)
-    await click('收起详细内容与记录'); assert.equal(document.querySelector('#cmi-content-panel'), null)
+    await click('收起当前有效内容'); assert.equal(document.querySelector('#cmi-content-panel'), null)
     await act(async () => root.render(null))
     assert.equal(seat.style.display, 'flex'); assert.equal(seat.style.color, 'red')
     assert.equal(seat.hasAttribute('hidden'), false); assert.equal(seat.hasAttribute('inert'), false)
@@ -228,8 +227,8 @@ test('details reopen for each visit or target, stay collapsed on refresh, and ca
   try {
     await render('a'); await settle()
     assert.ok(content()); assert.ok(document.querySelector('#cmi-history-panel'))
-    for (const title of ['模型携带了哪些内容', '上下文如何变化', '模型与累计用量', '累计输入']) assert.ok(document.body.textContent.includes(title), title)
-    assert.equal(document.querySelectorAll('.cmi-content-list > button').length, 50)
+    for (const title of ['当前有效内容', '占用变化', '本会话累计']) assert.ok(document.body.textContent.includes(title), title)
+    assert.equal(document.querySelectorAll('.cmi-content-list > button[aria-pressed]').length, 4)
     assert.equal(bodies.length, 1, 'opening details does not prefetch all 51 bodies')
     await reply(bodies[0], 'a'.repeat(16000), 16000, 32000)
     await click('下一段')
@@ -241,7 +240,7 @@ test('details reopen for each visit or target, stay collapsed on refresh, and ca
     assert.ok(!document.body.textContent.includes('late body from a'))
     await settle()
     assert.ok(content()); assert.equal(bodies[2].query.sessionId, 'b'); assert.equal(bodies[2].query.offset, 0)
-    await click('收起详细内容与记录')
+    await click('收起当前有效内容')
     assert.equal(bodies[2].signal.aborted, true)
     await reply(bodies[2], 'late body from b')
     assert.equal(content(), null); assert.ok(!document.body.textContent.includes('late body from b'))
@@ -259,10 +258,10 @@ test('details reopen for each visit or target, stay collapsed on refresh, and ca
     await reply(bodies.at(-1), 'new a body')
     await click('下一页'); await settle()
     assert.equal(inspections.at(-1).offset, 50)
-    assert.equal(document.querySelectorAll('.cmi-content-list > button').length, 1)
+    assert.equal(document.querySelectorAll('.cmi-content-list > button[aria-pressed]').length, 1)
     assert.equal(bodies.at(-1).query.id, 'event:50')
     await reply(bodies.at(-1), 'last page body')
-    await click('收起详细内容与记录')
+    await click('收起当前有效内容')
     await act(async () => root.render(null))
     await render('a'); await settle()
     assert.ok(content(), 'reopening the same target starts expanded')
@@ -418,15 +417,16 @@ test('context charts keep projection gaps, disjoint cache buckets, step changes 
   try {
     await act(async () => root.render(React.createElement(client.ContextInspectorView, { target: 'charts', form, api, pulse })))
     await act(async () => new Promise(resolve => setTimeout(resolve, 230)))
-    const path = document.querySelector('.cmi-pressure-line').getAttribute('d')
-    assert.equal((path.match(/M/g) ?? []).length, 2, 'unknown gap breaks the path')
-    assert.equal((path.match(/L/g) ?? []).length, 0)
-    assert.equal(document.querySelector('.cmi-usage-stack [data-usage="cache"]').style.width, '35%')
-    assert.equal(document.querySelector('.cmi-usage-stack [data-usage="write"]').style.width, '5%')
-    assert.match(document.querySelector('.cmi-request').textContent, /较前次输入−500/)
-    assert.equal(document.querySelectorAll('.cmi-chart [data-usage="output"]').length, 2)
-    await act(async () => document.querySelector('.cmi-pressure-point[data-unknown="true"]').click())
-    assert.match(document.querySelector('.cmi-pressure-caption').textContent, /占用未知/)
+    assert.equal(document.querySelectorAll('.cmv-bars>button').length, 3)
+    assert.equal(document.querySelectorAll('.cmv-bars>button[data-unknown="true"]').length, 1)
+    assert.equal(document.querySelector('.cmv-bars>button[data-unknown="true"]>span').style.height, '0px')
+    assert.equal(document.querySelectorAll('svg path.cmi-pressure-line').length, 0)
+    assert.equal(document.querySelector('.cmv-usage-stack [data-usage="read"]').style.width, '35%')
+    assert.equal(document.querySelector('.cmv-usage-stack [data-usage="write"]').style.width, '5%')
+    assert.equal(document.querySelectorAll('.cmv-request-details tbody tr').length, 2)
+    const cards = [...document.querySelector('.cmv-chart-grid').children].map(node => node.querySelector('h3').textContent)
+    assert.deepEqual(cards, ['占用变化', '压缩前后', '本会话累计'])
+    assert.ok(document.querySelector('.cmv-content').compareDocumentPosition(document.querySelector('.cmv-chart-grid')) & 2, 'content follows every chart')
     assert.equal(document.querySelectorAll('[role="tab"]').length, 0)
   } finally { await act(async () => root.unmount()); dom.window.close(); delete globalThis.window; delete globalThis.document }
 })

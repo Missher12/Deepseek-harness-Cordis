@@ -1,4 +1,5 @@
 import { canonicalHeader, deriveEventMessage, foldSurface, isSurfaceEvent, type SessionEvent, type SessionMessageProjection } from '@deepseek-ai/dsh-session'
+import { isCompactCheckpointSource } from '@deepseek-ai/dsh-compaction/checkpoint'
 import type { Message } from '@deepseek-ai/dsh-llm'
 import { estimateMessage, estimateToolsTokens } from '@deepseek-ai/dsh-token-meter/estimate'
 import { diagnosticsProjection } from './diagnostics.ts'
@@ -59,13 +60,13 @@ export function indexContext(events: readonly SessionEvent[], projections: reado
     if (message === null) continue
     const source = message.source as { kind: string }
     const toolName = message.role === 'tool' ? calls.get(message.toolCallId) : undefined
-    const category: Category = message.role === 'system' && event.seq === lastSystem ? 'system'
+    const category: Category = isCompactCheckpointSource(message.source) ? 'summary' : message.role === 'system' && event.seq === lastSystem ? 'system'
       : message.role === 'assistant' ? 'assistant'
       : source.kind === 'skill-invocation' || source.kind === 'skill-catalog' || (message.role === 'tool' && toolName === 'skill') ? 'skill'
       : message.role === 'tool' ? 'tool'
       : source.kind === 'user' ? 'user' : 'inject'
     const firstText = message.content.find(block => block.type === 'text')
-    const title = message.role === 'tool' ? `${toolName ?? '未记录工具名称'} · 工具结果`
+    const title = category === 'summary' ? `压缩摘要 · 记录 ${event.seq}` : message.role === 'tool' ? `${toolName ?? '未记录工具名称'} · 工具结果`
       : message.role === 'system' ? event.seq === lastSystem ? '当前系统指令' : '先前系统片段'
       : firstText?.type === 'text' && firstText.text.trim() ? firstText.text.trim().replace(/\s+/gu, ' ').slice(0, 110)
       : `${categories.find(item => item.id === category)!.label} · 记录 ${event.seq}`

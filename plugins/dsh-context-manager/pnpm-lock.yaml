@@ -15,6 +15,7 @@ overrides:
   '@deepseek-ai/dsh-agent-preset-registry': link:../../packages/preset/agent-preset-registry
   '@deepseek-ai/dsh-api-remotes': link:../../packages/api/remotes
   '@deepseek-ai/dsh-api-session-controller': link:../../packages/api/session-controller
+  '@deepseek-ai/dsh-client-locale': link:../../packages/client/locale
   '@deepseek-ai/dsh-client-store': link:../../packages/client/store
   '@deepseek-ai/dsh-client-ui-conversation': link:../../packages/client/ui-conversation
   '@deepseek-ai/dsh-client-ui-model-selection': link:../../packages/client/ui-model-selection
@@ -101,6 +102,9 @@ importers:
       '@deepseek-ai/dsh-agent-preset-registry':
         specifier: link:../../packages/preset/agent-preset-registry
         version: link:../../packages/preset/agent-preset-registry
+      '@deepseek-ai/dsh-client-locale':
+        specifier: link:../../packages/client/locale
+        version: link:../../packages/client/locale
       '@deepseek-ai/dsh-client-store':
         specifier: link:../../packages/client/store
         version: link:../../packages/client/store

@@ -14,7 +14,7 @@ const read = name => execFileSync('tar', ['-xOf', archive, `package/${name}`], {
 const manifest = JSON.parse(read('package.json'))
 const inspector = Boolean(manifest.exports?.['./inspector'])
 const expected = ['COMPATIBILITY.json', 'LICENSE', 'README.md', 'THIRD_PARTY_NOTICES.md', 'cordis.patch.yml',
-  'lib/client.js', 'lib/diagnostics.js', 'lib/engine.js', 'lib/index.js', 'lib/policy.js', 'package.json',
+  'lib/chart-data.js', 'lib/client.js', 'lib/diagnostics.js', 'lib/engine.js', 'lib/index.js', 'lib/policy.js', 'package.json',
   ...(inspector ? ['lib/inspector.js', 'lib/inspector-fold.js', 'lib/typert.js'] : [])].map(p => `package/${p}`).sort()
 assert.deepEqual(members, expected, 'Package must not contain another plugin, verification fixtures, or local profiles')
 assert.equal(manifest.name, '@missher/dsh-context-manager')
@@ -27,7 +27,7 @@ for (const hook of ['preinstall', 'install', 'postinstall', 'preuninstall', 'uni
 }
 assert.deepEqual(manifest.dsh.client.inject, ['@deepseek-ai/dsh-client-ui-settings', '@deepseek-ai/dsh-api-session-controller',
   ...(inspector ? ['@deepseek-ai/dsh-client-ui-conversation', '@deepseek-ai/dsh-api-remotes'] : []),
-  ...(manifest.devDependencies?.['@deepseek-ai/dsh-client-ui-model-selection'] ? ['@deepseek-ai/dsh-client-ui-model-selection'] : [])])
+  ...(manifest.devDependencies?.['@deepseek-ai/dsh-client-ui-model-selection'] ? ['@deepseek-ai/dsh-client-ui-model-selection'] : []), '@deepseek-ai/dsh-client-locale'])
 const overlayText = read('cordis.patch.yml')
 const overlay = load(overlayText)
 const ownedTargets = new Set(['compaction-basic', 'preset-standard', 'preset-ptc', 'preset-cordis', 'preset-minimal'])

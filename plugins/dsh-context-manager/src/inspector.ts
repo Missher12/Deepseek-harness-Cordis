@@ -4,6 +4,7 @@ import type {} from '@deepseek-ai/dsh-session-query'
 import type { SessionObservation } from '@deepseek-ai/dsh-session-query'
 import type {} from '@deepseek-ai/dsh-token-meter/client'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
+import { contextGroups } from './chart-data.ts'
 import { pressureHistory } from './pressure-history.ts'
 export { pressureHistory } from './pressure-history.ts'
 import { indexContext, MAX_EVENTS } from './inspector-fold.ts'
@@ -53,6 +54,7 @@ export class ContextInspector extends TypertRemoteService {
       const needle = query.search.trim().toLocaleLowerCase()
       const matched = index.indexed.map(item => item.row).filter(row => (query.archived || row.current)
         && (query.category === 'all' || row.category === query.category)
+        && (query.group === undefined || contextGroups.find(group => group.id === query.group)?.categories.some(category => category === row.category))
         && (!needle || `${row.title} ${row.source}`.toLocaleLowerCase().includes(needle)))
       matched.sort(query.sort === 'size' ? (a, b) => b.tokens - a.tokens || b.seq - a.seq || a.id.localeCompare(b.id) : (a, b) => a.seq - b.seq || a.id.localeCompare(b.id))
       const config = index.header?.config

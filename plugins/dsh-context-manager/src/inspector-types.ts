@@ -2,7 +2,7 @@ import type { CompactionEntry } from './diagnostics-types.ts'
 import type { IdleStatus } from './idle-types.ts'
 
 export const categories = [
-  { id: 'system', label: '系统指令' }, { id: 'tools', label: '工具定义' },
+  { id: 'summary', label: '压缩摘要' }, { id: 'system', label: '系统指令' }, { id: 'tools', label: '工具定义' },
   { id: 'user', label: '用户消息' }, { id: 'inject', label: '注入内容' },
   { id: 'skill', label: '技能内容' }, { id: 'assistant', label: '助手回复' },
   { id: 'tool', label: '工具结果' },
@@ -14,6 +14,7 @@ export interface InspectQuery {
   atSeq: number | null
   offset: number
   category: Category | 'all'
+  group?: 'summary' | 'tool' | 'message' | 'instruction'
   search: string
   sort: 'size' | 'position'
   archived: boolean
