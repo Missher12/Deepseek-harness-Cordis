@@ -352,23 +352,23 @@
 }
 
 .day[data-level='1'] {
-  background: oklch(from var(--dsw-alias-state-business-primary) .89 calc(c * .35) h);
+  background: oklch(from var(--usage-particle-color, var(--dsw-alias-state-business-primary)) .89 calc(c * .35) h);
 }
 
 .day[data-level='2'] {
-  background: oklch(from var(--dsw-alias-state-business-primary) .78 calc(c * .55) h);
+  background: oklch(from var(--usage-particle-color, var(--dsw-alias-state-business-primary)) .78 calc(c * .55) h);
 }
 
 .day[data-level='3'] {
-  background: oklch(from var(--dsw-alias-state-business-primary) .67 calc(c * .75) h);
+  background: oklch(from var(--usage-particle-color, var(--dsw-alias-state-business-primary)) .67 calc(c * .75) h);
 }
 
 .day[data-level='4'] {
-  background: oklch(from var(--dsw-alias-state-business-primary) .56 calc(c * .9) h);
+  background: oklch(from var(--usage-particle-color, var(--dsw-alias-state-business-primary)) .56 calc(c * .9) h);
 }
 
 .day[data-level='5'] {
-  background: oklch(from var(--dsw-alias-state-business-primary) .45 c h);
+  background: oklch(from var(--usage-particle-color, var(--dsw-alias-state-business-primary)) .45 c h);
 }
 
 .months {
@@ -539,3 +539,10 @@
     gap: 2px;
   }
 }
+
+.colorControls { display: flex; align-items: center; gap: 12px; margin-top: 12px; color: var(--dsw-alias-label-secondary); font-size: 12px; }
+.colorPicker { display: inline-flex; align-items: center; gap: 8px; }
+.colorPicker input { width: 28px; height: 24px; padding: 2px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 6px; background: var(--dsw-alias-bg-layer-1); cursor: pointer; }
+.colorControls button { padding: 3px 7px; border: 0; border-radius: 5px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.colorControls button:hover { background: var(--dsw-alias-bg-skeleton); }
+.colorControls button:disabled { opacity: .45; cursor: default; }

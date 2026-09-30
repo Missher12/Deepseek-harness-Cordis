@@ -1,11 +1,12 @@
 import {
-  useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode,
+  useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent, type ReactNode,
 } from 'react'
 import type { UsageInsightsSnapshot } from '../types.ts'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import { buildParticleGrid, type ParticleChartMode } from './charts.ts'
 import { formatCompactNumber, formatDuration, formatModel } from './format.ts'
 import { readUsageSnapshot, writeUsageSnapshot } from './snapshot-cache.ts'
+import { readParticleColor, setParticleColor, subscribeParticleColor } from './particle-color.ts'
 import css from './UsageInsightsSection.module.css'
 
 /** Registration-side Remote and locale face used by the section. */
@@ -239,6 +240,7 @@ function ActivityChart({ snapshot, mode, locale, t }: {
 export function UsageInsightsSection({ load, locale, t }: UsageInsightsSectionProps): ReactNode {
   const [request, setRequest] = useState(0)
   const [mode, setMode] = useState<ChartMode>('daily')
+  const particleColor = useSyncExternalStore(subscribeParticleColor, readParticleColor)
   const [state, setState] = useState<ViewState>(() => {
     const cached = readUsageSnapshot()
     return cached === undefined
@@ -353,7 +355,17 @@ export function UsageInsightsSection({ load, locale, t }: UsageInsightsSectionPr
           ))}
         </div>
       </div>
-      <div className={css.chartPanel} id={`${panelId}-panel`} role="tabpanel" aria-labelledby={`${panelId}-${mode}-tab`}>
+      <div className={css.colorControls}>
+        <label className={css.colorPicker}>
+          <span>{t('particleColor')}</span>
+          <input type="color" aria-label={t('particleColor')} value={particleColor || '#7c5cc4'}
+            onChange={event => { setParticleColor(event.currentTarget.value) }} />
+        </label>
+        <button type="button" onClick={() => { setParticleColor('') }} disabled={particleColor === ''}>
+          {t('resetColor')}
+        </button>
+      </div>
+      <div className={css.chartPanel} style={{ '--usage-particle-color': particleColor || 'var(--dsw-alias-state-business-primary)' } as CSSProperties} id={`${panelId}-panel`} role="tabpanel" aria-labelledby={`${panelId}-${mode}-tab`}>
         <ActivityChart snapshot={snapshot} mode={mode} locale={locale} t={t} />
       </div>
       <div className={css.detailsGrid}>

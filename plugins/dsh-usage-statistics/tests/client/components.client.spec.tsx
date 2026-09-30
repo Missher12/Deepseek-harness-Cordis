@@ -5,12 +5,14 @@ import type { UsageInsightsSnapshot } from '../../src/types.ts'
 import { UsageInsightsSection } from '../../src/client/UsageInsightsSection.tsx'
 import type { UsageInsightsSectionInjected, UsageInsightsSectionProps } from '../../src/client/UsageInsightsSection.tsx'
 import { en, zh, type UsageInsightsLocaleKey } from '../../src/client/locales.ts'
+import { setParticleColor } from '../../src/client/particle-color.ts'
 import { resetUsageSnapshotForTest } from '../../src/client/snapshot-cache.ts'
 
 afterEach(() => {
   vi.useRealTimers()
   cleanup()
   resetUsageSnapshotForTest()
+  setParticleColor('')
 })
 
 const t = ((key: UsageInsightsLocaleKey): string => en[key]) as UsageInsightsSectionProps['t']
@@ -58,6 +60,22 @@ function props(
 }
 
 describe('UsageInsightsSection', () => {
+  it('remembers a custom particle colour while keeping the same data and seven-row grid', async () => {
+    const load = vi.fn().mockResolvedValue(SNAPSHOT)
+    const first = render(<UsageInsightsSection {...props(load)} />)
+    const picker = await screen.findByLabelText(en.particleColor)
+    const before = [...document.querySelectorAll('[data-level]')].map(cell => cell.getAttribute('data-level'))
+    fireEvent.change(picker, { target: { value: '#1b9d80' } })
+    expect(screen.getByRole('tabpanel').style.getPropertyValue('--usage-particle-color')).toBe('#1b9d80')
+    expect([...document.querySelectorAll('[data-level]')].map(cell => cell.getAttribute('data-level'))).toEqual(before)
+    expect(load).toHaveBeenCalledTimes(1)
+    first.unmount()
+    render(<UsageInsightsSection {...props(load)} />)
+    expect((await screen.findByLabelText(en.particleColor) as HTMLInputElement).value).toBe('#1b9d80')
+    fireEvent.click(screen.getByRole('button', { name: en.resetColor }))
+    expect(screen.getByRole('tabpanel').style.getPropertyValue('--usage-particle-color')).toContain('--dsw-alias-state-business-primary')
+  })
+
   it('keeps the native page title and description visible across loading and ready states', async () => {
     const deferred = Promise.withResolvers<UsageInsightsSnapshot>()
     render(<UsageInsightsSection {...props(() => deferred.promise)} />)
