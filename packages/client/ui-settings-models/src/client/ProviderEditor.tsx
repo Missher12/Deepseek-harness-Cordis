@@ -20,6 +20,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
+import type { ModelFieldsRenderer } from './slot-contract.ts'
 import type {
   CredentialInfo, SettingsNamespaceView, SettingsPathOpView,
 } from '@deepseek-ai/dsh-api-remotes/client'
@@ -44,7 +45,7 @@ type EditorLayout = 'deepseek' | 'pi-ai' | 'unknown'
 
 
 /** Props of {@link ProviderEditor}. */
-export interface ProviderEditorProps {
+export interface ProviderEditorProps extends Partial<ModelFieldsRenderer> {
   /** Provider route id. */
   provider: string
   /** Display name for the card title. */
@@ -511,6 +512,7 @@ export function ProviderEditor(props: ProviderEditorProps): ReactNode {
               )
               : (
                 <ModelListEditor
+                  {...props.renderSlot === undefined ? {} : { renderSlot: props.renderSlot }}
                   {...catalogProps}
                   catalogProvider={props.declared === true ? undefined : props.provider}
                   defaultInput={Array.isArray(defaultInput) ? defaultInput : undefined}

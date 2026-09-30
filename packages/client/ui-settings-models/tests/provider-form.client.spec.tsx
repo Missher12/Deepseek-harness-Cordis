@@ -212,7 +212,7 @@ async function mountSection(options: Parameters<typeof scriptedFace>[0] = {}) {
     operations: operationsWith(scripted.face),
     schema: settingsSchema,
     t,
-    renderSlot: () => null,
+    renderSlot: (_name, _owner, options) => options?.fallback ?? null,
   }
   render(<ModelsSection {...injected} />)
   return { ...scripted, controller }
@@ -265,6 +265,23 @@ describe('protocolChoices', () => {
 })
 
 describe('model list editing', () => {
+  it('saves input and reasoning changes in the same provider transaction', async () => {
+    const neighbor = { id: 'neighbor', input: ['image'], name: 'Keep me' }
+    const { mutate } = await mountSection({ providers: { openai: { models: [
+      { id: 'preview', input: ['text'], reasoningEfforts: { low: 'light', high: 'deep' } }, neighbor,
+    ] } } })
+    openEditor('openai')
+    fireEvent.click(within(screen.getByRole('group', { name: `${en.modelInputTypes} 1` })).getByRole('checkbox', { name: en.modelInputImage }))
+    fireEvent.change(screen.getByLabelText(`${en.reasoningMaximum} 1`), { target: { value: 'low' } })
+    expect(mutate).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByText(en.apply))
+    await waitFor(() => { expect(mutate).toHaveBeenCalledTimes(1) })
+    expect(firstMutate(mutate).ops).toEqual([{
+      op: 'set', path: ['providers', 'openai', 'models'],
+      value: [{ id: 'preview', input: ['text', 'image'], reasoningEfforts: { low: 'light' } }, neighbor],
+    }])
+  })
+
   it('changes image input without rewriting a neighboring model declaration', async () => {
     const neighbor = { id: 'vision', input: ['image'], name: 'Kept vision model' }
     const { mutate } = await mountSection({

@@ -20,6 +20,8 @@ interface ModelInputTypesProps {
   loading?: boolean
   /** Installed model or provider defaults when the row does not declare input types. */
   fallback?: readonly string[] | undefined
+  /** Show labels and choices compactly beside other model controls. */
+  compact?: boolean
   /** Section copy. */
   t: (key: ModelsKey) => string
   /** Replace this row, preserving unrelated configuration. */
@@ -32,17 +34,17 @@ interface ModelInputTypesProps {
  * @returns the labeled text and image checkboxes.
  */
 export function ModelInputTypes({
-  model, field, position, disabled, loading = false, fallback, t, onChange,
+  model, field, position, disabled, loading = false, fallback, compact = false, t, onChange,
 }: ModelInputTypesProps): ReactNode {
   const modalities = model[field]
   const selected = Array.isArray(modalities) && modalities.length > 0 ? modalities : fallback ?? ['text']
   return (
-    <fieldset className={styles['modelInputTypes']} aria-label={`${t('modelInputTypes')} ${String(position)}`}>
+    <fieldset className={styles['modelInputTypes']} aria-label={`${t('modelInputTypes')} ${String(position)}`} title={compact ? t('modelInputHint') : undefined}>
       <legend className={styles['modelFieldLabel']}>{t('modelInputTypes')}</legend>
-      <p className={styles['inputSource']}>
+      {compact ? null : <p className={styles['inputSource']}>
         {t(loading ? 'modelInputLoading' : Array.isArray(modalities) && modalities.length > 0
           ? 'modelInputDeclared' : 'modelInputInherited')}
-      </p>
+      </p>}
       <div className={styles['modelInputChoices']}>
         {(['text', 'image'] as const).map(modality => (
           <Checkbox
@@ -64,7 +66,7 @@ export function ModelInputTypes({
           />
         ))}
       </div>
-      <p className={styles['inputHint']}>{t('modelInputHint')}</p>
+      {compact ? null : <p className={styles['inputHint']}>{t('modelInputHint')}</p>}
     </fieldset>
   )
 }

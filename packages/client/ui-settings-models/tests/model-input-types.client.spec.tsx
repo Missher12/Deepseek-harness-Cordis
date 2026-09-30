@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 /** Input-type defaults, nonempty selections, and hidden model metadata. */
+import { useState } from 'react'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ModelInputTypes } from '../src/client/ModelInputTypes.tsx'
 import { ModelRow } from '../src/client/ModelRow.tsx'
+import type { ModelFieldsOwnerProps } from '../src/client/slot-contract.ts'
 import { en } from '../src/client/locales.ts'
 
 afterEach(cleanup)
@@ -15,7 +17,7 @@ it('edits image capability before opening model options and preserves other fiel
   render(<ModelRow model={model} position={1} inputField="input" expanded={false}
     disabled={false} t={key => en[key]} contextWindow={capacity} maxTokens={capacity}
     onChange={onChange} onFieldChange={vi.fn()} onToggle={vi.fn()} onRemove={vi.fn()} />)
-  expect(screen.getByText(en.modelInputDeclared)).toBeTruthy()
+  expect(screen.getByRole('group', { name: `${en.modelInputTypes} 1` }).getAttribute('title')).toBe(en.modelInputHint)
   expect(screen.queryByRole('textbox', { name: `${en.contextWindow} 1` })).toBeNull()
   fireEvent.click(screen.getByRole('checkbox', { name: en.modelInputImage }))
   expect(onChange).toHaveBeenCalledWith({ ...model, input: ['text', 'image'] })
@@ -95,4 +97,29 @@ describe.each(['inputModalities', 'input'] as const)('%s input types', (field) =
     }
     expect(onChange).not.toHaveBeenCalled()
   })
+})
+
+it('keeps injected reasoning beside inputs in one draft before the advanced fold opens', () => {
+  const onChange = vi.fn()
+  const renderFields = vi.fn()
+  renderFields.mockImplementation((name: string, owner: ModelFieldsOwnerProps, options?: { entryKey?: string }) => {
+    expect(name).toBe('settings.models.model-fields')
+    expect(options?.entryKey).toBe('llm-pi-ai')
+    return <button disabled={owner.disabled} onClick={() => { owner.onChange({ ...owner.model, reasoningEfforts: { high: 'vendor-high' } }) }}>Set reasoning</button>
+  })
+  function Editor() {
+    const [model, setModel] = useState<Record<string, unknown>>({ id: 'vision', input: ['text'], contextWindow: 64000 })
+    const capacity = { value: '', placeholder: '', onChange: vi.fn() }
+    return <ModelRow model={model} position={1} inputField="input" expanded={false} reasoningEnabled
+      disabled={false} t={key => en[key]} contextWindow={capacity} maxTokens={capacity}
+      onChange={(value) => { setModel(value); onChange(value) }} onFieldChange={vi.fn()} onToggle={vi.fn()} onRemove={vi.fn()}
+      renderSlot={renderFields} />
+  }
+  render(<Editor />)
+  fireEvent.click(screen.getByRole('checkbox', { name: en.modelInputImage }))
+  fireEvent.click(screen.getByRole('button', { name: 'Set reasoning' }))
+  expect(onChange).toHaveBeenLastCalledWith({ id: 'vision', input: ['text', 'image'], contextWindow: 64000, reasoningEfforts: { high: 'vendor-high' } })
+  expect(screen.queryByLabelText(`${en.reasoningMode} 1`)).toBeNull()
+  expect(screen.getByRole('checkbox', { name: en.modelInputImage }).closest('fieldset')?.parentElement)
+    .toBe(screen.getByRole('button', { name: 'Set reasoning' }).parentElement?.parentElement)
 })

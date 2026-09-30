@@ -16,6 +16,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
+import type { ModelFieldsRenderer } from './slot-contract.ts'
 import type { LlmDiscoveredModel } from '@deepseek-ai/dsh-api-remotes/client'
 import { Button, IconPlusOutlineRegular, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
 import { formatCapacity, parseCapacity } from './DeepSeekModelsEditor.tsx'
@@ -64,7 +65,7 @@ export interface ProbeTarget {
 }
 
 /** Props of {@link ModelListEditor}. */
-export interface ModelListEditorProps {
+export interface ModelListEditorProps extends Partial<ModelFieldsRenderer> {
   /** The rows as currently drafted. */
   models: readonly ModelDraft[]
   /** Catalog mode edits one override without replacing the served models list. */
@@ -367,6 +368,7 @@ export function ModelListEditor(props: ModelListEditorProps): ReactNode {
             position={index + 1}
             inputField="input"
             reasoningEnabled
+            {...props.renderSlot === undefined ? {} : { renderSlot: props.renderSlot }}
             reasoningIdentity={JSON.stringify([probe.settingsNs, probe.provider, textOf(model, 'id')])}
             reasoningFallback={catalog?.find(candidate => candidate.id === textOf(model, 'id'))?.reasoningEfforts}
             inputFallback={inputDefaults.get(textOf(model, 'id')) ?? props.defaultInput}

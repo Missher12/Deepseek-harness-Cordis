@@ -26,6 +26,7 @@
 
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
+import type { ModelFieldsRenderer } from './slot-contract.ts'
 import type { JsonValue } from '@deepseek-ai/dsh-util-values'
 import { apiKeyFailure } from './apiKey.ts'
 import { EditorFooter } from './EditorFooter.tsx'
@@ -62,7 +63,7 @@ function isHttpUrl(value: string): boolean {
 }
 
 /** Props of {@link CustomProviderCard}. */
-export interface CustomProviderCardProps {
+export interface CustomProviderCardProps extends Partial<ModelFieldsRenderer> {
   /** Route ids already declared, so the card refuses to shadow one. */
   taken: readonly string[]
   /** Wire protocols the adapter can serve, in the order it reports them. */
@@ -289,6 +290,7 @@ export function CustomProviderCard(props: CustomProviderCardProps): ReactNode {
           : <p className={styles['error']}>{t(keyFailure === 'keyBlank' ? 'keyBlankNew' : keyFailure)}</p>}
       </div>
       <ModelListEditor
+        {...props.renderSlot === undefined ? {} : { renderSlot: props.renderSlot }}
         models={models}
         onChange={setModels}
         probe={{

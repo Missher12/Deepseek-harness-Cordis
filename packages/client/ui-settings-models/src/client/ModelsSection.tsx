@@ -60,7 +60,7 @@ export interface ModelsSectionInjected {
 type AddMode = 'catalog' | 'custom'
 
 /** The child slots this section declares and dispatches (see ./slot-contract.ts). */
-type ModelsChildSlots = 'settings.models.provider-card' | 'settings.models.footer'
+type ModelsChildSlots = 'settings.models.provider-card' | 'settings.models.footer' | 'settings.models.model-fields'
 
 /** The child-slot dispatch function the renderer binds for the section. */
 type ModelsRenderSlot = PropsRenderSlots<ModelsChildSlots>['renderSlot']
@@ -109,7 +109,7 @@ interface CatalogDraft {
 /** Values that vary around the shared provider-editor rendering. */
 interface ProviderEditorRenderProps extends Pick<
   ProviderEditorProps,
-  'namespace' | 'schema' | 'operations' | 't' | 'readOnly' | 'onClose'
+  'namespace' | 'schema' | 'operations' | 't' | 'readOnly' | 'onClose' | 'renderSlot'
 > {
   target: EditorTarget
 }
@@ -412,6 +412,7 @@ function Loaded({ injected, renderSlot }: { injected: ModelsSectionFace; renderS
                 {renderProviderEditor({
                   target,
                   namespace,
+                  renderSlot,
                   schema,
                   operations,
                   t,
@@ -507,6 +508,7 @@ function Loaded({ injected, renderSlot }: { injected: ModelsSectionFace; renderS
                 ? renderProviderEditor({
                   target,
                   namespace,
+                  renderSlot,
                   schema,
                   operations,
                   t,
@@ -593,6 +595,7 @@ function Loaded({ injected, renderSlot }: { injected: ModelsSectionFace; renderS
                       provider={draft.target.provider}
                       displayName={draft.target.displayName}
                       hideTitle
+                      renderSlot={renderSlot}
                       namespace={draft.namespace}
                       schema={schema}
                       settingsPath={draft.target.settingsPath}
@@ -621,6 +624,7 @@ function Loaded({ injected, renderSlot }: { injected: ModelsSectionFace; renderS
                     className={styles['addPanel']}
                   >
                     <CustomProviderCard
+                      renderSlot={renderSlot}
                       taken={state.rows.map(row => row.entry.provider)}
                       protocols={protocols}
                       revision={piAi.revision}

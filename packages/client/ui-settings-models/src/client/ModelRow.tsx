@@ -1,6 +1,7 @@
 /** Shared model fields and actions for both adapter catalog editors. */
 
 import type { ReactNode } from 'react'
+import type { ModelFieldsRenderer } from './slot-contract.ts'
 import clsx from 'clsx'
 import {
   IconChevronDownOutlineRegular, IconChevronRightOutlineRegular, IconTrashOutlineRegular,
@@ -21,7 +22,7 @@ interface CapacityInput {
 }
 
 /** Adapter-owned data and actions for one model row. */
-interface ModelRowProps {
+interface ModelRowProps extends Partial<ModelFieldsRenderer> {
   model: DeepSeekModelDraft
   position: number
   inputField: 'inputModalities' | 'input'
@@ -91,11 +92,6 @@ export function ModelRow(props: ModelRowProps): ReactNode {
           <IconTrashOutlineRegular size={14} />
         </button>
       </div>
-      <ModelInputTypes
-        model={model} field={props.inputField} position={position}
-        fallback={props.inputFallback} loading={props.inputLoading === true}
-        disabled={disabled || props.inputLoading === true} t={t} onChange={props.onChange}
-      />
       {props.expanded
         ? (
           <div className={styles['modelAdvanced']}>
@@ -115,20 +111,32 @@ export function ModelRow(props: ModelRowProps): ReactNode {
                 />
               </label>
             ))}
-            {props.reasoningEnabled === true ? <ModelReasoningFields key={props.reasoningIdentity}
-              value={model['reasoningEfforts']} inherited={props.reasoningFallback}
-              label={String(position)} disabled={disabled} t={t}
-              onChange={(value) => {
-                const next = { ...model }
-                if (value === undefined) delete next['reasoningEfforts']
-                else next['reasoningEfforts'] = value
-                props.onChange(next)
-              }}
-            /> : null}
 
           </div>
         )
         : null}
+      <div className={styles['modelCapabilities']}>
+        <ModelInputTypes
+          compact model={model} field={props.inputField} position={position}
+          fallback={props.inputFallback} loading={props.inputLoading === true}
+          disabled={disabled || props.inputLoading === true} t={t} onChange={props.onChange}
+        />
+        {props.reasoningEnabled === true ? (() => {
+          const fallback = <ModelReasoningFields key={props.reasoningIdentity}
+            value={model['reasoningEfforts']} inherited={props.reasoningFallback}
+            label={String(position)} disabled={disabled} t={t}
+            onChange={(value) => {
+              const next = { ...model }
+              if (value === undefined) delete next['reasoningEfforts']
+              else next['reasoningEfforts'] = value
+              props.onChange(next)
+            }}/>
+          return <div key={props.reasoningIdentity} className={styles['modelReasoningArea']}>{props.renderSlot === undefined ? fallback : props.renderSlot('settings.models.model-fields', {
+            model, inherited: { reasoningEfforts: props.reasoningFallback }, position, disabled,
+            onChange: props.onChange,
+          }, { entryKey: 'llm-pi-ai', fallback })}</div>
+        })() : null}
+      </div>
     </div>
   )
 }

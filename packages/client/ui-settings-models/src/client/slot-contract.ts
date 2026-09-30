@@ -18,6 +18,7 @@
  */
 
 import type {} from '@deepseek-ai/dsh-client-ui-slots'
+import type { PropsRenderSlots } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ProviderDirectoryEntry } from './store.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
@@ -31,6 +32,8 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
      * area renders nothing.
      */
     'settings.models.provider-card': { kind: 'keyed'; scope: 'root'; owner: ProviderCardExtrasOwnerProps }
+    /** Adapter-owned controls beside the input types in the same model draft. */
+    'settings.models.model-fields': { kind: 'keyed'; scope: 'root'; owner: ModelFieldsOwnerProps }
     /** Optional account login choice before the credential editor. */
     'settings.models.sign-in': { kind: 'single'; scope: 'root'; owner: { complete: () => void; useApiKey: () => void } }
     /**
@@ -56,3 +59,20 @@ export interface ModelsFooterOwnerProps {
   /** Marker field: footer owner props are intentionally empty. */
   children?: never
 }
+
+/** Per-model controls share the owning card's draft and save transaction. */
+export interface ModelFieldsOwnerProps {
+  /** Current row, including fields owned by other controls. */
+  model: Readonly<Record<string, unknown>>
+  /** Catalog declarations for capabilities not explicitly configured. */
+  inherited: Readonly<Record<string, unknown>>
+  /** One-based row position used by accessible labels. */
+  position: number
+  /** Hold controls while read-only, loading, or saving. */
+  disabled: boolean
+  /** Replace this draft row without issuing a separate settings write. */
+  onChange: (model: Record<string, unknown>) => void
+}
+
+/** The Models section's renderer, forwarded unchanged through its editors. */
+export type ModelFieldsRenderer = Pick<PropsRenderSlots<'settings.models.model-fields'>, 'renderSlot'>
