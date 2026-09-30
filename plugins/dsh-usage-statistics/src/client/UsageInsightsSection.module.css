@@ -348,7 +348,10 @@
   height: 100%;
   min-width: 0;
   border-radius: 2px;
-  background: transparent;
+  /* LOCAL CHANGE: a day without usage keeps the grid readable instead of
+     vanishing. Mixing the theme's own label colour keeps the empty cell faint
+     and neutral in both light and dark themes. */
+  background: color-mix(in srgb, var(--dsw-alias-label-primary) 10%, transparent);
 }
 
 .day[data-level='1'] {
@@ -369,6 +372,33 @@
 
 .day[data-level='5'] {
   background: oklch(from var(--dsw-alias-state-business-primary) .62 c h);
+}
+
+/* LOCAL CHANGE: the shipped ramp runs light to dark, which reads backwards on
+   a dark surface — its darkest step is the least visible, so the busiest day
+   looks like the quietest one. Dark theme gets the same ramp reversed (dim to
+   bright), so in both themes more usage means more prominent, and on the dark
+   surface the busiest day is literally the brightest. DSH marks its dark
+   palette with `body[data-ds-dark-theme]`, which is exactly where it redefines
+   every alias token, including `--dsw-alias-state-business-primary`. */
+body[data-ds-dark-theme] .day[data-level='1'] {
+  background: oklch(from var(--dsw-alias-state-business-primary) .45 calc(c * .4) h);
+}
+
+body[data-ds-dark-theme] .day[data-level='2'] {
+  background: oklch(from var(--dsw-alias-state-business-primary) .55 calc(c * .6) h);
+}
+
+body[data-ds-dark-theme] .day[data-level='3'] {
+  background: oklch(from var(--dsw-alias-state-business-primary) .65 calc(c * .78) h);
+}
+
+body[data-ds-dark-theme] .day[data-level='4'] {
+  background: oklch(from var(--dsw-alias-state-business-primary) .74 calc(c * .92) h);
+}
+
+body[data-ds-dark-theme] .day[data-level='5'] {
+  background: oklch(from var(--dsw-alias-state-business-primary) .84 c h);
 }
 
 .months {
