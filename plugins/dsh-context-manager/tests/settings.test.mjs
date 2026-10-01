@@ -455,7 +455,9 @@ test('current context shows one full 1M window and every K bucket without a basi
     assert.equal(card.querySelector('[data-color="other"]').style.width,'2%')
     assert.equal(card.querySelectorAll('.cmv-capacity-stack').length,1)
     assert.equal(card.querySelectorAll('[aria-pressed]').length,0,'no hidden full-window toggle')
-    assert.deepEqual([...card.querySelectorAll('.cmv-key')].map(node=>node.textContent),['压缩摘要30K3.0%','工具结果200K20.0%','对话消息50K5.0%','指令与定义20K2.0%','其他占用20K2.0%','剩余可用680K68.0%'])
+    assert.deepEqual([...card.querySelectorAll('.cmv-key')].map(node=>node.textContent),['记忆摘要已占用30K3.0%','工具结果200K20.0%','对话消息50K5.0%','指令与定义20K2.0%','其他占用20K2.0%','剩余可用680K68.0%'])
+    assert.equal(card.querySelector('[data-color="summary"]').style.width,'3%','retained memory keeps its actual share of the window')
+    assert.match(card.querySelector('[data-slice="summary"]').title,/不计入剩余可用空间/)
     assert.equal(card.querySelectorAll('.cmv-key:disabled').length,2,'unclassified usage and free space are not content filters')
   } finally { await act(async () => root.unmount()); dom.window.close(); delete globalThis.window; delete globalThis.document }
 })

@@ -2,7 +2,8 @@
 export const zh = {
   title: '上下文', readonly: '只读', refresh: '刷新数据', settingsHint: '设置 → 上下文管理',
   current: '当前上下文', contentBasis: '有效内容', windowBasis: '整个窗口', basis: '组成口径',
-  summary: '压缩摘要', tool: '工具结果', message: '对话消息', instruction: '指令与定义', free: '剩余可用', other: '其他占用',
+  summary: '记忆摘要', tool: '工具结果', message: '对话消息', instruction: '指令与定义', free: '剩余可用', other: '其他占用',
+  occupied: '已占用', unoccupied: '未占用', summaryHint: '压缩后保留的记忆摘要，已占用当前窗口，不计入剩余可用空间。点击查看摘要内容。',
   capacity: '总容量', used: '已用', hostOccupancy: '宿主占用', unknownWindow: '尚无窗口容量',
   availableHint: '剩余为总窗口减去当前占用；下一次请求还需留出输出空间，并遵守设置中的压缩阈值。',
   estimate: '各项为估算', estimateHint: '分类保持原始文本估算；宿主占用高于分类合计的差额列入其他占用。两者不一致时按较大值估算剩余，避免高估容量。压缩摘要只计保留的摘要，不计已释放的原文。',
@@ -36,7 +37,8 @@ export type InspectorLocaleKey = keyof typeof zh
 export const en: Record<InspectorLocaleKey, string> = {
   title: 'Context', readonly: 'Read only', refresh: 'Refresh', settingsHint: 'Settings → Context manager',
   current: 'Current context', contentBasis: 'Active content', windowBasis: 'Full window', basis: 'Composition basis',
-  summary: 'Summary', tool: 'Tool results', message: 'Conversation', instruction: 'Instructions & definitions', free: 'Available', other: 'Other occupancy',
+  summary: 'Memory summary', tool: 'Tool results', message: 'Conversation', instruction: 'Instructions & definitions', free: 'Available', other: 'Other occupancy',
+  occupied: 'Occupied', unoccupied: 'Unoccupied', summaryHint: 'Retained memory from compaction occupies the current window and is excluded from available space. Select to read the summary.',
   capacity: 'Total capacity', used: 'Used', hostOccupancy: 'Host occupancy', unknownWindow: 'Window capacity unavailable',
   availableHint: 'The remaining window excludes current occupancy. The next request must also allow for output and the configured compaction threshold.',
   estimate: 'Estimated values', estimateHint: 'Category counts retain their text estimates. Any excess in host occupancy appears as Other occupancy. Available space uses the larger total to avoid overstating capacity. Summary counts include retained text, not released content.',

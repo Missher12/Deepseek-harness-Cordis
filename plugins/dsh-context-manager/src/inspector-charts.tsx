@@ -22,7 +22,7 @@ export function ContextComposition({ data, t, onGroup }: { data: Inspection; t: 
   const chart = composition(data)
   const pct = chart.window === null ? null : chart.used / chart.window * 100
   const isGroup = (id: typeof chart.slices[number]['id']): id is ContextGroup => id !== 'free' && id !== 'other'
-  const sliceLabel = (slice: typeof chart.slices[number]) => `${t(slice.id)} ≈ ${exactTokens(slice.value)} Token${chart.window === null ? '' : ` · ${slice.share.toFixed(1)}%`}`
+  const sliceLabel = (slice: typeof chart.slices[number]) => `${t(slice.id)} ≈ ${exactTokens(slice.value)} Token${chart.window === null ? '' : ` · ${slice.share.toFixed(1)}%`}${slice.id === 'summary' && slice.value > 0 ? ` · ${t('occupied')}。${t('summaryHint')}` : ''}`
   return <article className="cmv-card cmv-composition">
     <div className="cmv-heading"><div><h3>{t('current')}</h3><Tooltip label={`${t('capacity')} ${exactTokens(chart.window)} Token`} portal><div tabIndex={0} className="cmv-number"><strong>{formatCapacity(chart.window)}</strong><span>{t('capacity')}</span></div></Tooltip></div>
       <div className="cmv-capacity-used"><span>{t('used')} ≈ <strong>{formatTokenK(chart.used)}</strong></span><b>{pct === null ? '—' : `${pct.toFixed(1)}%`}</b></div></div>
@@ -31,7 +31,7 @@ export function ContextComposition({ data, t, onGroup }: { data: Inspection; t: 
         {isGroup(slice.id) ? <button type="button" data-color={slice.id} style={{ width: `${slice.value / chart.total * 100}%` }} aria-label={sliceLabel(slice)} onClick={() => { if (isGroup(slice.id)) onGroup(slice.id) }}/> : <span data-color={slice.id} role="img" aria-label={sliceLabel(slice)} style={{ width: `${slice.value / chart.total * 100}%` }} tabIndex={0}/>}
       </Tooltip>)}
     </div>
-    <div className="cmv-legend">{chart.slices.map(slice => <button key={slice.id} type="button" className="cmv-key" disabled={!isGroup(slice.id)} data-value={slice.value} data-share={slice.share} title={sliceLabel(slice)} onClick={() => { if (isGroup(slice.id)) onGroup(slice.id) }}><span><i data-color={slice.id}/>{t(slice.id)}</span><strong>{formatTokenK(slice.value)}<small>{chart.window === null ? '—' : `${slice.share.toFixed(1)}%`}</small></strong></button>)}</div>
+    <div className="cmv-legend">{chart.slices.map(slice => <button key={slice.id} type="button" className="cmv-key" disabled={!isGroup(slice.id)} data-slice={slice.id} data-value={slice.value} data-share={slice.share} title={sliceLabel(slice)} onClick={() => { if (isGroup(slice.id)) onGroup(slice.id) }}><span><i data-color={slice.id}/>{t(slice.id)}{slice.id === 'summary' && <small className="cmv-summary-state">{t(slice.value > 0 ? 'occupied' : 'unoccupied')}</small>}</span><strong>{formatTokenK(slice.value)}<small>{chart.window === null ? '—' : `${slice.share.toFixed(1)}%`}</small></strong></button>)}</div>
     <div className="cmv-between cmv-muted"><Tooltip label={`${t('estimateHint')}${chart.measured === null ? '' : ` ${t('hostOccupancy')} ${exactTokens(chart.measured)} Token`}`} portal><span tabIndex={0}>{t('estimate')}</span></Tooltip>{chart.window === null ? <span>{t('unknownWindow')}</span> : chart.overflow ? <span>{t('overflow')} ≈ {formatTokenK(chart.used - chart.window)}</span> : <Tooltip label={t('availableHint')} portal><span tabIndex={0}>{t('windowBasis')} · 100%</span></Tooltip>}</div>
   </article>
 }

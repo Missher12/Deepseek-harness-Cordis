@@ -46,7 +46,10 @@
 .cmv-view .cmv-stack>button:hover { opacity: .8; }
 .cmv-view .cmv-stack>button:focus-visible { outline: 2px solid var(--dsw-alias-label-primary); outline-offset: -3px; }
 .cmv-view .cmv-legend { display: grid; grid-template-columns: repeat(auto-fit,minmax(110px,1fr)); gap: 8px; }
-.cmv-view .cmv-key { background: none; border: 0; font: inherit; color: inherit; text-align: left; padding: 3px; border-radius: var(--dsw-radius-sm); min-width: 0; cursor: pointer; }
+.cmv-view .cmv-key { background: none; border: 0; font: inherit; color: inherit; text-align: left; padding: 6px; border-radius: var(--dsw-radius-sm); min-width: 0; cursor: pointer; }
+.cmv-view .cmv-key[data-slice="summary"] { background: color-mix(in srgb,var(--cmv-gray) 12%,var(--dsw-alias-bg-layer-1)); box-shadow: inset 0 0 0 .5px color-mix(in srgb,var(--cmv-gray) 30%,transparent); }
+.cmv-view .cmv-key[data-slice="summary"]>span { flex-wrap: wrap; }
+.cmv-view .cmv-summary-state { margin-left: auto; }
 .cmv-view .cmv-key:disabled { cursor: default; }
 .cmv-view .cmv-key:not(:disabled):hover { background: var(--dsw-alias-interactive-bg-hover); }
 .cmv-view .cmv-key>span { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--dsw-alias-label-secondary); white-space: nowrap; }
