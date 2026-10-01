@@ -1,4 +1,4 @@
-/** Read-only chart values. Content estimates never borrow provider usage totals. */
+/** Read-only chart values. Category estimates retain their original token counts. */
 import type { Category, Inspection } from './inspector-types.ts'
 
 export const contextGroups = [
@@ -8,7 +8,7 @@ export const contextGroups = [
   { id: 'instruction', categories: ['system', 'tools', 'inject', 'skill'] },
 ] as const satisfies readonly { id: string; categories: readonly Category[] }[]
 export type ContextGroup = typeof contextGroups[number]['id']
-export interface ChartSlice { id: ContextGroup | 'free'; value: number; share: number }
+export interface ChartSlice { id: ContextGroup | 'other' | 'free'; value: number; share: number }
 
 /** Tenths of a percent sum to 100 while bar widths use unrounded values. */
 export function percentages(values: readonly number[]): number[] {
@@ -22,15 +22,25 @@ export function percentages(values: readonly number[]): number[] {
   return units.map(value => value / 10)
 }
 
-/** Entire-window charts use the same text estimator for all occupied segments. */
-export function composition(data: Pick<Inspection, 'parts' | 'pressure'>, basis: 'content' | 'window') {
+/** Fill the recorded window without distributing an unclassified usage delta
+ * over the text categories. When estimates exceed the host reading, use the
+ * larger estimate for remaining capacity and retain both readings for the UI.
+ */
+export function composition(data: Pick<Inspection, 'parts' | 'pressure' | 'pressureHistory'>) {
   const slices: ChartSlice[] = contextGroups.map(group => ({ id: group.id, value: data.parts.filter(part => group.categories.some(category => category === part.category)).reduce((sum, part) => sum + part.tokens, 0), share: 0 }))
   const content = slices.reduce((sum, item) => sum + item.value, 0)
-  const window = data.pressure?.window ?? null
-  if (content > 0 && basis === 'window' && window !== null && window > 0) slices.push({ id: 'free', value: Math.max(0, window - content), share: 0 })
+  const cut = data.pressureHistory.at(-1)
+  const capacity = data.pressure?.window ?? cut?.window ?? null
+  const window = capacity !== null && capacity > 0 ? capacity : null
+  const measured = data.pressure?.projected ?? cut?.tokens ?? null
+  const used = Math.max(content, measured ?? 0)
+  const other = used - content
+  if (other > 0) slices.push({ id: 'other', value: other, share: 0 })
+  const free = window === null ? null : Math.max(0, window - used)
+  if (free !== null) slices.push({ id: 'free', value: free, share: 0 })
   const total = slices.reduce((sum, item) => sum + item.value, 0)
   const shares = percentages(slices.map(item => item.value))
-  return { content, total, window, overflow: window !== null && content > window, slices: slices.map((item, index) => ({ ...item, share: shares[index]! })) }
+  return { content, used, measured, free, total, window, overflow: window !== null && used > window, slices: slices.map((item, index) => ({ ...item, share: shares[index]! })) }
 }
 
 /** Disjoint usage buckets: the cached input is already part of total input. */

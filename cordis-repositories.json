@@ -11,7 +11,7 @@
     {
       "path": "plugins/dsh-context-manager",
       "name": "@missher/dsh-context-manager",
-      "version": "0.6.0-local.1",
+      "version": "0.6.0-local.2",
       "historyRepository": "Missher12/dsh-context-manager",
       "importedCommit": "c338afdcc41cb909219a8c70995a9d8379764174"
     },
