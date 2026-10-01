@@ -4,6 +4,7 @@ import { Button, Tooltip } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { Inspection } from './inspector-types.ts'
 import { composition, usageSlices, type ContextGroup } from './chart-data.ts'
 import type { InspectorText } from './inspector-locales.ts'
+import type { Policy } from './policy.ts'
 
 export const formatTokens = (value: number | null | undefined) => value == null ? '—' : value >= 1000 ? `${(value / 1000).toFixed(1)}K` : Math.round(value).toLocaleString()
 export const formatCapacity = (value: number | null) => value === null ? '—' : value >= 1_000_000 ? `${(value / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 2 })}M` : formatTokens(value)
@@ -18,21 +19,22 @@ export function CacheDonut({ value, t }: { value: number | null; t: InspectorTex
 }
 
 /** One full-window bar includes available capacity and preserves category estimates. */
-export function ContextComposition({ data, t, onGroup }: { data: Inspection; t: InspectorText; onGroup: (group: ContextGroup) => void }) {
-  const chart = composition(data)
+export function ContextComposition({ data, policy, t, onGroup }: { data: Inspection; policy: Policy | undefined; t: InspectorText; onGroup: (group: ContextGroup) => void }) {
+  const chart = composition(data, policy)
   const pct = chart.window === null ? null : chart.used / chart.window * 100
-  const isGroup = (id: typeof chart.slices[number]['id']): id is ContextGroup => id !== 'free' && id !== 'other'
-  const sliceLabel = (slice: typeof chart.slices[number]) => `${t(slice.id)} ≈ ${exactTokens(slice.value)} Token${chart.window === null ? '' : ` · ${slice.share.toFixed(1)}%`}${slice.id === 'summary' && slice.value > 0 ? ` · ${t('occupied')}。${t('summaryHint')}` : ''}`
+  const isGroup = (id: typeof chart.slices[number]['id']): id is ContextGroup => id !== 'free' && id !== 'other' && id !== 'reserve'
+  const hint = (slice: typeof chart.slices[number]) => slice.id === 'reserve' ? `${t('reserveHint')} ${t('gate')} ${formatTokenK(chart.limit!)} Token` : slice.id === 'free' ? t(chart.limit === null ? 'availableHint' : 'freeHint') : slice.id === 'summary' ? t('summaryHint') : ''
+  const sliceLabel = (slice: typeof chart.slices[number]) => `${t(slice.id)} ≈ ${exactTokens(slice.value)} Token${chart.window === null ? '' : ` · ${slice.share.toFixed(1)}%`}${hint(slice) ? ` · ${hint(slice)}` : ''}`
   return <article className="cmv-card cmv-composition">
     <div className="cmv-heading"><div><h3>{t('current')}</h3><Tooltip label={`${t('capacity')} ${exactTokens(chart.window)} Token`} portal><div tabIndex={0} className="cmv-number"><strong>{formatCapacity(chart.window)}</strong><span>{t('capacity')}</span></div></Tooltip></div>
       <div className="cmv-capacity-used"><span>{t('used')} ≈ <strong>{formatTokenK(chart.used)}</strong></span><b>{pct === null ? '—' : `${pct.toFixed(1)}%`}</b></div></div>
     <div className="cmv-stack cmv-capacity-stack" role="group" aria-label={t('windowBasis')} data-total={chart.total} data-capacity={chart.window}>
-      {chart.window !== null && chart.slices.filter(slice => slice.value > 0).map(slice => <Tooltip key={slice.id} label={sliceLabel(slice)} portal>
-        {isGroup(slice.id) ? <button type="button" data-color={slice.id} style={{ width: `${slice.value / chart.total * 100}%` }} aria-label={sliceLabel(slice)} onClick={() => { if (isGroup(slice.id)) onGroup(slice.id) }}/> : <span data-color={slice.id} role="img" aria-label={sliceLabel(slice)} style={{ width: `${slice.value / chart.total * 100}%` }} tabIndex={0}/>}
+      {chart.window !== null && chart.slices.filter(slice => slice.value > 0).map(slice => <Tooltip key={slice.id} label={slice.id === 'reserve' ? t('reserveTooltip') : sliceLabel(slice)} portal>
+        {isGroup(slice.id) ? <button type="button" data-color={slice.id} style={{ width: `${slice.value / chart.total * 100}%` }} aria-label={sliceLabel(slice)} onClick={() => { if (isGroup(slice.id)) onGroup(slice.id) }}/> : <span data-color={slice.id} role="img" aria-label={sliceLabel(slice)} style={{ width: `${slice.value / chart.total * 100}%` }} tabIndex={0}>{slice.share >= 12 && slice.id !== 'other' ? t(slice.id) : null}</span>}
       </Tooltip>)}
     </div>
-    <div className="cmv-legend">{chart.slices.map(slice => <button key={slice.id} type="button" className="cmv-key" disabled={!isGroup(slice.id)} data-slice={slice.id} data-value={slice.value} data-share={slice.share} title={sliceLabel(slice)} onClick={() => { if (isGroup(slice.id)) onGroup(slice.id) }}><span><i data-color={slice.id}/>{t(slice.id)}{slice.id === 'summary' && <small className="cmv-summary-state">{t(slice.value > 0 ? 'occupied' : 'unoccupied')}</small>}</span><strong>{formatTokenK(slice.value)}<small>{chart.window === null ? '—' : `${slice.share.toFixed(1)}%`}</small></strong></button>)}</div>
-    <div className="cmv-between cmv-muted"><Tooltip label={`${t('estimateHint')}${chart.measured === null ? '' : ` ${t('hostOccupancy')} ${exactTokens(chart.measured)} Token`}`} portal><span tabIndex={0}>{t('estimate')}</span></Tooltip>{chart.window === null ? <span>{t('unknownWindow')}</span> : chart.overflow ? <span>{t('overflow')} ≈ {formatTokenK(chart.used - chart.window)}</span> : <Tooltip label={t('availableHint')} portal><span tabIndex={0}>{t('windowBasis')} · 100%</span></Tooltip>}</div>
+    <div className="cmv-legend">{chart.slices.map(slice => <button key={slice.id} type="button" className="cmv-key" disabled={!isGroup(slice.id)} data-slice={slice.id} data-value={slice.value} data-share={slice.share} title={sliceLabel(slice)} onClick={() => { if (isGroup(slice.id)) onGroup(slice.id) }}><span><i data-color={slice.id}/>{t(slice.id)}</span><strong>{formatTokenK(slice.value)}<small>{chart.window === null ? '—' : `${slice.share.toFixed(1)}%`}</small></strong></button>)}</div>
+    <div className="cmv-between cmv-muted"><Tooltip label={`${t('estimateHint')}${chart.measured === null ? '' : ` ${t('hostOccupancy')} ${exactTokens(chart.measured)} Token`}`} portal><span tabIndex={0}>{t('estimate')}</span></Tooltip>{chart.window === null ? <span>{t('unknownWindow')}</span> : chart.overflow ? <span>{t('overflow')} ≈ {formatTokenK(chart.used - chart.window)}</span> : <Tooltip label={t(chart.limit === null ? 'availableHint' : 'freeHint')} portal><span tabIndex={0}>{t('windowBasis')} · 100%</span></Tooltip>}</div>
   </article>
 }
 

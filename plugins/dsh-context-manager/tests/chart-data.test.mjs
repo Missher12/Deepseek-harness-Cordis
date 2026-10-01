@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { composition, percentages, usageSlices } from '../lib/chart-data.js'
+import { defaults } from '../lib/policy.js'
 
 test('the full window includes unclassified occupancy and free capacity without repricing content', () => {
   assert.deepEqual(percentages([1, 1, 1]), [33.4, 33.3, 33.3])
@@ -48,4 +49,33 @@ test('session totals count disjoint cache buckets once and preserve unknown usag
   assert.equal(chart.total,120); assert.equal(chart.hit,30)
   assert.deepEqual(chart.values,[60,30,10,20])
   assert.equal(usageSlices({input:0,uncached:0,cacheRead:0,cacheWrite:0,output:0}).hit,null)
+})
+
+test('compaction reserve follows the actual admission check and excludes retained memory', () => {
+  const data={parts:[{category:'summary',tokens:30000},{category:'tool',tokens:200000}],pressure:{window:1000000,projected:320000},pressureHistory:[],model:{maxTokens:64000},historical:false}
+  const current=composition(data,defaults)
+  assert.equal(current.limit,790000)
+  assert.equal(current.free,470000)
+  assert.equal(current.reserve,210000)
+  assert.equal(current.slices.find(slice=>slice.id==='summary').value,30000)
+  assert.deepEqual(current.slices.slice(-2).map(slice=>[slice.id,slice.value]),[['free',470000],['reserve',210000]])
+  assert.equal(current.slices.reduce((sum,slice)=>sum+slice.value,0),1000000)
+  const earlier=composition(data,{...defaults,triggerPercent:70})
+  assert.equal(earlier.limit,690000); assert.equal(earlier.reserve,310000)
+  const outputLimited=composition({...data,model:{maxTokens:400000}},defaults)
+  assert.equal(outputLimited.limit,570000); assert.equal(outputLimited.reserve,430000)
+  const atCheck=composition({...data,pressure:{window:1000000,projected:790000}},defaults)
+  assert.equal(atCheck.free,0); assert.equal(atCheck.reserve,210000)
+  const aboveCheck=composition({...data,pressure:{window:1000000,projected:880000}},defaults)
+  assert.equal(aboveCheck.free,0); assert.equal(aboveCheck.reserve,120000); assert.equal(aboveCheck.total,1000000)
+  const overflow=composition({...data,pressure:{window:1000000,projected:1100000}},defaults)
+  assert.equal(overflow.free,0); assert.equal(overflow.reserve,0); assert.equal(overflow.used,1100000)
+})
+
+test('disabled, unknown and historical policies never invent a compaction reserve', () => {
+  const data={parts:[],pressure:{window:1000000,projected:320000},pressureHistory:[],model:{maxTokens:64000},historical:false}
+  for(const chart of [composition(data),composition(data,{...defaults,enabled:false}),composition({...data,model:null},defaults),composition({...data,historical:true,pressure:null,pressureHistory:[{window:1000000,tokens:320000}]},defaults)]) {
+    assert.equal(chart.limit,null); assert.equal(chart.reserve,null); assert.equal(chart.free,680000)
+    assert.equal(chart.slices.some(slice=>slice.id==='reserve'),false)
+  }
 })

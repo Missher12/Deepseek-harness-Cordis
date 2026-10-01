@@ -435,7 +435,7 @@ test('current context shows one full 1M window and every K bucket without a basi
   const dom = new JSDOM('<div id="root"></div>', { url: 'http://localhost' })
   globalThis.window = dom.window; globalThis.document = dom.window.document; globalThis.IS_REACT_ACT_ENVIRONMENT = true
   const snapshot = { sessionId: 'capacity', cursor: 2, cutSeq: 2, sampledAt: 1000, historical: false,
-    pressure: {window:1000000,projected:320000,input:310000}, official: null, usage: null, model: null,
+    pressure: {window:1000000,projected:320000,input:310000}, official: null, usage: null, model: {provider:'mock',model:'large',maxTokens:64000,effort:null},
     parts: [{category:'summary',tokens:30000,count:1},{category:'tool',tokens:200000,count:1},{category:'user',tokens:50000,count:1},{category:'system',tokens:20000,count:1}],
     rows: [], total: 0, offset: 0, pageSize: 50, activeCount: 4, archivedCount: 0, requests: [], requestCount: 0, compactions: [], pressureHistory: [] }
   const formValue = { revision: 1, value: { policy: defaults } }
@@ -451,13 +451,16 @@ test('current context shows one full 1M window and every K bucket without a basi
     const card = document.querySelector('.cmv-composition')
     assert.equal(card.querySelector('.cmv-number strong').textContent,'1M')
     assert.equal(card.querySelector('.cmv-capacity-stack').dataset.capacity,'1000000')
-    assert.equal(card.querySelector('[data-color="free"]').style.width,'68%')
+    assert.equal(card.querySelector('[data-color="free"]').style.width,'47%')
+    assert.equal(card.querySelector('.cmv-capacity-stack').lastElementChild.dataset.color,'reserve')
+    assert.equal(card.querySelector('[data-color="reserve"]').style.width,'21%')
     assert.equal(card.querySelector('[data-color="other"]').style.width,'2%')
     assert.equal(card.querySelectorAll('.cmv-capacity-stack').length,1)
     assert.equal(card.querySelectorAll('[aria-pressed]').length,0,'no hidden full-window toggle')
-    assert.deepEqual([...card.querySelectorAll('.cmv-key')].map(node=>node.textContent),['记忆摘要已占用30K3.0%','工具结果200K20.0%','对话消息50K5.0%','指令与定义20K2.0%','其他占用20K2.0%','剩余可用680K68.0%'])
+    assert.deepEqual([...card.querySelectorAll('.cmv-key')].map(node=>node.textContent),['记忆摘要30K3.0%','工具结果200K20.0%','对话消息50K5.0%','指令与定义20K2.0%','其他占用20K2.0%','未占用470K47.0%','压缩预留210K21.0%'])
     assert.equal(card.querySelector('[data-color="summary"]').style.width,'3%','retained memory keeps its actual share of the window')
-    assert.match(card.querySelector('[data-slice="summary"]').title,/不计入剩余可用空间/)
-    assert.equal(card.querySelectorAll('.cmv-key:disabled').length,2,'unclassified usage and free space are not content filters')
+    assert.match(card.querySelector('[data-slice="summary"]').title,/属于已用内容/)
+    assert.match(card.querySelector('[data-slice="reserve"]').title,/检查线 790K/)
+    assert.equal(card.querySelectorAll('.cmv-key:disabled').length,3,'unclassified usage, free space and reserve are not content filters')
   } finally { await act(async () => root.unmount()); dom.window.close(); delete globalThis.window; delete globalThis.document }
 })

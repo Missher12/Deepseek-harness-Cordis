@@ -33,26 +33,27 @@
 .cmv-view .cmv-latest { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .cmv-view .cmv-small-number { font-size: 20px; font-variant-numeric: tabular-nums; margin: 4px 0; }
 .cmv-view .cmv-small-number small { font-size: 12px; color: var(--dsw-alias-label-secondary); }
-.cmv-view [data-color="summary"], .cmv-view [data-category="summary"] { background: var(--cmv-gray); }
+.cmv-view [data-color="summary"], .cmv-view [data-category="summary"] { background: var(--dsw-alias-label-deep-diving); }
 .cmv-view [data-color="tool"], .cmv-view [data-category="tool"], .cmv-view [data-usage="uncached"] { background: var(--cmv-blue); }
 .cmv-view [data-color="message"], .cmv-view :is([data-category="user"],[data-category="assistant"]), .cmv-view [data-usage="read"] { background: var(--cmv-green); }
 .cmv-view [data-color="instruction"], .cmv-view :is([data-category="system"],[data-category="tools"],[data-category="inject"],[data-category="skill"]), .cmv-view [data-usage="write"] { background: var(--cmv-amber); }
 .cmv-view [data-usage="output"] { background: var(--cmv-gray); }
-.cmv-view [data-color="free"] { background: repeating-linear-gradient(135deg,transparent 0,transparent 4px,var(--dsw-alias-border-l3) 4px,var(--dsw-alias-border-l3) 5px),var(--dsw-alias-bg-module-platform); }
-.cmv-view [data-color="other"] { background: color-mix(in srgb,var(--dsw-alias-label-secondary) 40%,var(--dsw-alias-bg-layer-1)); }
+.cmv-view [data-color="free"] { background: var(--dsw-alias-bg-layer-1); box-shadow: inset 0 0 0 .5px var(--dsw-alias-settings-card-stroke); }
+.cmv-view [data-color="reserve"] { background: repeating-linear-gradient(135deg,color-mix(in srgb,var(--cmv-gray) 55%,var(--dsw-alias-bg-layer-1)) 0 2px,color-mix(in srgb,var(--cmv-gray) 28%,var(--dsw-alias-bg-layer-1)) 2px 7px); color: var(--dsw-alias-label-primary); }
+.cmv-view [data-color="other"] { background: color-mix(in srgb,var(--cmv-blue) 30%,var(--dsw-alias-bg-layer-1)); }
 .cmv-view .cmv-stack { display: flex; height: 24px; width: 100%; border-radius: var(--dsw-radius-sm); overflow: hidden; background: var(--dsw-alias-interactive-bg-hover); }
 .cmv-view .cmv-stack>button, .cmv-view .cmv-stack>span { display: block; flex-shrink: 0; min-width: 0; height: 100%; padding: 0; border: 0; box-shadow: inset -1px 0 0 var(--dsw-alias-bg-layer-1); }
+.cmv-view .cmv-capacity-stack { box-shadow: 0 0 0 .5px var(--dsw-alias-settings-card-stroke); }
+.cmv-view .cmv-capacity-stack>span { display: flex; align-items: center; justify-content: center; overflow: hidden; white-space: nowrap; font-size: 11px; }
 .cmv-view .cmv-stack>button { cursor: pointer; }
 .cmv-view .cmv-stack>button:hover { opacity: .8; }
 .cmv-view .cmv-stack>button:focus-visible { outline: 2px solid var(--dsw-alias-label-primary); outline-offset: -3px; }
 .cmv-view .cmv-legend { display: grid; grid-template-columns: repeat(auto-fit,minmax(110px,1fr)); gap: 8px; }
 .cmv-view .cmv-key { background: none; border: 0; font: inherit; color: inherit; text-align: left; padding: 6px; border-radius: var(--dsw-radius-sm); min-width: 0; cursor: pointer; }
-.cmv-view .cmv-key[data-slice="summary"] { background: color-mix(in srgb,var(--cmv-gray) 12%,var(--dsw-alias-bg-layer-1)); box-shadow: inset 0 0 0 .5px color-mix(in srgb,var(--cmv-gray) 30%,transparent); }
-.cmv-view .cmv-key[data-slice="summary"]>span { flex-wrap: wrap; }
-.cmv-view .cmv-summary-state { margin-left: auto; }
+.cmv-view .cmv-key[data-slice="reserve"] { background: color-mix(in srgb,var(--cmv-gray) 12%,var(--dsw-alias-bg-layer-1)); box-shadow: inset 0 0 0 .5px color-mix(in srgb,var(--cmv-gray) 30%,transparent); }
 .cmv-view .cmv-key:disabled { cursor: default; }
 .cmv-view .cmv-key:not(:disabled):hover { background: var(--dsw-alias-interactive-bg-hover); }
-.cmv-view .cmv-key>span { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--dsw-alias-label-secondary); white-space: nowrap; }
+.cmv-view .cmv-key>span { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--dsw-alias-label-secondary); }
 .cmv-view .cmv-key strong { display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px; padding-left: 11px; margin-top: 4px; font-variant-numeric: tabular-nums; }
 .cmv-view .cmv-key small { font-size: 11px; color: var(--dsw-alias-label-secondary); }
 .cmv-view i { display: inline-block; height: 6px; width: 6px; border-radius: 2px; flex-shrink: 0; }
