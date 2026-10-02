@@ -184,6 +184,44 @@ describe('ToolResultPruner content transform', () => {
 })
 
 describe('ToolResultPruner session transaction', () => {
+  it('preserves protected current results while pruning older results and retaining tool identities', () => {
+    const session = Session.create(SessionId('protected-results'))
+    const old = SessionSeq(appendToolStep(session, 1, 'old', [{ type: 'text', text: 'a'.repeat(100) }]))
+    const recent = SessionSeq(appendToolStep(session, 2, 'recent', [{ type: 'text', text: 'b'.repeat(100) }]))
+    const latest = SessionSeq(appendToolStep(session, 3, 'latest', [{ type: 'text', text: 'c'.repeat(100) }]))
+    session.append('turn/start', { turn: 4 })
+    const before = session.snapshotEvents()
+    const protectedSeqs = new Set([recent, latest])
+    const prune = service()
+
+    const result = prune.pruneSession(session, { protectedSeqs })
+
+    expect(result.pruned.map(entry => entry.originalSeq)).toEqual([old])
+    expect(prune.supportsProtectedSeqs).toBe(true)
+    expect(session.surface.nodes).toContain(recent)
+    expect(session.surface.nodes).toContain(latest)
+    expect(session.snapshotEvents().slice(0, before.length)).toEqual(before)
+    expect(protectedSeqs).toEqual(new Set([recent, latest]))
+    const messages = session.deriveMessages().filter(message => message.role === 'tool')
+    expect(messages.map(message => message.source.callId)).toEqual([
+      ToolCallId('old'), ToolCallId('recent'), ToolCallId('latest'),
+    ])
+    expect(messages.slice(1).map(message => message.content)).toEqual([
+      [{ type: 'text', text: 'b'.repeat(100) }], [{ type: 'text', text: 'c'.repeat(100) }],
+    ])
+
+    expect(prune.pruneSession(session, { protectedSeqs }).pruned).toHaveLength(0)
+    expect(prune.pruneSession(session).pruned.map(entry => entry.originalSeq)).toEqual([recent, latest])
+  })
+
+  it('makes no writes when every oversized result is protected', () => {
+    const session = Session.create(SessionId('all-results-protected'))
+    const seq = SessionSeq(appendToolStep(session, 1, 'keep', [{ type: 'text', text: 'x'.repeat(100) }]))
+    const before = session.snapshotEvents()
+    expect(service().pruneSession(session, { protectedSeqs: new Set([seq]) })).toEqual({ pruned: [], charsRemoved: 0 })
+    expect(session.snapshotEvents()).toEqual(before)
+  })
+
   it('prunes a stable snapshot, preserves all data, and cites the replaced result', () => {
     const session = Session.create(SessionId('preserve'))
     const originalSeq = appendToolStep(session, 1, 'one', [{

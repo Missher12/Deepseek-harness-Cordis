@@ -13,7 +13,7 @@ if (!source) throw new Error('Set DSH_SOURCE_DIR to a built Harness 0.2.0-rc.1 o
 const cli = resolve(source, 'apps/cli/lib/bin.js')
 const manifest = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'))
 const runtime = JSON.parse(await readFile(join(source, 'apps/cli/package.json'), 'utf8')).version
-assert.equal(runtime, manifest.peerDependencies['@deepseek-ai/dsh-session-persistence'])
+assert.equal(runtime, manifest.devDependencies['@deepseek-ai/dsh-session-persistence'])
 const artifact = join(root, `dist/missher-dsh-usage-statistics-${manifest.version}.tgz`)
 const installSpec = process.env.DSH_INSTALL_SPEC ?? artifact
 const label = installSpec === artifact ? 'tarball' : 'directory'
@@ -51,9 +51,9 @@ async function bootAndRead(mode) {
   const receipt = join(work, `${mode}.json`)
   const reporter = join(work, `${mode}-reporter.mjs`)
   const installed = mode !== 'removed'
-  await writeFile(reporter, `import {writeFile} from 'node:fs/promises';
+  await writeFile(reporter, `import {writeFile,rename} from 'node:fs/promises';
 export const inject=${JSON.stringify(installed ? ['usageStatistics','usageStatisticsAcceptanceSeed'] : ['usageStatisticsAcceptanceSeed'])};
-export async function apply(ctx){const snapshot=${installed ? 'await ctx.usageStatistics.snapshot()' : 'null'};await writeFile(${JSON.stringify(receipt)},JSON.stringify({snapshot,pluginActive:ctx.get('usageStatistics')!==undefined}));}`)
+export async function apply(ctx){const snapshot=${installed ? 'await ctx.usageStatistics.snapshot()' : 'null'};await writeFile(${JSON.stringify(receipt+'.tmp')},JSON.stringify({snapshot,pluginActive:ctx.get('usageStatistics')!==undefined}));await rename(${JSON.stringify(receipt+'.tmp')},${JSON.stringify(receipt)});}`)
   await writeFile(patch, `- insert:\n    - id: acceptance-seed\n      name: ${JSON.stringify(join(work,'seed.mjs'))}\n    - id: acceptance-reporter\n      name: ${JSON.stringify(reporter)}\n`)
   child = spawn(process.execPath, [cli,'--profile',profile,'--no-open','--host','127.0.0.1','--port','0'], {cwd: work, env, stdio:['ignore','pipe','pipe']})
   let log = ''
@@ -75,6 +75,8 @@ export async function apply(ctx){const snapshot=${installed ? 'await ctx.usageSt
     assert.equal(report.snapshot.insights.cacheHitRate,0.76)
     assert.equal(report.snapshot.sessionCount,1)
     assert.equal(report.snapshot.omittedSessions,0)
+    assert.equal(report.snapshot.hourly.tokens.length,24)
+    assert.equal(report.snapshot.hourly.tokens.reduce((a,b)=>a+b,0),30_000)
   } else assert.equal(report.snapshot,null)
   assert.equal(report.pluginActive,installed)
   await stop()
@@ -92,12 +94,20 @@ async function protectedSessions(dir, result={}) {
 try {
   await bootAndRead('installed')
   const before=await protectedSessions(join(home,'sessions'))
-  // Preserve the existing v1 domain / v3 rows across process and Bundle lifetimes.
+  // Preserve the v1 domain / v4 derived rows across process and Bundle lifetimes.
   const cachePath=join(home,'storages','missher_usage_statistics.json')
   const cacheBefore=await readFile(cachePath)
   const cache=JSON.parse(cacheBefore)
   assert.deepEqual(cache.unit,{name:'missher_usage_statistics',version:1})
-  assert.equal(cache.tables.sessions['usage-statistics-validation-v4'].schemaVersion,3)
+  assert.equal(cache.tables.sessions['usage-statistics-validation-v4'].schemaVersion,4)
+  // Simulate a valid previous-release cache. Only derived facts may be rebuilt.
+  const legacy=structuredClone(cache)
+  legacy.tables.sessions['usage-statistics-validation-v4'].schemaVersion=3
+  delete legacy.tables.sessions['usage-statistics-validation-v4'].row.hourly
+  await writeFile(cachePath,JSON.stringify(legacy))
+  await bootAndRead('upgraded-v3')
+  assert.deepEqual(await readFile(cachePath),cacheBefore)
+  assert.deepEqual(await protectedSessions(join(home,'sessions')),before)
   await bootAndRead('restarted')
   assert.deepEqual(await readFile(cachePath),cacheBefore)
   assert.deepEqual(await protectedSessions(join(home,'sessions')),before)
@@ -112,7 +122,7 @@ try {
   assert.deepEqual(await readFile(cachePath),cacheBefore)
   assert.deepEqual(await protectedSessions(join(home,'sessions')),before)
   await writeFile(patch,'[]\n')
-  const report={runtime,pnpmVersion,version:manifest.version,installKind:label,profileWork:work,artifactSha256:createHash('sha256').update(await readFile(artifact)).digest('hex'),install:true,loaderBoot:true,hostSnapshotRead:true,syntheticTokens:30_000,cacheHitRate:0.76,uninstallRestoresBase:true,pluginServiceRemoved:true,sessionBytesUnchanged:true,cacheDomainVersion:1,cacheRowVersion:3,cacheBytesUnchangedAfterRestartRemoveReinstall:true,reinstallRestoresStatistics:true,realModel:false}
+  const report={runtime,pnpmVersion,version:manifest.version,installKind:label,profileWork:work,artifactSha256:createHash('sha256').update(await readFile(artifact)).digest('hex'),install:true,loaderBoot:true,hostSnapshotRead:true,syntheticTokens:30_000,cacheHitRate:0.76,uninstallRestoresBase:true,pluginServiceRemoved:true,sessionBytesUnchanged:true,cacheDomainVersion:1,cacheRowVersion:4,legacyV3RebuiltWithoutSessionWrites:true,hourlyTokens:30_000,cacheBytesUnchangedAfterRestartRemoveReinstall:true,reinstallRestoresStatistics:true,realModel:false}
   await writeFile(join(root,`verification/profile-${label}.json`),JSON.stringify(report,null,2)+'\n')
   console.log(JSON.stringify(report,null,2))
 } finally {await stop()}

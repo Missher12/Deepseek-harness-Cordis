@@ -1,3 +1,21 @@
+# 2026-10-03：小时活动去框
+
+用户追加要求去掉小时活动的框，并在鼠标悬停时显示 Token 消耗。候选更新为 **0.2.1-local.9**：只移除小时区域的边框、底色、圆角和内边距；沿用原生 Tooltip 的悬停/键盘/点击提示，小时数据与颗粒图不变。相对 .8 的运行代码改动只有 `UsageInsightsSection.module.css`。
+
+隔离构建目录为 `.verification/hourly-frameless-20261003/plugins/usage`；冻结包和本轮验证见 `/Users/missher/Documents/Deepseek-harness-Cordis/coordination/2026-10-03/usage-hourly-frameless/DELIVERY.md`。旧 .8 交付保持，维护目录 lib 和日常 profile 不由本会话写入，日常安装仍由协调会话统一安排。
+
+# 2026-10-03：小时活动与配色候选（前一轮 .8）
+
+需求 USAGE-HOURLY-20261003，用户确认默认今天 0–23 点。唯一源码为当前统一仓库的 `plugins/dsh-usage-statistics`；开始时插件干净，统一仓库 HEAD 为 `46cefccbb01afea9f0b6e52c6ba5d04728e14591`。日常基线为 0.2.1-local.7；本轮源码/隔离候选为 **0.2.1-local.8**，尚未安装日常。
+
+实现：原 53×7 颗粒图保留；配色选择移到标题旁原生菜单，五种预设、跟随主题和自定义，保留 localStorage 颜色键；下方新增今天 24 小时柱状图、准确数值提示、合计/峰值、时区和刷新。Host 从原有接受且去重的用量事件按日期/小时聚合；仅派生行版本 3→4、浏览器快照信封 1→2，缓存域仍为 1。不改原始会话、模型、凭据或其他插件。
+
+构建、测试和 profile 均在 `.verification/hourly-20261003/plugins/usage`；只读 SDK 为 `/Users/missher/Documents/Projects/03-DeepSeek-Harness/升级候选/cordis-0.2.0-rc.2-20260930`。不重建维护目录 lib。类型检查、77 项测试、实际 CLI tarball 安装/加载/快照/旧缓存重建/重启/卸载/重装及会话字节保护通过。受控浏览器通过正常 Host 启动 URL 登录（裸根 URL 会返回 401）；用 IAB 验证，Chrome 的自动翻译会扰动文案。
+
+最终包、校验值、截图、验证与剩余限制统一见 `/Users/missher/Documents/Deepseek-harness-Cordis/coordination/2026-10-03/usage-hourly/DELIVERY.md`。日常安装由协调会话单写；本轮不安装、不重启、不提交或推送。
+
+以下是旧阶段的记录，不作为当前版本和安装状态。
+
 # 当前状态
 
 本轮命名与 UI 候选已在隔离目录构建并验证，确认日常依赖是冻结 tgz 后，将对应产物回填本目录已跟踪的 lib，避免新包名配到旧客户端注册。原 lib 已在协调目录备份；旧交付包保持字节不变。下面的「根 lib 保持」描述适用于当时的历史阶段。

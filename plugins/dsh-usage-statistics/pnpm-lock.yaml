@@ -11,6 +11,7 @@ overrides:
   '@deepseek-ai/dsh-api-remotes': link:../../packages/api/remotes
   '@deepseek-ai/dsh-app-boot': link:../../packages/boot/app-boot
   '@deepseek-ai/dsh-client-locale': link:../../packages/client/locale
+  '@deepseek-ai/dsh-client-ui-primitives': link:../../packages/client/ui-primitives
   '@deepseek-ai/dsh-client-ui-renderer': link:../../packages/client/ui-renderer
   '@deepseek-ai/dsh-client-ui-settings': link:../../packages/client/ui-settings
   '@deepseek-ai/dsh-client-ui-slots': link:../../packages/client/ui-slots
@@ -32,6 +33,9 @@ importers:
       '@deepseek-ai/cordis':
         specifier: link:../../vendor/cordis
         version: link:../../vendor/cordis
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: link:../../packages/client/ui-primitives
+        version: link:../../packages/client/ui-primitives
       '@deepseek-ai/dsh-session-persistence':
         specifier: link:../../packages/session/session-persistence
         version: link:../../packages/session/session-persistence

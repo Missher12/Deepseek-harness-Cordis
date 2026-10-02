@@ -10,6 +10,12 @@ export function usageDateKey(time: number, timeZone: string): string {
   return createUsageDateFormatter(timeZone)(time)
 }
 
+/** Project an event into a local 0–23 clock hour, including midnight and DST repeats. */
+export function createUsageHourFormatter(timeZone: string): (time: number) => number {
+  const formatter = new Intl.DateTimeFormat('en', { timeZone, hour: '2-digit', hourCycle: 'h23' })
+  return time => Number(formatter.formatToParts(time).find(part => part.type === 'hour')!.value)
+}
+
 /**
  * Reuse one validated formatter for a session's calendar projection.
  * @param timeZone - IANA zone, validated when the formatter is created.

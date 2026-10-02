@@ -107,6 +107,14 @@ The Service Definition exports `toolPairingBalancedBefore(session, seq)` and `to
 The optional tool-result pruning service reports each durable content replacement and the aggregate Unicode-code-point reduction. Its public result types live in [`compaction-tool-result-pruner/src/types.ts`](../../packages/compaction/compaction-tool-result-pruner/src/types.ts).
 
 ```ts type-equiv
+/** Per-pass exclusions from the current tool-result surface snapshot. */
+interface PruneSessionOptions {
+  /** Current surface nodes excluded from this pass; omission protects no nodes. */
+  readonly protectedSeqs?: ReadonlySet<SessionSeq>
+}
+```
+
+```ts type-equiv
 /** Cited source event and size accounting for one landed surface replacement. */
 interface PrunedEntry {
   /** Full-fidelity tool-result event shadowed by the replacement. */
@@ -240,11 +248,12 @@ pruneContent(blocks: readonly ContentBlock[]): ContentBlock[] | null
  * shadowed node through the injected token meter, so pure consumers can
  * subtract it without per-node state.
  * @param session - session whose current surface is rewritten.
+ * @param options - surface nodes to exclude; omitted options retain full-surface pruning.
  * @returns landed replacements and aggregate Unicode-code-point savings.
  * @throws when the session rejects a replacement; replacements committed
  * earlier in the pass remain durable.
  */
-pruneSession(session: Session): PruneResult
+pruneSession(session: Session, options?: PruneSessionOptions): PruneResult
 ```
 
 Types: [ContentBlock](llm-streaming.md) · [Session](session.md)

@@ -93,6 +93,7 @@ export function aggregateUsageRows(
   // Validate once even when there are no rows.
   const today = usageDateKey(options.now, options.timeZone)
   const days = new Map<string, DayTotals>()
+  const hourly = { date: today, tokens: Array<number>(24).fill(0) }
   const models = new Map<string, number>()
   const efforts = new Map<string, number>()
   const skills = new Map<string, number>()
@@ -119,6 +120,9 @@ export function aggregateUsageRows(
     mergeCounts(efforts, row.reasoningEfforts)
     mergeCounts(skills, row.skills)
     mergeCounts(tools, row.tools)
+    for (const hour of row.hourly) {
+      if (hour.date === today) hourly.tokens[hour.hour]! += hour.tokens
+    }
     for (const day of row.daily) {
       const total = days.get(day.date) ?? { humanMessages: 0, tokens: 0, toolCalls: 0 }
       total.humanMessages += day.humanMessages
@@ -183,6 +187,7 @@ export function aggregateUsageRows(
       chatDays: humanDays.size,
     },
     activity,
+    hourly,
     features,
   }
 }

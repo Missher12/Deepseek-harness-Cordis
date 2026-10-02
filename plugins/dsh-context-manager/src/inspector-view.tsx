@@ -42,7 +42,8 @@ function IdleStatusLine({ target, api, revision, settingsRevision, retry, t }: {
     return () => { abort.abort(); clearTimeout(timer) }
   }, [target, api, revision, settingsRevision, retry])
   const value = state?.target === target ? state.value : null
-  const message = value?.status === 'scheduled' && value.dueAt !== null ? `${Math.max(0, Math.ceil((value.dueAt - Date.now()) / 60000))} ${t('minutes')}` : value?.message
+  const message = value?.status === 'scheduled' && value.dueAt !== null && !/background|busy/u.test(value.reasonCode ?? '')
+    ? `${value.restored ? `${t('restored')} · ` : ''}${Math.max(0, Math.ceil((value.dueAt - Date.now()) / 60000))} ${t('minutes')}` : value?.message
   return <span role="status" aria-label={t('idle')}>{t('idle')} · {error ? t('idleUnknown') : message ?? t('idleWait')}</span>
 }
 
@@ -57,8 +58,19 @@ function RequestStatus({ data, policy, stale, t }: { data: Inspection; policy: P
   </div>
 }
 
-function ContentDetail({ target, cutSeq, row, api, t }: { target: string; cutSeq: number; row: ContentRow; api: InspectorApi; t: InspectorText }) {
+type ContentDetailProps = { target: string; cutSeq: number; row: ContentRow; api: InspectorApi; t: InspectorText }
+function ContentDetail(props: ContentDetailProps) {
+  const [trail, setTrail] = useState<ContentRow[]>([])
+  const row = trail.at(-1) ?? props.row
+  return <article className="cmv-reader">
+    {trail.length > 0 && <Button size="sm" variant="ghost" onClick={() => setTrail(value => value.slice(0, -1))}>{props.t('backToSummary')}</Button>}
+    <ContentReader key={row.id} {...props} row={row} onSource={source => setTrail(value => [...value, source])}/>
+  </article>
+}
+
+function ContentReader({ target, cutSeq, row, api, t, onSource }: ContentDetailProps & { onSource: (row: ContentRow) => void }) {
   const [offsets, setOffsets] = useState([0])
+  const [sourceOffset, setSourceOffset] = useState(0)
   const [page, setPage] = useState<ContentPage | null>(null)
   const [error, setError] = useState('')
   const [retry, setRetry] = useState(0)
@@ -66,14 +78,19 @@ function ContentDetail({ target, cutSeq, row, api, t }: { target: string; cutSeq
   useEffect(() => {
     const controller = new AbortController()
     setPage(null); setError('')
-    void api.content({ sessionId: target, cutSeq, id: row.id, offset }, controller.signal).then(value => {
-      if (!controller.signal.aborted && value.sessionId === target && value.cutSeq === cutSeq && value.id === row.id && value.offset === offset) setPage(value)
+    void api.content({ sessionId: target, cutSeq, id: row.id, offset, ...(row.category === 'summary' ? { sourceOffset } : {}) }, controller.signal).then(value => {
+      if (!controller.signal.aborted && value.sessionId === target && value.cutSeq === cutSeq && value.id === row.id && value.offset === offset && (!value.sources || value.sources.offset === sourceOffset)) setPage(value)
     }).catch(reason => { if (!controller.signal.aborted) setError(errorText(reason, t)) })
     return () => controller.abort()
-  }, [api, target, cutSeq, row.id, offset, retry, t])
-  return <article className="cmv-reader"><div className="cmv-heading"><h3>{row.title}</h3><span className="cmv-muted">{formatTokens(row.tokens)}</span></div><div className="cmv-muted cmv-reader-meta">{t(row.category)} · {t('record')} {row.seq}{row.current ? '' : ` · ${t('replaced')}`}{row.images ? ` · ${row.images} ${t('images')}` : ''}</div><div className="cmv-muted cmv-source">{row.source}</div>
+  }, [api, target, cutSeq, row.id, row.category, offset, sourceOffset, retry, t])
+  return <><div className="cmv-heading"><h3>{row.title}</h3><span className="cmv-muted">{formatTokens(row.tokens)}</span></div><div className="cmv-muted cmv-reader-meta">{t(row.category)} · {t('record')} {row.seq}{row.current ? '' : ` · ${t('replaced')}`}{row.images ? ` · ${row.images} ${t('images')}` : ''}</div><div className="cmv-muted cmv-source">{row.source}</div>
     {error ? <div role="alert"><p>{error}</p><Button size="sm" onClick={() => setRetry(retry + 1)}>{t('retry')}</Button></div> : !page ? <Loading/> : <><pre className="cmi-body" tabIndex={0}>{page.text || t('noText')}</pre>{(offset > 0 || page.nextOffset !== null) && <div className="cmv-pagination"><Button size="sm" disabled={offsets.length === 1} onClick={() => setOffsets(value => value.slice(0, -1))}>{t('previousText')}</Button><span>{t('characters')} {exactTokens(offset + 1)}–{exactTokens(offset + page.text.length)} / {exactTokens(page.totalChars)}</span><Button size="sm" disabled={page.nextOffset === null} onClick={() => { if (page.nextOffset !== null) setOffsets(value => [...value, page.nextOffset!]) }}>{t('nextText')}</Button></div>}</>}
-  </article>
+    {row.category === 'summary' && page && <section className="cmv-summary-source" aria-label={t('sourceOriginals')}><h3>{t('sourceOriginals')}</h3><p className="cmv-muted">{t('sourceHint')}</p>
+      {page.sources?.rows.length ? <><div className="cmi-content-list">{page.sources.rows.map(source => <button type="button" key={source.id} onClick={() => onSource(source)}><span className="cmv-row-title"><strong>{source.title}</strong></span><span className="cmv-muted">{t('record')} {source.seq} · {t(source.category)}</span></button>)}</div>
+        {(sourceOffset > 0 || page.sources.nextOffset !== null) && <div className="cmv-pagination"><Button size="sm" disabled={sourceOffset === 0} onClick={() => setSourceOffset(value => Math.max(0, value - 4))}>{t('previousSources')}</Button><span>{sourceOffset + 1}–{sourceOffset + page.sources.rows.length} / {exactTokens(page.sources.total)}</span><Button size="sm" disabled={page.sources.nextOffset === null} onClick={() => { if (page.sources?.nextOffset != null) setSourceOffset(page.sources.nextOffset) }}>{t('nextSources')}</Button></div>}</>
+        : <p className="cmv-muted">{t('noSources')}</p>}
+    </section>}
+  </>
 }
 
 function ContentBrowser({ data, query, change, api, target, loading, t }: { data: Inspection; query: InspectQuery; change: (patch: Partial<InspectQuery>) => void; api: InspectorApi; target: string; loading: boolean; t: InspectorText }) {

@@ -6,7 +6,9 @@ import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-cli
 import { buildParticleGrid, type ParticleChartMode } from './charts.ts'
 import { formatCompactNumber, formatDuration, formatModel } from './format.ts'
 import { readUsageSnapshot, writeUsageSnapshot } from './snapshot-cache.ts'
-import { readParticleColor, setParticleColor, subscribeParticleColor } from './particle-color.ts'
+import { readParticleColor, subscribeParticleColor } from './particle-color.ts'
+import { ParticleColorPicker } from './ParticleColorPicker.tsx'
+import { HourlyActivity } from './HourlyActivity.tsx'
 import css from './UsageInsightsSection.module.css'
 
 /** Registration-side Remote and locale face used by the section. */
@@ -335,7 +337,7 @@ export function UsageInsightsSection({ load, locale, t }: UsageInsightsSectionPr
       ) : null}
       {snapshot.sessionCount === 0 ? <p className={css.empty}>{t('empty')}</p> : null}
       <div className={css.activityHeader}>
-        <h3>{t('tokenActivity')}</h3>
+        <div className={css.activityTitle}><h3>{t('tokenActivity')}</h3><ParticleColorPicker color={particleColor} t={t} /></div>
         <div className={css.tabs} role="tablist" aria-label={t('tokenActivity')}>
           {modes.map((item, index) => (
             <button
@@ -355,18 +357,11 @@ export function UsageInsightsSection({ load, locale, t }: UsageInsightsSectionPr
           ))}
         </div>
       </div>
-      <div className={css.colorControls}>
-        <label className={css.colorPicker}>
-          <span>{t('particleColor')}</span>
-          <input type="color" aria-label={t('particleColor')} value={particleColor || '#7c5cc4'}
-            onChange={event => { setParticleColor(event.currentTarget.value) }} />
-        </label>
-        <button type="button" onClick={() => { setParticleColor('') }} disabled={particleColor === ''}>
-          {t('resetColor')}
-        </button>
-      </div>
       <div className={css.chartPanel} style={{ '--usage-particle-color': particleColor || 'var(--dsw-alias-state-business-primary)' } as CSSProperties} id={`${panelId}-panel`} role="tabpanel" aria-labelledby={`${panelId}-${mode}-tab`}>
         <ActivityChart snapshot={snapshot} mode={mode} locale={locale} t={t} />
+      </div>
+      <div style={{ '--usage-particle-color': particleColor || 'var(--dsw-alias-state-business-primary)' } as CSSProperties}>
+        <HourlyActivity key={snapshot.hourly.date} snapshot={snapshot} locale={locale} t={t} refresh={retry} refreshing={state.refreshing} />
       </div>
       <div className={css.detailsGrid}>
         <div>

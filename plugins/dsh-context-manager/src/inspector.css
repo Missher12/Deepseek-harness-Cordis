@@ -12,6 +12,9 @@
 .cmv-view h2 { font-size: 16px; }
 .cmv-view h3 { font-size: 13px; line-height: 20px; }
 .cmv-view .cmv-muted { color: var(--dsw-alias-label-secondary); font-size: 12px; }
+.cmv-view .cmv-summary-source { display: grid; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: .5px solid var(--dsw-alias-settings-card-stroke); }
+.cmv-view .cmv-summary-usage { margin-top: 8px; overflow-wrap: anywhere; }
+.cmv-view .cmv-growth { display: flex; flex-wrap: wrap; gap: 6px 18px; }
 .cmv-view .cmv-header, .cmv-view .cmv-heading, .cmv-view .cmv-between, .cmv-view .cmv-meta, .cmv-view .cmv-footer { display: flex; align-items: center; gap: 10px; justify-content: space-between; min-width: 0; }
 .cmv-view .cmv-header { margin-bottom: 8px; }
 .cmv-view .cmv-header>.cmv-heading { margin-right: auto; justify-content: flex-start; }

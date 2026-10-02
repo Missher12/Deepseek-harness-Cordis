@@ -36,6 +36,11 @@ overrides:
   '@deepseek-ai/dsh-workspace': link:../../packages/workspace/workspace
   '@deepseek-ai/dsh-typert-protocol': link:../../packages/typert/protocol
   '@deepseek-ai/schemastery': link:../../vendor/schemastery
+  '@deepseek-ai/dsh-storage': link:../../packages/storage/storage
+  '@deepseek-ai/dsh-storage-domain': link:../../packages/storage/storage-domain
+  '@deepseek-ai/dsh-storage-json': link:../../packages/storage/storage-json
+  '@deepseek-ai/dsh-session-persistence-jsonl': link:../../packages/session/session-persistence-jsonl
+  '@deepseek-ai/dsh-compaction-tool-result-pruner': link:../../packages/compaction/compaction-tool-result-pruner
 
 importers:
 
@@ -71,6 +76,9 @@ importers:
       '@deepseek-ai/dsh-session-query':
         specifier: link:../../packages/session-query/session-query
         version: link:../../packages/session-query/session-query
+      '@deepseek-ai/dsh-storage-domain':
+        specifier: link:../../packages/storage/storage-domain
+        version: link:../../packages/storage/storage-domain
       '@deepseek-ai/dsh-token-meter':
         specifier: link:../../packages/llm/token-meter
         version: link:../../packages/llm/token-meter
@@ -123,15 +131,27 @@ importers:
       '@deepseek-ai/dsh-client-ui-settings':
         specifier: link:../../packages/client/ui-settings
         version: link:../../packages/client/ui-settings
+      '@deepseek-ai/dsh-compaction-tool-result-pruner':
+        specifier: link:../../packages/compaction/compaction-tool-result-pruner
+        version: link:../../packages/compaction/compaction-tool-result-pruner
       '@deepseek-ai/dsh-llm-retry':
         specifier: link:../../packages/llm/llm-retry
         version: link:../../packages/llm/llm-retry
       '@deepseek-ai/dsh-session-format-catalog':
         specifier: link:../../packages/session/session-format-catalog
         version: link:../../packages/session/session-format-catalog
+      '@deepseek-ai/dsh-session-persistence-jsonl':
+        specifier: link:../../packages/session/session-persistence-jsonl
+        version: link:../../packages/session/session-persistence-jsonl
       '@deepseek-ai/dsh-settings':
         specifier: link:../../packages/settings/settings
         version: link:../../packages/settings/settings
+      '@deepseek-ai/dsh-storage':
+        specifier: link:../../packages/storage/storage
+        version: link:../../packages/storage/storage
+      '@deepseek-ai/dsh-storage-json':
+        specifier: link:../../packages/storage/storage-json
+        version: link:../../packages/storage/storage-json
       '@deepseek-ai/dsh-tools':
         specifier: link:../../packages/core/tools
         version: link:../../packages/core/tools

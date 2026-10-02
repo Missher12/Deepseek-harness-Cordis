@@ -9,6 +9,10 @@ function snapshotSchema() {
   'sessionCount': z.number(),
   'omittedSessions': z.number(),
   'incompleteUsageSamples': z.number(),
+  'hourly': z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    tokens: z.array(z.number().nonnegative()).length(24),
+  }),
   'summary': z.object({
   'totalTokens': z.union([z.literal(null), z.number()]),
   'peakDailyTokens': z.union([z.literal(null), z.number()]),

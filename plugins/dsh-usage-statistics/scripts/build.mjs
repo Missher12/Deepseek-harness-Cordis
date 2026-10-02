@@ -6,7 +6,7 @@ import {fileURLToPath} from 'node:url'
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
 const manifest = JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8'))
-const external = ['react', 'react/jsx-runtime', 'react-dom', '@deepseek-ai/cordis', '@deepseek-ai/dsh-client-ui-slots']
+const external = ['react', 'react/jsx-runtime', 'react-dom', '@deepseek-ai/cordis', '@deepseek-ai/dsh-client-ui-slots', '@deepseek-ai/dsh-client-ui-primitives']
 const css = {
   name: 'scoped-css',
   setup(builder) {

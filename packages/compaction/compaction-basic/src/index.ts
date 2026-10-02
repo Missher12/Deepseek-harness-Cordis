@@ -106,9 +106,8 @@ const modelPolicy: z<ModelCompactPolicyConfig> = z.object({
  * Dependency-light compaction backend using `ctx.tokenMeter` for pressure,
  * retention, cited source events, and summary-convergence pricing.
  *
- * `summarize()` is the sole subclass customization hook; the replay and durable
- * mutation strategy stays fixed so every pricing decision uses the singleton
- * token meter.
+ * Subclass hooks customize summarization and idle range selection; replay and
+ * durable mutation keep using the shared transaction and singleton token meter.
  */
 export class BasicCompactionEngine extends CompactionEngine {
   static inject = ['llm', 'tokenMeter', 'sessions']
@@ -238,7 +237,7 @@ export class BasicCompactionEngine extends CompactionEngine {
    * Summarize the replayed conversation region through a direct one-shot
    * `ctx.llm.stream()` call whose prefix reuses the conversation's own system
    * prompt, tools, and messages so the provider's KV cache is not invalidated.
-   * Override this sole hook for a template or remote summarizer.
+   * Override this hook for a template or remote summarizer.
    * @param input - replayed conversation prefix (system, tools, and leading messages) to condense.
    * @param agent - supplies routed-model history, fallback model, and session id.
    * @param signal - optional cancellation forwarded to the adapter.
@@ -391,11 +390,8 @@ export class BasicCompactionEngine extends CompactionEngine {
         const operationSignal = AbortSignal.any([agentSignal, signal])
         try {
           operationSignal.throwIfAborted()
-          const range = selectCompactableRange(
-            agent.session,
-            this.ctx.tokenMeter.measure(agent.session),
-            0,
-          )
+          const range = await this.selectMaintenanceRange(agent, operationSignal)
+          operationSignal.throwIfAborted()
           if (range === null) return null
           return await compactSurfaceRegion(
             this.regionDependencies(),
@@ -432,6 +428,22 @@ export class BasicCompactionEngine extends CompactionEngine {
         { cause: error },
       )
     }
+  }
+
+  /**
+   * Select a useful range while this operation owns the agent's maintenance claim.
+   * Overrides may recheck policy asynchronously; the shared transaction still
+   * validates surface membership and tool pairing before opening its bracket.
+   * @param agent - idle agent whose next-turn admission is reserved.
+   * @param signal - combined caller and agent-maintenance cancellation.
+   * @returns the inclusive surface range, or `null` to skip without a summary.
+   */
+  protected selectMaintenanceRange(
+    agent: Agent,
+    signal: AbortSignal,
+  ): Promise<{ start: SessionSeq; end: SessionSeq } | null> {
+    signal.throwIfAborted()
+    return Promise.resolve(selectCompactableRange(agent.session, this.ctx.tokenMeter.measure(agent.session), 0))
   }
 
   /** Bind the effective token meter and dynamically dispatched summarizer hook. */

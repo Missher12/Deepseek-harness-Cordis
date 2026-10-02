@@ -229,7 +229,9 @@ function fakeAgent(
 }
 
 /** Service over a store-detached session for failure classification. */
-function detachedService(): { ctx: Context; compact: GatedCompactionEngine; flushes: () => number } {
+function detachedService(
+  Engine: typeof GatedCompactionEngine = GatedCompactionEngine,
+): { ctx: Context; compact: GatedCompactionEngine; flushes: () => number } {
   const ctx = new Context()
   void new LlmRuntime(ctx)
   void new SessionStore(ctx)
@@ -241,11 +243,23 @@ function detachedService(): { ctx: Context; compact: GatedCompactionEngine; flus
     flushes += 1
     return Promise.resolve(false)
   })
-  return { ctx, compact: new GatedCompactionEngine(ctx, { auto: false }), flushes: () => flushes }
+  return { ctx, compact: new Engine(ctx, { auto: false }), flushes: () => flushes }
 }
 
 function compactEvents(session: Session): SessionEvent[] {
   return session.snapshotEvents().filter(event => event.type.startsWith('compaction/'))
+}
+
+/** Join the test invariant host before a short-lived detached context can dispose. */
+async function readyDetachedService(Engine: typeof GatedCompactionEngine) {
+  const service = detachedService(Engine)
+  try {
+    await service.ctx.plugin(InvariantRegistry)
+    return service
+  } catch (error: unknown) {
+    await service.ctx.fiber.dispose()
+    throw error
+  }
 }
 
 describe('compactNow through the real loop', () => {
@@ -417,6 +431,102 @@ describe('compactNow through the real loop', () => {
 })
 
 describe('compactNow transaction and failure classification', () => {
+  it('selects an overridden range inside maintenance and preserves the excluded tail', async () => {
+    const session = closedConversation(3)
+    const originalSurface = [...session.surface.nodes]
+    let reserved = false
+    let selected = false
+    class PrefixEngine extends GatedCompactionEngine {
+      protected override async selectMaintenanceRange(owner: Agent, signal: AbortSignal) {
+        expect(reserved).toBe(true)
+        expect(owner.session).toBe(session)
+        signal.throwIfAborted()
+        selected = true
+        return { start: originalSurface[0]!, end: originalSurface[1]! }
+      }
+    }
+    const { ctx, compact, flushes } = await readyDetachedService(PrefixEngine)
+    const agent = fakeAgent(session, () => {
+      reserved = true
+      return () => { reserved = false }
+    })
+    try {
+      expect(await compact.compactNow(agent, SIGNAL)).not.toBeNull()
+      expect(selected).toBe(true)
+      expect(reserved).toBe(false)
+      expect(flushes()).toBe(1)
+      expect(session.surface.nodes.slice(1)).toEqual(originalSurface.slice(2))
+      expect(compact.calls).toHaveLength(1)
+      expect(compact.calls[0]?.messages).toHaveLength(2)
+    } finally {
+      await ctx.fiber.dispose()
+    }
+  })
+
+  it('skips a useful history when maintenance policy returns no range', async () => {
+    class SkipEngine extends GatedCompactionEngine {
+      protected override async selectMaintenanceRange() { return null }
+    }
+    const { ctx, compact, flushes } = await readyDetachedService(SkipEngine)
+    const session = closedConversation(3)
+    const before = session.snapshotEvents()
+    let releases = 0
+    try {
+      const agent = fakeAgent(session, () => () => { releases += 1 })
+      expect(await compact.compactNow(agent, SIGNAL)).toBeNull()
+      expect(session.snapshotEvents()).toEqual(before)
+      expect(compact.calls).toHaveLength(0)
+      expect(flushes()).toBe(0)
+      expect(releases).toBe(1)
+    } finally {
+      await ctx.fiber.dispose()
+    }
+  })
+
+  it.each(['caller', 'agent'] as const)('honors %s cancellation before an asynchronous selection can skip', async (source) => {
+    const entered = Promise.withResolvers<undefined>()
+    const finishSelection = Promise.withResolvers<undefined>()
+    const controller = new AbortController()
+    const reason = new Error('cancelled while selecting')
+    let observedSignal: AbortSignal | undefined
+    class WaitingEngine extends GatedCompactionEngine {
+      protected override async selectMaintenanceRange(_owner: Agent, signal: AbortSignal) {
+        observedSignal = signal
+        entered.resolve(undefined)
+        await finishSelection.promise
+        return null
+      }
+    }
+    const { ctx, compact, flushes } = await readyDetachedService(WaitingEngine)
+    const session = closedConversation(3)
+    const before = session.snapshotEvents()
+    let releases = 0
+    const agent = fakeAgent(session, () => () => { releases += 1 }, source === 'agent' ? controller.signal : SIGNAL)
+    const running = compact.compactNow(agent, source === 'caller' ? controller.signal : SIGNAL)
+    const settled = running.then(() => undefined, (error: unknown) => error)
+    try {
+      await entered.promise
+      controller.abort(reason)
+      expect(observedSignal?.aborted).toBe(true)
+      expect(releases).toBe(0)
+      finishSelection.resolve(undefined)
+      const error = await settled
+      if (source === 'caller') expect(error).toBe(reason)
+      else {
+        expect(error).toBeInstanceOf(ManualCompactionError)
+        expect(error).toMatchObject({ code: 'cancelled', cause: reason })
+      }
+      expect(session.snapshotEvents()).toEqual(before)
+      expect(compact.calls).toHaveLength(0)
+      expect(flushes()).toBe(0)
+      expect(releases).toBe(1)
+    } finally {
+      finishSelection.resolve(undefined)
+      await settled
+      await ctx.fiber.dispose()
+    }
+  })
+
   it('returns null without writing a bracket for history that cannot be compacted', async () => {
     const { compact } = detachedService()
     const session = Session.create(SessionId('empty'))

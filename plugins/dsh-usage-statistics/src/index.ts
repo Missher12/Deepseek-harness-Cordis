@@ -68,6 +68,11 @@ const rowSchema: z.ZodType<SessionUsageRow> = z.object({
   completedTurnDurationMs: countSchema,
   completedTurnCount: countSchema,
   daily: z.array(daySchema),
+  hourly: z.array(z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    hour: z.number().int().min(0).max(23),
+    tokens: countSchema,
+  }).strict()),
   models: countRecordSchema,
   reasoningEfforts: countRecordSchema,
   skills: countRecordSchema,
@@ -75,7 +80,7 @@ const rowSchema: z.ZodType<SessionUsageRow> = z.object({
 }).strict()
 
 const cacheRecordSchema = z.object({
-  schemaVersion: z.literal(3),
+  schemaVersion: z.literal(4),
   revision: z.string(),
   createdAt: countSchema,
   timeZone: z.string(),
@@ -239,7 +244,7 @@ export class UsageStatistics extends TypertRemoteService {
         await handle.close()
       }
       const record: CacheRecord = {
-        schemaVersion: 3,
+        schemaVersion: 4,
         revision,
         createdAt: handle.header.createdAt,
         timeZone,

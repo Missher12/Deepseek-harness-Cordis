@@ -43,6 +43,8 @@ With these rows, oversized tool results are trimmed automatically as part of con
 
 Every tool result whose text exceeds the threshold is replaced by a trimmed version: the configured head, a short "middle pruned" marker, and the configured tail. Rich content such as images and structured blocks keeps its order and all logged image-offload selections. The replacement keeps the tool call, step, errors, and metadata — only the text content changes. If a replacement cannot be recorded, the run fails and the trims already applied stay in place.
 
+Callers may pass `protectedSeqs` to `pruneSession(session, options)` to exclude current surface nodes before any replacement. Exclusions apply only to that pass; omitted options preserve full-surface behavior. Consumers supporting older hosts must require `supportsProtectedSeqs === true` before relying on exclusions, because older implementations ignore extra arguments.
+
 ### Setting the size limits
 
 All settings are optional; the defaults trim any result with more than 8,192 text characters to its first 4,096 plus its last 1,024, joined by the marker. The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-compaction-tool-result-pruner) is the exhaustive source.

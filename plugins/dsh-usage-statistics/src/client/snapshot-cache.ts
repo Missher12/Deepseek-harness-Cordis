@@ -1,7 +1,7 @@
 import type { UsageInsightsSnapshot } from '../types.ts'
 
 const STORAGE_KEY = 'dsh.usage-statistics.snapshot.v1'
-const STORAGE_VERSION = 1
+const STORAGE_VERSION = 2
 const MAX_ACTIVITY_DAYS = 371
 const MAX_FEATURES = 50
 
@@ -43,6 +43,10 @@ function isUsageSnapshot(value: unknown): value is UsageInsightsSnapshot {
     || !isFiniteCount(insights.uniqueSkills) || !isFiniteCount(insights.totalToolCalls)
     || !isFiniteCount(insights.chatDays)) return false
   if (!Array.isArray(value.activity) || value.activity.length > MAX_ACTIVITY_DAYS) return false
+  if (!isRecord(value.hourly) || typeof value.hourly.date !== 'string'
+    || !/^\d{4}-\d{2}-\d{2}$/.test(value.hourly.date)
+    || !Array.isArray(value.hourly.tokens) || value.hourly.tokens.length !== 24
+    || !value.hourly.tokens.every(isFiniteCount)) return false
   if (!value.activity.every((day) => {
     if (!isRecord(day)) return false
     return typeof day.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day.date)

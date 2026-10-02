@@ -57,6 +57,7 @@ describe('foldSessionUsage', () => {
     }))
     const row = foldSessionUsage(header(), events, 'UTC')
     expect(row.totalTokens).toBe(30)
+    expect(row.hourly).toEqual([{ date: '2026-03-01', hour: 12, tokens: 30 }])
     expect(row.validUsageSamples).toBe(3)
     expect(row.incompleteUsageSamples).toBe(0)
   })
@@ -86,6 +87,7 @@ describe('foldSessionUsage', () => {
 
     const row = foldSessionUsage(header(), [chunk, final], 'UTC')
 
+    expect(row.hourly).toEqual([{ date: '2026-03-01', hour: 12, tokens: 500 }])
     expect(row.tokens).toEqual({
       uncachedInput: 120,
       output: 50,
@@ -353,5 +355,24 @@ describe('foldSessionUsage', () => {
 
     expect(row.completedTurnDurationMs).toBe(8_000_000_000_000_000)
     expect(row.completedTurnCount).toBe(1)
+  })
+})
+
+
+describe('hourly attribution', () => {
+  it('keeps local-day boundaries, inherited events and invalid usage consistent with daily totals', () => {
+    const times = ['2026-10-02T14:00:00Z', '2026-10-02T15:59:59Z', '2026-10-02T16:00:00Z', '2026-10-02T17:00:00Z']
+    const events = times.map((time, i) => ({
+      ...assistant(i, 0, { inputTokens: i === 3 ? -1 : 70, outputTokens: 30 }),
+      seq: SessionSeq(i), time: Date.parse(time),
+    }))
+    const row = foldSessionUsage(header(), events, 'Asia/Shanghai', 1)
+    expect(row.hourly).toEqual([
+      { date: '2026-10-02', hour: 23, tokens: 100 },
+      { date: '2026-10-03', hour: 0, tokens: 100 },
+    ])
+    expect(row.totalTokens).toBe(200)
+    expect(row.incompleteUsageSamples).toBe(1)
+    for (const day of row.daily) expect(row.hourly.filter(hour => hour.date === day.date).reduce((sum, hour) => sum + hour.tokens, 0)).toBe(day.tokens)
   })
 })

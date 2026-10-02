@@ -1,12 +1,16 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, afterEach, describe, expect, it, vi } from 'vitest'
 import type { UsageInsightsSnapshot } from '../../src/types.ts'
 import { UsageInsightsSection } from '../../src/client/UsageInsightsSection.tsx'
 import type { UsageInsightsSectionInjected, UsageInsightsSectionProps } from '../../src/client/UsageInsightsSection.tsx'
 import { en, zh, type UsageInsightsLocaleKey } from '../../src/client/locales.ts'
 import { setParticleColor } from '../../src/client/particle-color.ts'
 import { resetUsageSnapshotForTest } from '../../src/client/snapshot-cache.ts'
+
+beforeAll(() => {
+  vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} })
+})
 
 afterEach(() => {
   vi.useRealTimers()
@@ -45,6 +49,7 @@ const SNAPSHOT: UsageInsightsSnapshot = {
     chatDays: 373,
   },
   activity,
+  hourly: { date: '2026-08-18', tokens: Array.from({ length: 24 }, (_, hour) => hour === 7 ? 12_345 : 0) },
   features: [
     { kind: 'skill', name: 'preview', count: 110 },
     { kind: 'tool', name: 'bash', count: 86 },
@@ -63,7 +68,8 @@ describe('UsageInsightsSection', () => {
   it('remembers a custom particle colour while keeping the same data and seven-row grid', async () => {
     const load = vi.fn().mockResolvedValue(SNAPSHOT)
     const first = render(<UsageInsightsSection {...props(load)} />)
-    const picker = await screen.findByLabelText(en.particleColor)
+    await screen.findByRole('button', { name: en.particleColor })
+    const picker = screen.getByLabelText(en.customColor)
     const before = [...document.querySelectorAll('[data-level]')].map(cell => cell.getAttribute('data-level'))
     fireEvent.change(picker, { target: { value: '#1b9d80' } })
     expect(screen.getByRole('tabpanel').style.getPropertyValue('--usage-particle-color')).toBe('#1b9d80')
@@ -71,8 +77,9 @@ describe('UsageInsightsSection', () => {
     expect(load).toHaveBeenCalledTimes(1)
     first.unmount()
     render(<UsageInsightsSection {...props(load)} />)
-    expect((await screen.findByLabelText(en.particleColor) as HTMLInputElement).value).toBe('#1b9d80')
-    fireEvent.click(screen.getByRole('button', { name: en.resetColor }))
+    expect((await screen.findByLabelText(en.customColor) as HTMLInputElement).value).toBe('#1b9d80')
+    fireEvent.click(screen.getByRole('button', { name: en.particleColor }))
+    fireEvent.click(screen.getByRole('menuitem', { name: en.themeColor }))
     expect(screen.getByRole('tabpanel').style.getPropertyValue('--usage-particle-color')).toContain('--dsw-alias-state-business-primary')
   })
 
@@ -310,5 +317,41 @@ describe('UsageInsightsSection', () => {
     }
     render(<UsageInsightsSection {...props(async () => incompleteOnly)} />)
     expect(await screen.findByRole('status')).toBeTruthy()
+  })
+})
+
+
+describe('hourly activity and palette', () => {
+  it('shows exact hourly counts, preserves them across calendar modes and supports keyboard traversal', async () => {
+    const load = vi.fn().mockResolvedValue(SNAPSHOT)
+    const view = render(<UsageInsightsSection {...props(load)} />)
+    const hour = await screen.findByRole('button', { name: '07:00–08:00 · 12,345 Token' })
+    expect(view.container.querySelectorAll('[data-usage-hour]')).toHaveLength(24)
+    expect(view.container.querySelectorAll('[data-usage-hour][tabindex="0"]')).toHaveLength(1)
+    fireEvent.keyDown(hour, { key: 'ArrowRight' })
+    expect(document.activeElement?.getAttribute('data-usage-hour')).toBe('8')
+    fireEvent.keyDown(document.activeElement!, { key: 'End' })
+    expect(document.activeElement?.getAttribute('data-usage-hour')).toBe('23')
+    fireEvent.click(screen.getByRole('tab', { name: en.cumulative }))
+    expect(screen.getByRole('button', { name: '07:00–08:00 · 12,345 Token' })).toBeTruthy()
+    expect(load).toHaveBeenCalledTimes(1)
+    fireEvent.click(screen.getByRole('button', { name: en.refresh }))
+    await waitFor(() => { expect(load).toHaveBeenCalledTimes(2) })
+  })
+  it('selects a preset locally and labels cached previous-day hours by their actual date', async () => {
+    const load = vi.fn().mockResolvedValue(SNAPSHOT)
+    render(<UsageInsightsSection {...props(load)} />)
+    fireEvent.click(await screen.findByRole('button', { name: en.particleColor }))
+    fireEvent.click(screen.getByRole('menuitem', { name: en.tealColor }))
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(screen.getByRole('tabpanel').style.getPropertyValue('--usage-particle-color')).toBe('#369f97')
+    expect(screen.queryByText(/^Today/)).toBeNull()
+    expect(load).toHaveBeenCalledTimes(1)
+  })
+  it('keeps all zero-use hours readable without inventing a peak', async () => {
+    render(<UsageInsightsSection {...props(async () => ({ ...SNAPSHOT, hourly: { date: SNAPSHOT.hourly.date, tokens: Array(24).fill(0) } }))} />)
+    expect(await screen.findByText(en.hourlyEmpty)).toBeTruthy()
+    expect(screen.getByRole('button', { name: '00:00–01:00 · 0 Token' })).toBeTruthy()
+    expect(document.querySelector('[data-peak]')).toBeNull()
   })
 })

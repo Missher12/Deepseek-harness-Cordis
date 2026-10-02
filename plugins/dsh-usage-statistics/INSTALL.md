@@ -1,26 +1,32 @@
 # 安装与卸载
 
-本地候选 **0.2.1-local.4** 精确适配 **DSH 0.2.0-rc.1**。插件 0.2.0 对应 DSH 0.1.7-rc.2；插件 0.1.0 对应 Desktop 0.5.10 / DSH 0.1.5-rc.2。请先核对宿主版本，无需添加版本豁免。本轮日常应用安装由协调会话统一执行，当前验证范围见 [VALIDATION.md](VALIDATION.md)。
+本地候选 **0.2.1-local.9** 已在 **DSH 0.2.0-rc.2** 隔离验证。运行时沿用正常 Host 检查，不按版本号豁免。日常应用安装由协调会话统一执行，验证层级见 [VALIDATION.md](VALIDATION.md)。
 
-## Desktop 本地目录安装
+## Desktop 压缩包安装
 
-1. 打开侧栏「插件」，点击「添加插件」。
-2. 将已验证的 `missher-dsh-usage-statistics-0.2.1-local.4.tgz` 解压，在「本地插件目录」或「包名或地址」中填写解压所得 `package` 目录的绝对路径。该目录必须包含 `package.json`、`cordis.patch.yml` 和 `lib`。
-3. 点击「安装」，确认显示版本 **0.2.1-local.4**，完成后点击「立即启用」。
-4. 打开左下角「更多 → 设置 → 使用统计」。若界面提示下次启动生效，按提示重启应用。
+1. 打开侧栏「插件 → 添加插件」。
+2. 在「包名或地址」中填写已验证的 `missher-dsh-usage-statistics-0.2.1-local.9.tgz` 绝对路径。压缩包包含 Host/Client/Typert 入口，安装时无需构建；由包管理器解析运行依赖。
+3. 确认显示版本 **0.2.1-local.9**，完成后按宿主提示启用或重启。
+4. 打开「设置 → 使用统计」。查看本地统计不需要 API Key。
 
-此前停留在旧版兼容性错误页时，关闭添加窗口再重新填写路径，让宿主重新读取清单。若已经装入旧版，先在插件页卸载旧版再安装候选；统计原始数据仍由宿主持久化服务保存。
+使用交付记录中的 SHA256 核对包；`scripts/pack.mjs` 在包旁生成 `SHA256SUMS`。已有版本的升级由正常插件安装流程处理，不为升级清空会话或统计缓存。
 
-本地目录安装使用链接，请保留解压目录及编译好的 `lib`。维护源码目录的 `lib` 本轮没有重建，不能用该目录替代候选。直接安装压缩包时，在「包名或地址」中填写已验证 `.tgz` 的绝对路径。使用本插件 `pack:bundle` 脚本时，校验值写入安装包旁的 `SHA256SUMS`；通过公共 `npm pack` 流程打包时不会自动生成该文件。
+## 本地插件目录
 
-## CLI 与 Web 的独立 profile
+「本地插件目录」填写的是**已构建且依赖已准备好的目录**，须含 `package.json`、`cordis.patch.yml`、`lib` 和可解析的运行依赖。目录安装使用链接，单纯解压 tgz 并不会为该目录准备 Cordis 等 peer 依赖，可能出现“failed to import”。
 
-Desktop 的保留 `desktop` profile 由应用专管，公开 CLI 不能对它安装或卸载插件。不要为了测试把 `DSH_HOME` 指向日常 Desktop 数据目录；使用[统一安装指南](https://github.com/Missher12/Deepseek-harness-Cordis/blob/main/docs/cookbook/install-cordis-plugins.zh.md#cli-web)中的隔离流程，把示例包替换为本插件的已构建目录或 `.tgz`。
+本轮交付记录提供了已准备的本机目录，其运行依赖只读链接到本机已构建 SDK，未另装宿主。该目录可直接填写，但须保留目录及其依赖目标；跨电脑交付请使用上面的压缩包安装流程，不复制本机依赖链接。开发者可按 README 的 SDK 流程准备自己的源码目录。
 
-卸载名称是 `@missher/dsh-usage-statistics`。具有自定义数据目录的 Intel 应用优先使用上面的界面安装，默认 `~/.dsh` 不一定是它正在使用的数据目录。查看本地统计不需要配置 API Key。
+本轮维护源码目录的 `lib` 保留原字节，不能用它替代已验证候选。此前停留在旧版兼容性错误页时，关闭添加窗口后重新填写已准备的路径，让宿主重新读取清单。
 
-## 卸载
+## CLI 与 Web 的隔离 profile
 
-进入侧栏「插件」，打开 `@missher/dsh-usage-statistics` 并点击「卸载」。确认后本插件的统计入口和服务随插件撤销。CLI/Web 自定义 profile 的卸载流程见上面的统一指南，使用本插件的完整包名。
+Desktop 的保留 `desktop` profile 由应用专管，公开 CLI 不能对它安装或卸载插件。不要为了测试把 `DSH_HOME` 指向日常 Desktop 数据目录；使用[统一安装指南](https://github.com/Missher12/Deepseek-harness-Cordis/blob/main/docs/cookbook/install-cordis-plugins.zh.md#cli-web)中的隔离流程，把示例包替换为本插件的已构建包。
 
-插件自己的派生缓存保留供重新安装使用。会话、模型设置和凭据不由卸载逻辑删除。
+卸载名称是 `@missher/dsh-usage-statistics`。自定义数据目录的 Intel 应用使用实际应用内的插件入口；默认 `~/.dsh` 不一定是它正在使用的数据目录。
+
+## 卸载与回退
+
+在侧栏「插件」中打开本插件并卸载，统计入口和服务随之撤销，派生缓存保留供重装使用；会话、模型设置和凭据不会由插件删除。回退可重新安装之前的 0.2.1-local.7 包；旧版本会按自己的格式重新生成派生缓存，不需要回写或替换原始会话。协调安装前仍应保存最新 profile、锁文件与派生缓存备份。
+
+历史版本：0.2.0 对应 DSH 0.1.7-rc.2；0.1.0 对应 Desktop 0.5.10 / DSH 0.1.5-rc.2。旧包原有的版本限制不变。

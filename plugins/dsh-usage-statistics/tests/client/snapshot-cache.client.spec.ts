@@ -34,6 +34,7 @@ const snapshot = {
     totalToolCalls: 2,
     chatDays: 1,
   },
+  hourly: { date: '2026-08-20', tokens: Array(24).fill(0) },
   activity: [{ date: '2026-08-20', humanMessages: 1, tokens: 10, toolCalls: 2, level: 4 }],
   features: [{ kind: 'skill', name: 'preview', count: 1 }],
 } satisfies UsageInsightsSnapshot
@@ -114,6 +115,10 @@ describe('usage snapshot stale-while-refresh cache', () => {
       malformed(['activity', 0, 'level'], 1.5),
       malformed(['activity', 0, 'level'], -1),
       malformed(['activity', 0, 'level'], 5),
+      malformed(['hourly'], undefined),
+      malformed(['hourly', 'date'], 'yesterday'),
+      malformed(['hourly', 'tokens'], Array(23).fill(0)),
+      malformed(['hourly', 'tokens', 0], -1),
       malformed(['features'], {}),
       malformed(['features'], Array.from({ length: 51 }, () => snapshot.features[0])),
       malformed(['features'], [null]),
@@ -193,4 +198,13 @@ describe('usage snapshot stale-while-refresh cache', () => {
       else Object.defineProperty(globalThis, 'localStorage', descriptor)
     }
   })
+})
+
+
+it('rebuilds legacy renderer snapshots rather than inventing missing hourly data', () => {
+  const { hourly: _hours, ...legacy } = snapshot
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, snapshot: legacy }))
+  resetUsageSnapshotForTest({ preserveStorage: true })
+  expect(readUsageSnapshot()).toBeUndefined()
+  expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
 })

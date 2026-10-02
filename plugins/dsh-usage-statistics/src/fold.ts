@@ -1,12 +1,13 @@
 /** Pure fold from one immutable session inspection to privacy-minimal usage facts. */
 
 import type { SessionEvent, SessionHeader } from '@deepseek-ai/dsh-session/types'
-import type { SessionUsageRow, UsageDay, UsageTokenBuckets } from './types.ts'
-import { createUsageDateFormatter } from './calendar.ts'
+import type { SessionUsageRow, UsageDay, UsageHour, UsageTokenBuckets } from './types.ts'
+import { createUsageDateFormatter, createUsageHourFormatter } from './calendar.ts'
 
 interface UsageSample {
   readonly buckets: UsageTokenBuckets
   readonly date: string
+  readonly hour: number
   readonly model?: string
   readonly reasoningEffort?: string
 }
@@ -117,8 +118,10 @@ export function foldSessionUsage(
 ): SessionUsageRow {
   // Constructing the formatter validates the time zone even for an empty log.
   const dateKey = createUsageDateFormatter(timeZone)
+  const hourKey = createUsageHourFormatter(timeZone)
   void dateKey(header.createdAt)
   const days = new Map<string, DayAccumulator>()
+  const hours = new Map<string, UsageHour>()
   const models = new Map<string, number>()
   const reasoningEfforts = new Map<string, number>()
   const skills = new Map<string, number>()
@@ -184,6 +187,7 @@ export function foldSessionUsage(
         samples.set(key, {
           buckets,
           date: dateKey(item.time),
+          hour: hourKey(item.time),
           ...currentModel === undefined ? {} : { model: currentModel },
           ...currentReasoningEffort === undefined ? {} : { reasoningEffort: currentReasoningEffort },
         })
@@ -227,6 +231,10 @@ export function foldSessionUsage(
     totalTokens = nextTotal as number
     const day = dayOf(days, sample.date)
     day.tokens += sampleTotal as number
+    const hourId = `${sample.date}:${sample.hour}`
+    const hour = hours.get(hourId) ?? { date: sample.date, hour: sample.hour, tokens: 0 }
+    hour.tokens += sampleTotal as number
+    hours.set(hourId, hour)
     validUsageSamples += 1
   }
 
@@ -251,6 +259,7 @@ export function foldSessionUsage(
     completedTurnDurationMs,
     completedTurnCount,
     daily,
+    hourly: [...hours.values()].sort((a, b) => a.date.localeCompare(b.date) || a.hour - b.hour),
     models: recordOf(models),
     reasoningEfforts: recordOf(reasoningEfforts),
     skills: recordOf(skills),

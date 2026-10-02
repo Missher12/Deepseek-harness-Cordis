@@ -14,6 +14,7 @@ const row = (overrides: Partial<SessionUsageRow> = {}): SessionUsageRow => ({
   completedTurnDurationMs: 5_000,
   completedTurnCount: 1,
   daily: [],
+  hourly: [],
   models: {},
   reasoningEfforts: {},
   skills: {},
@@ -145,5 +146,25 @@ describe('aggregateUsageRows', () => {
       { kind: 'tool', name: 'same', count: 1 },
       { kind: 'tool', name: 'zeta', count: 1 },
     ])
+  })
+})
+
+
+describe('today hourly snapshot', () => {
+  it('merges sessions into exactly 24 hours of today in the configured zone, without older days', () => {
+    const rows = [row({ hourly: [
+      { date: '2026-10-02', hour: 23, tokens: 999 },
+      { date: '2026-10-03', hour: 0, tokens: 100 },
+      { date: '2026-10-03', hour: 7, tokens: 200 },
+    ] }), row({ hourly: [{ date: '2026-10-03', hour: 7, tokens: 300 }] })]
+    const result = aggregateUsageRows(rows, { now: Date.parse('2026-10-02T23:30:00Z'), timeZone: 'Asia/Shanghai' })
+    expect(result.hourly.date).toBe('2026-10-03')
+    expect(result.hourly.tokens).toHaveLength(24)
+    expect(result.hourly.tokens[0]).toBe(100)
+    expect(result.hourly.tokens[7]).toBe(500)
+    expect(result.hourly.tokens.reduce((a, b) => a + b, 0)).toBe(600)
+    const next = aggregateUsageRows(rows, { now: Date.parse('2026-10-03T16:00:00Z'), timeZone: 'Asia/Shanghai' })
+    expect(next.hourly.date).toBe('2026-10-04')
+    expect(next.hourly.tokens).toEqual(Array(24).fill(0))
   })
 })

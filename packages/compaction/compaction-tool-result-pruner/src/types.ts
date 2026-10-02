@@ -18,6 +18,12 @@ export interface ResolvedConfig {
   readonly tailChars: number
 }
 
+/** Per-pass exclusions from the current tool-result surface snapshot. */
+export interface PruneSessionOptions {
+  /** Current surface nodes excluded from this pass; omission protects no nodes. */
+  readonly protectedSeqs?: ReadonlySet<SessionSeq>
+}
+
 /** Cited source event and size accounting for one landed surface replacement. */
 export interface PrunedEntry {
   /** Full-fidelity tool-result event shadowed by the replacement. */

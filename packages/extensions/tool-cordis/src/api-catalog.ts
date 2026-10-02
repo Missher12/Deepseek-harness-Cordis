@@ -3304,6 +3304,11 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [],
       },
       {
+        signature: 'readonly supportsProtectedSeqs: true = true',
+        description: 'True when `pruneSession` honors per-pass `protectedSeqs`; absent on older hosts.',
+        parameters: [],
+      },
+      {
         signature: 'measureContent(blocks: readonly ContentBlock[]): number',
         description: 'Measure text content in Unicode code points; non-text blocks cost zero.',
         parameters: [{ name: 'blocks', description: 'tool-result content to measure.' }],
@@ -3316,9 +3321,9 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'pruned content, or `null` when the text is within budget.',
       },
       {
-        signature: 'pruneSession(session: Session): PruneResult',
+        signature: 'pruneSession(session: Session, options?: PruneSessionOptions): PruneResult',
         description: 'Prune every over-budget tool result from one stable current-surface snapshot. Each replacement preserves the complete event data except for `content`, cites the shadowed node so replay can recover the replacement input, and is immediately preceded by a `compaction/prune` shadow-price event pricing the shadowed node through the injected token meter, so pure consumers can subtract it without per-node state.',
-        parameters: [{ name: 'session', description: 'session whose current surface is rewritten.' }],
+        parameters: [{ name: 'session', description: 'session whose current surface is rewritten.' }, { name: 'options', description: 'surface nodes to exclude; omitted options retain full-surface pruning.' }],
         returns: 'landed replacements and aggregate Unicode-code-point savings.',
         throws: ['when the session rejects a replacement; replacements committed earlier in the pass remain durable.'],
       },
@@ -6211,6 +6216,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'PruneResult',
     declaration: 'export interface PruneResult {\n    readonly pruned: readonly PrunedEntry[];\n    readonly charsRemoved: number;\n}',
+  },
+  {
+    name: 'PruneSessionOptions',
+    declaration: 'export interface PruneSessionOptions {\n    readonly protectedSeqs?: ReadonlySet<SessionSeq>;\n}',
   },
   {
     name: 'PtcBindingErrorClass',

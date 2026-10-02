@@ -6,16 +6,18 @@ import type { OutputInjected } from './Assistant.tsx'
 import type { PreferencesController } from './settings.ts'
 import { LAYOUTS, MOTIONS, DENSITIES, TEXT_SIZES } from '../preferences.ts'
 import { StreamMarkdown } from './stream.tsx'
+import { StepLabel } from './StepLabel.tsx'
 
 export interface SettingsInjected extends OutputInjected { setPreference: PreferencesController['set'] }
 type Props = PropsRuntime<'settings.section'> & PropsLocale<'missher.output-renderer'> & InjectFace<SettingsInjected>
 
 export function Settings({ useOutputPreferences, setPreference, t }: Props) {
   const state = useOutputPreferences(value => value)
-  const [sample, setSample] = useState(t('sample'))
+  const processPreview = state.value.layout === 'process' || state.value.layout === 'checklist'
+  const sampleText = t(processPreview ? 'processSample' : 'sample')
+  const [sample, setSample] = useState(sampleText)
   const [playing, setPlaying] = useState(false)
   const frame = useRef(0)
-  const sampleText = t('sample')
   const labels = useMemo(() => ({ code: { copyLabel: t('copy'), copiedLabel: t('copied'), toolbarLabels: { codeLabel: t('code'), wrapLabel: t('wrap'), unwrapLabel: t('unwrap') } }, footnotes: t('footnotes') }), [t])
   useEffect(() => {
     cancelAnimationFrame(frame.current)
@@ -40,15 +42,22 @@ export function Settings({ useOutputPreferences, setPreference, t }: Props) {
   }
   const disabled = state.saving || !state.ready || !state.writable
   return <div className="dsh-output-settings">
-    <h2>{t('section')}</h2>
+    <div className="dsh-output-settings-header">
+      <h2>{t('section')}</h2>
+      <div className="dsh-output-settings-status" role="status" data-error={state.error || undefined}>
+        {state.error ? t('failed') : state.status === 'loading' ? t('loading') : !state.writable || state.status === 'unavailable' ? t('unavailable') : state.saving ? t('saving') : t('saved')}
+      </div>
+    </div>
     <p className="dsh-output-intro">{t('intro')}</p>
     <fieldset disabled={disabled}><legend>{t('layout')}</legend>
       <div className="dsh-output-options">
         {LAYOUTS.map(layout => <Button key={layout} variant="outline" aria-pressed={state.value.layout === layout}
           disabled={disabled} onClick={() => { void setPreference('layout', layout) }} className="dsh-output-choice" data-choice={layout}>
           <span className="dsh-output-mini" aria-hidden="true"><i /><i /><i /></span>
-          <span className="dsh-output-choice-name">{t(layout)}</span>
-          <span className="dsh-output-description">{t(`${layout}Hint`)}</span>
+          <span className="dsh-output-choice-copy">
+            <span className="dsh-output-choice-name">{t(layout)}</span>
+            <span className="dsh-output-description">{t(`${layout}Hint`)}</span>
+          </span>
         </Button>)}
       </div>
     </fieldset>
@@ -78,14 +87,21 @@ export function Settings({ useOutputPreferences, setPreference, t }: Props) {
         </Button>)}
       </div>
     </fieldset>
-    <div className="dsh-output-settings-status" role="status" data-error={state.error || undefined}>
-      {state.error ? t('failed') : !state.ready ? t('loading') : !state.writable ? t('unavailable') : state.saving ? t('saving') : t('saved')}
-    </div>
     <section className="dsh-output-preview" aria-label={t('preview')}>
       <div className="dsh-output-preview-header"><span>{t('preview')}</span><Button variant="outline" size="sm" onClick={replay}>{t('replay')}</Button></div>
-      <div className="dsh-output-assistant" data-output-layout={state.value.layout} data-output-both="true"
+      {processPreview && <div className="dsh-output-preview-process" data-output-layout={state.value.layout}>
+        {(['processNote', 'verificationNote'] as const).map((note, index) => <div key={note}>
+          <div className={`dsh-output-assistant${state.value.layout === 'checklist' ? ' dsh-output-checklist-step' : ''}`}
+            data-output-layout={state.value.layout} data-output-density={state.value.density} data-output-text-size={state.value.textSize}>
+            {state.value.layout === 'checklist' && <StepLabel step={index + 1} status="settled" text={t} />}
+            <section className="dsh-output-reasoning"><div className="dsh-output-label">{t('thinking')}</div><p>{t(note)}</p></section>
+          </div>
+          <details className="dsh-output-preview-tools"><summary>{t('previewTool')}</summary><p>{t('previewToolDetail')}</p></details>
+        </div>)}
+      </div>}
+      <div className="dsh-output-assistant" data-output-layout={state.value.layout} data-output-both={!processPreview || undefined}
         data-output-density={state.value.density} data-output-text-size={state.value.textSize}>
-        <section className="dsh-output-reasoning"><div className="dsh-output-label">{t('thinking')}</div><p>{t('note')}</p></section>
+        {!processPreview && <section className="dsh-output-reasoning"><div className="dsh-output-label">{t('thinking')}</div><p>{t('note')}</p></section>}
         <section className="dsh-output-answer"><div className="dsh-output-label dsh-output-answer-label">{t('answer')}</div>
           <StreamMarkdown text={sample} running={playing} motion={state.value.motion} labels={labels} />
         </section>

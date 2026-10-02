@@ -22,6 +22,13 @@ export interface UsageDay {
   toolCalls: number
 }
 
+/** Provider-reported usage in one local clock hour; repeated DST hours share a bucket. */
+export interface UsageHour {
+  date: string
+  hour: number
+  tokens: number
+}
+
 /** Privacy-minimal derived facts for one durable session lifecycle. */
 export interface SessionUsageRow {
   /** Session identity used only as the cache key. */
@@ -46,6 +53,8 @@ export interface SessionUsageRow {
   completedTurnCount: number
   /** Sorted non-empty local daily rows. */
   daily: UsageDay[]
+  /** Sparse clock-hour totals from the same accepted samples as daily totals. */
+  hourly: UsageHour[]
   /** Request counts keyed by `provider/model`. */
   models: Record<string, number>
   /** Request counts keyed by adapter-owned effort id. */
@@ -95,5 +104,7 @@ export interface UsageInsightsSnapshot {
     chatDays: number
   }
   activity: UsageActivityDay[]
+  /** Today's 24 local clock hours, including zero-use hours. */
+  hourly: { date: string; tokens: number[] }
   features: UsageFeature[]
 }
