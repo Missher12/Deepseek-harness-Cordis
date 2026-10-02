@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import { Button, MenuItemButton, Modal, Toast } from '@deepseek-ai/dsh-client-ui-primitives'
 import { SESSION_DELETE_PATH } from '../session-delete-wire.js'
 import { en } from './locales.js'
@@ -75,7 +75,10 @@ export function SessionDeleteMenuItem({ sessionId, archive, deleteActions, useMe
   useMenuOpenState: () => readonly [boolean, (open: boolean) => void]; t?: Translate
 }) {
   const [, setMenuOpen] = useMenuOpenState()
-  const snapshot = useSyncExternalStore(archive.subscribe, archive.getSnapshot)
+  // Host stores use receiver-bound methods; React invokes bare callbacks.
+  const subscribe = useCallback((listener: () => void) => archive.subscribe(listener), [archive])
+  const getSnapshot = useCallback(() => archive.getSnapshot(), [archive])
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot)
   const archived = snapshot.archivedSessionIds.includes(sessionId)
   const [supported, setSupported] = useState(false)
   useEffect(() => {

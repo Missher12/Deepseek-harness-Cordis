@@ -1,6 +1,6 @@
 {
   "name": "@missher/dsh-session-bridge",
-  "version": "0.1.3-local.3",
+  "version": "0.1.3-local.4",
   "private": true,
   "description": "DSH session plugin: run a session inside a throwaway /tmp scratch workspace, and talk to other sessions by their session id (list / read / send).",
   "keywords": [

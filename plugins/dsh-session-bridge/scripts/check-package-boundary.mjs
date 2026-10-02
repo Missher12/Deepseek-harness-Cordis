@@ -28,7 +28,7 @@ for (const entry of entries.filter(name => /^package\/(?:lib|src)\/.*\.(?:js|tsx
 const client = read('lib/client/index.js')
 const runtimeRequests = [...new Set([...client.matchAll(/(?:require|__require)\(["']([^"']+)["']\)/g)].map(match => match[1]))].sort()
 assert.deepEqual(runtimeRequests, ['@deepseek-ai/dsh-client-ui-primitives', 'react', 'react/jsx-runtime'])
-assert.match(client, /style\.dataset\.plugin = ["']dsh-session-bridge["']/)
+assert.match(client, /style\.dataset\.plugin = ["']@missher\/dsh-session-bridge["']/)
 assert.match(client, /style\.dataset\.pluginCss = STYLE_ID/)
 const result = {
   package: manifest.name, version: manifest.version, archive,
