@@ -8,7 +8,7 @@
 
 ## 源码与 SDK
 
-从插件目录克隆所选独立仓库。开发前先构建 [Missher DSH Inter](https://github.com/Missher12/Missher-DSH-Inter)，再按插件 README 显式链接该 SDK。被 Git 忽略的 `harness-sdk` 链接代替对统一仓库相对目录的假设。
+从插件目录克隆所选独立仓库。开发前先构建 [Missher DeepSeek Harness Desktop](https://github.com/Missher12/Missher-DeepseekHarness-Desktop)，再按插件 README 显式链接该 SDK。被 Git 忽略的 `harness-sdk` 链接代替对统一仓库相对目录的假设。
 
 插件自己的 `package.json` 定义类型检查、构建和测试命令。`pnpm-workspace.yaml` 固定开发用 SDK 链接；这些链接不进入运行包。保留已提交锁文件及插件指定的 pnpm 版本。
 

@@ -2,24 +2,33 @@
 # section, a hash of its English and Chinese blocks outside code blocks and generated regions.
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write README.md
-/missher-dsh-inter:
-  en: 2edb74df01b86a23
-  zh: d0d666a287d5afe2
-/missher-dsh-inter/quick-access:
-  en: be08569abf9aa046
-  zh: 3dba67931f5de072
-/missher-dsh-inter/ubuntu-desktop:
-  en: e6e9375cf5c29771
-  zh: 66a98dbc37959817
-/missher-dsh-inter/run-this-source-tree:
-  en: 51408f5c2e7f98f4
-  zh: 0a675024c17f3e98
-/missher-dsh-inter/documentation-and-contribution:
-  en: a2cfa9a62cb35c28
-  zh: 6076211f5e94d62d
-/missher-dsh-inter/upstream-citation:
-  en: a13a718a983356be
-  zh: b8d057aaf11d0ca5
-/missher-dsh-inter/license:
-  en: b2eec2e8464cb819
-  zh: 821d2298aa1870da
+/missher-deepseek-harness-desktop:
+  en: 0f3f0bd931d48ab8
+  zh: 0fdf48a8a856ed3f
+/missher-deepseek-harness-desktop/download:
+  en: 3effe97000166f21
+  zh: 4ec8c07bfe48b977
+/missher-deepseek-harness-desktop/download/install-on-intel-mac:
+  en: d32b0c1c01f65635
+  zh: 498f8e659085c005
+/missher-deepseek-harness-desktop/download/install-on-ubuntu:
+  en: 2b981c90a9d19cd5
+  zh: d889e0c669fe2ce6
+/missher-deepseek-harness-desktop/download/first-start:
+  en: f141b8d6ccd0d4b5
+  zh: 1cc41c3aaf4970d5
+/missher-deepseek-harness-desktop/plugins:
+  en: 9fbd4cc6d5fe3f73
+  zh: aafa949f6d85125b
+/missher-deepseek-harness-desktop/plugins/other-maintained-extensions:
+  en: fa5eb901e768eb8a
+  zh: 186dfbe860cd70ea
+/missher-deepseek-harness-desktop/common-questions:
+  en: d4870b041ef70a5f
+  zh: 14c4af31419d23c2
+/missher-deepseek-harness-desktop/for-developers:
+  en: a1c7c4156d33c20f
+  zh: 323dd880c588466d
+/missher-deepseek-harness-desktop/project-ownership-and-license:
+  en: 008d874a134ad07e
+  zh: 775b9b4508d5b098

@@ -14,7 +14,7 @@
 | --- | --- | --- | --- |
 | 上下文管理 | 请求前压缩、当前上下文、正文、逐次变化、本会话累计 | 会话 → 上下文；设置 → 上下文管理 | [说明](https://github.com/Missher12/Missher-DSH-Context-Manager/tree/main/README.md) · [源码](https://github.com/Missher12/Missher-DSH-Context-Manager/tree/main/src/) · [包信息](https://github.com/Missher12/Missher-DSH-Context-Manager/tree/main/package.json) |
 | 使用统计 | 跨会话用量、活动图、模型/工具/技能排行 | 设置 → 使用统计 | [说明](https://github.com/Missher12/Missher-DSH-Usage-Statistics/tree/main/README.md) · [源码](https://github.com/Missher12/Missher-DSH-Usage-Statistics/tree/main/src/) · [包信息](https://github.com/Missher12/Missher-DSH-Usage-Statistics/tree/main/package.json) |
-| 输出外观 | 三种单栏助手输出布局、完整思考、工具详情及流式动效 | 设置 → 输出外观 | [说明](https://github.com/Missher12/Missher-DSH-Output-Renderer/tree/main/README.md) · [源码](https://github.com/Missher12/Missher-DSH-Output-Renderer/tree/main/src/) · [包信息](https://github.com/Missher12/Missher-DSH-Output-Renderer/tree/main/package.json) |
+| 输出外观 | 四种单栏助手输出布局、完整思考、工具详情及流式动效 | 设置 → 输出外观 | [说明](https://github.com/Missher12/Missher-DSH-Output-Renderer/tree/main/README.md) · [源码](https://github.com/Missher12/Missher-DSH-Output-Renderer/tree/main/src/) · [包信息](https://github.com/Missher12/Missher-DSH-Output-Renderer/tree/main/package.json) |
 | 会话桥接 | 会话 ID、跨会话投递与临时工作区 | 会话标题栏；新会话 → 工作区选择器 | [说明](https://github.com/Missher12/Missher-DSH-Session-Bridge/tree/main/README.md) · [源码](https://github.com/Missher12/Missher-DSH-Session-Bridge/tree/main/src/) · [包信息](https://github.com/Missher12/Missher-DSH-Session-Bridge/tree/main/package.json) |
 
 包名和版本以链接中的 manifest 为准，[cordis-repositories.json](../cordis-repositories.json) 记录独立仓库清单。历史验证报告各有自己的日期和范围，不能直接当作新安装的通过证明。

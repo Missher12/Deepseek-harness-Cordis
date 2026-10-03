@@ -1,4 +1,4 @@
-# Missher DSH Inter
+# Missher DeepSeek Harness Desktop
 
 本仓库维护当前桌面与公共 Host 源码，保留上游历史。各插件在[独立仓库](plugins/README.zh.md)开发、构建、安装和卸载，不增加共同兼容包。
 

@@ -1,76 +1,108 @@
-# Missher DSH Inter
+# Missher DeepSeek Harness Desktop
 
 [English](README.md) | 中文
 
-这里维护 Missher DSH Inter 桌面源码，并提供各个独立插件的入口。可直接进入[插件目录](plugins/README.zh.md)、[安装指南](docs/cookbook/install-cordis-plugins.zh.md)或[插件开发指南](docs/cookbook/build-cordis-plugins.zh.md)。
+这是一个可以连接 AI 模型、操作项目文件、调用工具并安装扩展的桌面应用。本仓库维护 **Missher 社区版 DeepSeek Harness**。普通用户下载下面对应系统的安装包即可，不需要学习编译源码。
 
-本项目基于 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)，该项目由 [DeepSeek AI](https://deepseek.com) 开发。这里沿用由 [Cordis](https://github.com/cordiverse/cordis) 支持的**一切皆插件**架构，保留上游作者归属、历史与许可证。本仓库和原项目的关系见[仓库分工](CORDIS.md)。
+应用不附带模型账号或 API 额度，安装后需配置自己的模型服务。桌面安装包、插件源码和个人数据分别管理；下载本仓库不会带走他人的聊天、密钥或学习记录。
 
-## 快捷入口
+<a id="downloads"></a>
 
-| 我想做什么 | 打开这里 |
+## 下载安装
+
+Intel 芯片的 Mac 选择 **Intel Mac**；使用 Intel/AMD 64 位处理器的 Ubuntu 电脑选择 **Ubuntu x64**。Intel 是处理器名称，旧仓库曾写成 Inter。本页安装包不包含 Apple Silicon 原生版、Linux ARM 版或 Windows 版。
+
+| 电脑 | 下载 | 适用范围 |
+| --- | --- | --- |
+| **Intel Mac** | [DMG 安装包](https://github.com/Missher12/Missher-DeepseekHarness-Desktop/releases/download/desktop-v0.2.0-rc.2-intel-mac.1/deepseek-harness-0.2.0-rc.2-mac-x64-unsigned.dmg) · [版本说明](https://github.com/Missher12/Missher-DeepseekHarness-Desktop/releases/tag/desktop-v0.2.0-rc.2-intel-mac.1) | Intel Mac；社区未公证包 |
+| **Ubuntu x64** | [DEB 安装包（推荐）](https://github.com/Missher12/Missher-DeepseekHarness-Desktop/releases/download/inter-v0.2.0-rc.2-ubuntu.6/deepseek-harness-0.2.0-rc.2-linux-amd64-unsigned.deb) · [版本说明](https://github.com/Missher12/Missher-DeepseekHarness-Desktop/releases/tag/inter-v0.2.0-rc.2-ubuntu.6) | Ubuntu 24.04 x64 |
+| **Ubuntu x64 便携格式** | [AppImage](https://github.com/Missher12/Missher-DeepseekHarness-Desktop/releases/download/inter-v0.2.0-rc.2-ubuntu.6/deepseek-harness-0.2.0-rc.2-linux-x86_64-unsigned.AppImage) | 已构建；未单独完成 AppImage 启动验收 |
+
+每个发布页提供 SHA-256 校验文件和验证范围，[全部发布记录](https://github.com/Missher12/Missher-DeepseekHarness-Desktop/releases)保留早期安装包。GitHub 的 **Code → Download ZIP** 下载的是源码，不能代替安装包。这些社区包尚未配置自动安装更新源。
+
+### Intel Mac 安装
+
+1. 下载上面的 DMG 并打开，把 **DeepSeek Harness.app** 拖进 **Applications（应用程序）**。
+2. 替换已有应用前先正常退出，保留数据和旧应用备份，确认新版正常后再处理备份。
+3. 从应用程序中打开。如果 macOS 拦截此社区未公证包，先核对来源与校验值，再在 **系统设置 → 隐私与安全性** 中对该应用单独允许打开；无需关闭系统整体安全检查。
+
+社区 Intel 版沿用独立的 `~/Library/Application Support/DeepSeek Harness Intel` 数据目录。替换应用本体不会复制或重置其中的插件配置、会话与凭据。
+
+### Ubuntu 安装
+
+下载 `.deb` 后，在下载文件所在目录打开终端，运行：
+
+```bash
+sudo apt install ./deepseek-harness-0.2.0-rc.2-linux-amd64-unsigned.deb
+```
+
+安装后在应用菜单中打开 **DeepSeek Harness**。DEB 已在 Ubuntu 24.04 完成安装及 Xvfb 下的 Electron 窗口启动验证；这证明应用能启动，不代表每种模型或插件流程都已验收。
+
+### 第一次打开
+
+1. 选择一个项目文件夹作为工作区。如果系统没有可用的“文档”目录，手动选择文件夹即可。
+2. 打开模型设置，填入自己的服务商、地址、API Key 和模型名称；文本、图片与思考档位取决于模型实际能力。
+3. 发一条简单消息检查服务是否可用，模型调用费用由所使用的服务商计算。
+4. 按需安装下面的独立插件；桌面下载包不会自动安装所有个人插件。
+
+## 独立插件：按需要选择
+
+每一行都能跳转到插件自己的 GitHub。各仓库 README 说明安装方法、应用内入口、设置与限制，并能返回本页。桌面版通过 **插件 → 添加插件** 安装；具体配置组和移除方式见[安装指南](docs/cookbook/install-cordis-plugins.zh.md)。
+
+| 插件 | 主要用途 |
 | --- | --- |
-| 查看或压缩当前会话的上下文 | [上下文管理](https://github.com/Missher12/Missher-DSH-Context-Manager/blob/main/README.md) |
-| 查看跨会话用量与排行 | [使用统计](https://github.com/Missher12/Missher-DSH-Usage-Statistics/blob/main/README.md) |
-| 调整助手输出、思考与工具布局 | [输出外观](https://github.com/Missher12/Missher-DSH-Output-Renderer/blob/main/README.md) |
-| 复制会话 ID、跨会话投递或使用临时工作区 | [会话桥接](https://github.com/Missher12/Missher-DSH-Session-Bridge/blob/main/README.md) |
-| 安装、升级或卸载插件 | [安装指南](docs/cookbook/install-cordis-plugins.zh.md) |
-| 构建、测试或打包插件 | [开发指南](docs/cookbook/build-cordis-plugins.zh.md) |
-| 查找私有插件或 MSE Learning | [独立项目](CORDIS.md#独立项目) |
+| [上下文管理](https://github.com/Missher12/Missher-DSH-Context-Manager) | 查看当前会话上下文、来源、用量和压缩记录 |
+| [使用统计](https://github.com/Missher12/Missher-DSH-Usage-Statistics) | 查看跨会话活动、用量、排行及可调色方格 |
+| [输出外观](https://github.com/Missher12/Missher-DSH-Output-Renderer) | 四种阅读布局、字号间距与流式动效 |
+| [会话桥接](https://github.com/Missher12/Missher-DSH-Session-Bridge) | 复制会话 ID、跨会话投递和临时工作区 |
+| [思考强度](https://github.com/Missher12/Missher-DSH-Reasoning-Effort) | 思考滑块、配色以及模型能力与档位设置 |
+| [MSE 持久学习](https://github.com/Missher12/Missher-MSE-Learning) | 保存纠错和方法，并按任务与预算召回 |
+| [Media 媒体采集（私有）](https://github.com/Missher12/Missher-Media) | 通过 Chrome CDP 采集、保留证据和选择导出 |
 
-每个插件均可单独选择和卸载。克隆仓库不会自动把插件安装或启用到 DSH；[插件目录](plugins/README.zh.md)列出了对应源码、说明和应用内入口。
+Media 保持私有：GitHub 显示 404 可能是账号没有访问权限。MSE 只公开产品代码，不包含私人学习记录。所有插件按需选择；取消宿主版本号限制不等于保证未来所有版本都兼容。
 
-## Ubuntu 桌面端
+### 其他独立扩展
 
-Linux x64 下载包通过 Ubuntu 工作流后发布到 [Releases](https://github.com/Missher12/Missher-DSH-Inter/releases)。Ubuntu 24.04 x64 建议选择 `.deb`，便携使用可选择 `.AppImage`；每次发布附带 `SHA256SUMS`。macOS 和 Ubuntu 共用源码，安装包中的二进制与原生依赖分别构建。
+这些是独立维护的项目，有自己的版本线和兼容记录，不是上面七个插件的前置依赖。安装前先看各仓库要求，不能把旧基线验收当成当前桌面已经通过。
 
-下载 `.deb` 后执行 `sudo apt install ./deepseek-harness-*.deb`，然后在应用列表打开 **DeepSeek Harness**。模型凭据自行配置，按需另装独立插件。Linux 社区包不会自动安装更新，有新版时从 Releases 下载安装。
+| 项目 | 用途 |
+| --- | --- |
+| [Memory / 项目记忆](https://github.com/Missher12/Missher-DSH-Memory) | 按项目审核、保存和检索记忆 |
+| [Evolution / 学习适配](https://github.com/Missher12/Missher-DSH-Evolution) | 既有 MSE SDK 产品线的 Harness 适配 |
+| [Brain / 召回汇总](https://github.com/Missher12/Missher-DSH-Brain) | 汇总参与的记忆与学习提供者 |
+| [Project Ops / 项目任务](https://github.com/Missher12/Missher-DSH-Project-Ops) | 项目任务发现、执行和验证回执 |
+| [Lark / 飞书](https://github.com/Missher12/Missher-DSH-Lark) | 通过已配对的飞书/Lark 私聊操作项目与会话 |
+
+## 常见问题
+
+**为什么安装后找不到插件？** 检查当前应用及配置组是否正确、插件是否启用和加载错误；按宿主提示重启或重新加载。只更新 Git 源码不会自动更新已安装的应用。
+
+**另一台电脑拉取 Git，会同步聊天吗？** 不会。仓库提供产品源码与可分发文件，私人数据需要另行备份迁移；不要把 API Key、Cookie、聊天记录或学习数据库放入公开 Git。
+
+**Mac 和 Ubuntu 能共用修改吗？** 可以共用桌面源码；原生程序和安装包必须分别构建。Mac 的 DMG 不能直接在 Ubuntu 运行。
+
+**问题应该反馈到哪里？** 插件功能问题交给对应插件仓库的 Issues；安装与桌面启动问题交给本仓库。请提供系统、应用/插件版本、复现步骤及脱敏错误。
 
 <a id="run"></a>
 
 <a id="run-from-source"></a>
 
-## 运行本仓库源码
+## 给开发者
 
-使用 [package.json](package.json) 声明的 Node.js `^22.19.0 || >=24.0.0` 和 pnpm `11.7.0`。运行前阅读[安全说明](SAFETY.zh.md)；Harness 仍处于开发者预览阶段，接口可能出现不兼容变更。
+使用 Node.js `^22.19.0 || >=24.0.0` 与 pnpm `11.7.0`。宿主在本仓库构建，插件在各自独立仓库开发；SDK 接入见[插件开发指南](docs/cookbook/build-cordis-plugins.zh.md)。
 
 ```sh
-git clone https://github.com/Missher12/Missher-DSH-Inter.git
-cd Missher-DSH-Inter
+git clone https://github.com/Missher12/Missher-DeepseekHarness-Desktop.git
+cd Missher-DeepseekHarness-Desktop
 pnpm install --frozen-lockfile
 pnpm run build
 pnpm dsh web
 ```
 
-Web UI 通常在 `http://127.0.0.1:3080` 打开。与已有安装并行开发时，使用独立测试数据目录，并核对 [profile 归属](docs/cookbook/install-cordis-plugins.zh.md#desktop)。根目录构建准备宿主，各可选插件另有自己的[构建和打包步骤](docs/cookbook/build-cordis-plugins.zh.md)。
+与已有安装同时开发时使用独立数据目录。进一步阅读[桌面打包](apps/desktop/README.zh.md)、[插件安装](docs/cookbook/install-cordis-plugins.zh.md)、[架构](docs/architecture.zh.md)、[安全说明](SAFETY.zh.md)与[贡献指南](CONTRIBUTING.zh.md)。
 
-`npx @deepseek-ai/dsh web` 运行的是上游发布的包，不会选用本 checkout，也不包含独立维护的定制插件。独立插件按安装指南从各自的 Releases 安装。
+## 项目来源与许可
 
-## 文档与参与维护
+本项目基于 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)，由 [DeepSeek AI](https://deepseek.com) 开发，并沿用 [Cordis](https://github.com/cordiverse/cordis) 插件架构。Missher 维护这里的社区分发与独立扩展，保留上游作者、历史和许可；本仓库不是 DeepSeek 官方发行渠道。
 
-- [插件导航](plugins/README.zh.md)：源码、使用说明和应用内入口。
-- [开发指南](docs/development.zh.md)、[架构](docs/architecture.zh.md)和[贡献指南](CONTRIBUTING.zh.md)：宿主开发与审查。
-- [Web UI 指南](docs/user/guide/index.zh.md)：Harness 日常使用。
-- [CORDIS.md](CORDIS.md)：源码归属、私有项目、历史仓库和验证范围。
-- [问题反馈](https://github.com/Missher12/Missher-DSH-Inter/issues)：报告本仓库问题时，附上宿主与插件版本、复现步骤及已脱敏错误。
-- [上游文档](https://deepseek-harness.github.io/deepseek-harness/)和[上游讨论](https://github.com/deepseek-ai/deepseek-harness/discussions)：官方 Harness 文档与社区。
-
-开发助手遵循 [AGENTS.md](AGENTS.md) 与各插件自己的约束。源码发布、测试通过、安装生效和真实模型验证是不同结果，实际验证层级以各项目的验收记录为准。
-
-## 上游引用
-
-Cordis 的设计参见 [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512)。原 Harness 项目引用格式如下：
-
-```bibtex
-@misc{deepseek-harness2026,
-  title={DeepSeek Harness: Everything is a Plugin},
-  author={DeepSeek-AI},
-  year={2026},
-  publisher={GitHub},
-  howpublished={\url{https://github.com/deepseek-ai/deepseek-harness}},
-}
-```
-
-## 许可证
-
-[MIT](LICENSE)。第三方依赖及许可证见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 和各插件的许可证文件。
+宿主采用 [MIT](LICENSE)，同时遵循[第三方声明](THIRD_PARTY_NOTICES.md)及各插件自己的许可证；仓库分工见 [CORDIS.md](CORDIS.md)。

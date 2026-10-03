@@ -8,7 +8,7 @@ Each plugin has an independent repository, package manifest, lockfile and runtim
 
 ## Source and SDK
 
-Clone the selected repository from the plugin directory. For development, build [Missher DSH Inter](https://github.com/Missher12/Missher-DSH-Inter) first and follow the plugin README to link that explicit SDK checkout. The ignored `harness-sdk` link replaces assumptions about a monorepo directory layout.
+Clone the selected repository from the plugin directory. For development, build [Missher DeepSeek Harness Desktop](https://github.com/Missher12/Missher-DeepseekHarness-Desktop) first and follow the plugin README to link that explicit SDK checkout. The ignored `harness-sdk` link replaces assumptions about a monorepo directory layout.
 
 The plugin owns its typecheck, build and test commands in `package.json`. Its `pnpm-workspace.yaml` pins development SDK links; these links are not shipped in the runtime package. Preserve the committed lockfile and the package's selected pnpm version.
 
