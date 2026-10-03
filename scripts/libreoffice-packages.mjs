@@ -7,18 +7,19 @@ import { isAbsolute, join, relative, sep } from 'node:path'
 /**
  * Require the declared native engine, or use WASM on other targets.
  * @param {{ optionalDependencies?: Record<string, string> }} manifest - Installed kit manifest.
- * @param {{ platform: string, arch: string }} target - Distribution platform and CPU.
+ * @param {{ platform: string, arch: string, libc?: string }} target - Distribution platform, CPU, and Linux ABI when specified.
  * @returns {string} Engine package suffix.
  */
 export function selectOfficeEngine(manifest, target) {
   const native = `${target.platform}-${target.arch}`
-  return Object.hasOwn(manifest.optionalDependencies ?? {}, `@deepseek-ai/libreoffice-kit-${native}`) ? native : 'wasm'
+  const candidates = target.platform === 'linux' && target.libc !== undefined ? [`${native}-${target.libc}`, native] : [native]
+  return candidates.find(engine => Object.hasOwn(manifest.optionalDependencies ?? {}, `@deepseek-ai/libreoffice-kit-${engine}`)) ?? 'wasm'
 }
 
 /**
  * Find every required package, retaining its installed dependency resolution and target engine.
  * @param {string} staging - Symlink-free installed Node project.
- * @param {{ platform: string, arch: string }} target - Distribution platform and CPU.
+ * @param {{ platform: string, arch: string, libc?: string }} target - Distribution platform, CPU, and Linux ABI when specified.
  * @returns {Promise<string[]>} Absolute package directories; rejects missing dependencies and paths outside staging.
  */
 export async function officePackageDirectories(staging, target) {

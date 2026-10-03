@@ -87,10 +87,11 @@ it('retains native prebuilds for the selected macOS architecture', () => {
 
 it.each([
   ['linux', 'x64', 'linux-x64'],
+  ['linux', 'x64', 'linux-x64-glibc'],
   ['linux', 'arm64', 'wasm'],
   ['freebsd', 'x64', 'wasm'],
 ] as const)('retains only the selected Office engine for %s/%s', (platform, arch, engine) => {
-  for (const candidate of ['linux-x64', 'darwin-arm64', 'wasm']) {
+  for (const candidate of ['linux-x64', 'linux-x64-glibc', 'darwin-arm64', 'wasm']) {
     const omitted = desktopRuntimeFileExclusion(
       `@deepseek-ai/libreoffice-kit-${candidate}/prebuilds.json`, { platform, arch }, engine,
     )
