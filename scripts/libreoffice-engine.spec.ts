@@ -22,8 +22,3 @@ it('selects a declared Linux native target without an OS-specific policy change'
 it('uses WASM when no native targets are declared', () => {
   expect(selectOfficeEngine({}, { platform: 'darwin', arch: 'x64' })).toBe('wasm')
 })
-
-it.each([['glibc', 'linux-x64-glibc'], ['musl', 'wasm']])('selects the declared Linux ABI %s', (libc, expected) => {
-  expect(selectOfficeEngine({ optionalDependencies: { '@deepseek-ai/libreoffice-kit-linux-x64-glibc': '1' } },
-    { platform: 'linux', arch: 'x64', libc })).toBe(expected)
-})

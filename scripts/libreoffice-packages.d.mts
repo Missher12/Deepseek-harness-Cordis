@@ -6,7 +6,7 @@
  * @param target - Distribution platform and CPU.
  * @returns Engine package suffix.
  */
-export function selectOfficeEngine(manifest: { optionalDependencies?: Record<string, string> }, target: { platform: string; arch: string; libc?: string }): string
+export function selectOfficeEngine(manifest: { optionalDependencies?: Record<string, string> }, target: { platform: string; arch: string }): string
 
 /**
  * Return absolute package directories inside the installed project, rejecting an incomplete closure.
@@ -14,4 +14,4 @@ export function selectOfficeEngine(manifest: { optionalDependencies?: Record<str
  * @param target - Distribution platform and CPU.
  * @returns Installed package directories.
  */
-export function officePackageDirectories(staging: string, target: { platform: string; arch: string; libc?: string }): Promise<string[]>
+export function officePackageDirectories(staging: string, target: { platform: string; arch: string }): Promise<string[]>

@@ -12,7 +12,7 @@ while [ -L "$launcher" ]; do
 done
 resources=$(CDPATH= cd -- "$(dirname -- "$launcher")/../../.." && pwd -P)
 case $(uname -s) in
-  Linux) executable="$resources/../deepseek-harness" ;;
-  *) executable="$resources/../MacOS/DeepSeek Harness" ;;
+  Linux) executable="$resources/../deepseek-harness"; application="$resources/app" ;;
+  *) executable="$resources/../MacOS/DeepSeek Harness"; application="$resources/app.asar" ;;
 esac
-ELECTRON_RUN_AS_NODE=1 exec "$executable" --expose-internals "$resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-desktop-host/lib/cli.js" "$@"
+ELECTRON_RUN_AS_NODE=1 exec "$executable" --expose-internals "$application/dsh/node_modules/@deepseek-ai/dsh-desktop-host/lib/cli.js" "$@"
