@@ -3,20 +3,11 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/cookbook/install-cordis-plugins.md
 /install-and-remove-dsh-plugins:
-  en: 02ce1a62939084b5
-  zh: 55a6daace3c7b6d3
-/install-and-remove-dsh-plugins/contents:
-  en: 8be032d9e0b1c4c5
-  zh: 2a9d0da775d557f8
-/install-and-remove-dsh-plugins/before-installing:
-  en: a3eecebd3b49aeaa
-  zh: 0803031e66870ba2
+  en: a15d9d8ced6bb136
+  zh: d8c3e4432839b012
 /install-and-remove-dsh-plugins/desktop:
-  en: 9538e29722039369
-  zh: 7d0676d07d564e6f
-/install-and-remove-dsh-plugins/cli-and-web:
-  en: 683932022a1b89c3
-  zh: 1937723774fe1ef6
-/install-and-remove-dsh-plugins/troubleshooting:
-  en: 5aba237a152bd3a0
-  zh: 48c7503d083c4604
+  en: 8bf0ac88a89db240
+  zh: 0d1265afc2100532
+/install-and-remove-dsh-plugins/verification-and-removal:
+  en: 3e3122f1fab80db2
+  zh: e3f6d78d9fc55ae0

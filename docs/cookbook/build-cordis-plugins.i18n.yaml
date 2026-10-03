@@ -3,17 +3,11 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/cookbook/build-cordis-plugins.md
 /build-and-package-dsh-plugins:
-  en: 5517adcf74bab473
-  zh: 4d1e54e33ddf2601
-/build-and-package-dsh-plugins/prerequisites:
-  en: e29973af44de8c1f
-  zh: b207b43415ed8dec
-/build-and-package-dsh-plugins/build-one-plugin:
-  en: f2fbb4198d7f4af9
-  zh: 82920df81696bc49
-/build-and-package-dsh-plugins/package-all-four:
-  en: b34c7693d099d7a5
-  zh: 3d592c4f734fc9d4
-/build-and-package-dsh-plugins/maintain-the-right-project:
-  en: 35d84611a04e65f1
-  zh: 77ec875e5e36f6ad
+  en: 65f8baa79ed2cb40
+  zh: ef04eaa29a6352be
+/build-and-package-dsh-plugins/source-and-sdk:
+  en: 808e83dc035db1b7
+  zh: e48cb9f9ca3ae7bf
+/build-and-package-dsh-plugins/delivery:
+  en: e8665008b06ffdb1
+  zh: 6b478a4000d6a753

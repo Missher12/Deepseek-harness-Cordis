@@ -1,2 +1,0 @@
-# Generated bundles preserve whitespace inside upstream template literals.
-lib/*.js -whitespace linguist-generated=true

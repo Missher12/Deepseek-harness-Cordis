@@ -4,16 +4,16 @@
 #   pnpm run verify-translation-pairing --write plugins/README.md
 /dsh-plugin-directory:
   en: 91c63dbce18e60be
-  zh: 9c74f2d0107693e1
+  zh: dd57c29e23737d54
 /dsh-plugin-directory/public-plugins:
-  en: fab1329a2a2ab778
-  zh: fc07d7567ffa5229
+  en: e0bcfe1a18ed7dbf
+  zh: 17ea47f6c042b7c8
 /dsh-plugin-directory/choose-the-right-owner:
   en: ce9169e7745854da
   zh: 1ad9047467b05566
 /dsh-plugin-directory/separate-projects:
-  en: 6aaee2ec06b67715
-  zh: 25aecd14d1a2bcb5
+  en: dbc5990184643626
+  zh: 534e05b5af5895be
 /dsh-plugin-directory/next-steps:
-  en: cfccd2a6e3b21821
-  zh: 3581a93234c76e82
+  en: 89f66ee606c2cfb4
+  zh: 5e48b8940dec5865

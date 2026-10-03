@@ -2,21 +2,24 @@
 # section, a hash of its English and Chinese blocks outside code blocks and generated regions.
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write README.md
-/deepseek-harness-cordis:
-  en: 5b3f7d2a2272ba28
-  zh: 41cda58bd0293a5d
-/deepseek-harness-cordis/quick-access:
-  en: 717601edcf4acc22
-  zh: 3375c02e2152f3fe
-/deepseek-harness-cordis/run-this-source-tree:
-  en: 6129a0feb8e9540c
-  zh: 60babb8f1c0f0537
-/deepseek-harness-cordis/documentation-and-contribution:
-  en: 2e50c8227ea32dab
-  zh: fa665813026b1287
-/deepseek-harness-cordis/upstream-citation:
+/missher-dsh-inter:
+  en: 2edb74df01b86a23
+  zh: d0d666a287d5afe2
+/missher-dsh-inter/quick-access:
+  en: be08569abf9aa046
+  zh: 3dba67931f5de072
+/missher-dsh-inter/ubuntu-desktop:
+  en: e6e9375cf5c29771
+  zh: 66a98dbc37959817
+/missher-dsh-inter/run-this-source-tree:
+  en: 51408f5c2e7f98f4
+  zh: 0a675024c17f3e98
+/missher-dsh-inter/documentation-and-contribution:
+  en: a2cfa9a62cb35c28
+  zh: 6076211f5e94d62d
+/missher-dsh-inter/upstream-citation:
   en: a13a718a983356be
   zh: b8d057aaf11d0ca5
-/deepseek-harness-cordis/license:
+/missher-dsh-inter/license:
   en: b2eec2e8464cb819
   zh: 821d2298aa1870da

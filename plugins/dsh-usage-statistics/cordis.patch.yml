@@ -1,4 +1,0 @@
-# Add the plugin's removable usage page and read-only statistics service.
-- insert:
-    - id: missher-usage-statistics
-      name: '@missher/dsh-usage-statistics'

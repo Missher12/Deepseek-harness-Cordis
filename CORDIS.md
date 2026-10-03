@@ -1,47 +1,23 @@
-# Deepseek-harness-Cordis
+# Missher DSH Inter
 
-这里统一维护 Missher 当前使用的 DSH 桌面源码和四个公开插件。宿主保留上游目录结构，插件保留独立包、配置、构建与卸载能力；克隆本仓库即可取得这五部分源码。
-
-快捷访问：[中文首页](README.zh.md) · [插件目录](plugins/README.zh.md) · [安装指南](docs/cookbook/install-cordis-plugins.zh.md) · [开发与打包](docs/cookbook/build-cordis-plugins.zh.md)。
+本仓库维护当前桌面与公共 Host 源码，保留上游历史。各插件在[独立仓库](plugins/README.zh.md)开发、构建、安装和卸载，不增加共同兼容包。
 
 ## 源码入口
 
-| 功能 | 维护位置 |
-| --- | --- |
-| 桌面程序、公共接口、图片附件、输入框插件引用、模型能力设置 | [apps/](apps/) 与 [packages/](packages/) |
-| 上下文压缩和当前会话详情 | [plugins/dsh-context-manager](plugins/dsh-context-manager/) |
-| 会话标识、跨会话投递、临时工作区 | [plugins/dsh-session-bridge](plugins/dsh-session-bridge/) |
-| 助手输出布局、思考和工具展示 | [plugins/dsh-output-renderer](plugins/dsh-output-renderer/) |
-| 跨会话用量、活动图和使用排行 | [plugins/dsh-usage-statistics](plugins/dsh-usage-statistics/) |
-
-宿主与插件构建步骤见[开发与打包](docs/cookbook/build-cordis-plugins.zh.md)。`plugins/` 不加入宿主的 pnpm workspace，不会成为宿主的强制安装依赖；各 Bundle 独立交付，没有额外的兼容插件或兼容安装包。
+桌面源码在 apps/desktop，公共 Host 和界面模块在 packages。插件清单与版本入口由 cordis-repositories.json 记录；四个原 plugins 子目录已经独立迁移，不再保留可修改副本。
 
 ## 独立项目
 
-| 项目 | 可见性 | 原因 |
-| --- | --- | --- |
-| [Media@Missher](https://github.com/Missher12/media-missher) | 私有 | 用户指定；源码和数据不进入本仓库 |
-| [dsh-reasoning-effort](https://github.com/Missher12/dsh-reasoning-effort) | 公开 | 定制思考深度 UI 与独立设计源码单独维护 |
-| [MSE Learning](https://github.com/Missher12/mse-learning) | 公开 | 独立跨宿主学习产品；公开范围只包含独立产品导出 |
+[Media](https://github.com/Missher12/Missher-Media) 保持私有；[思考强度](https://github.com/Missher12/Missher-DSH-Reasoning-Effort) 公开；[MSE Learning](https://github.com/Missher12/Missher-MSE-Learning) 只包含独立产品导出，不含父项目和学习记录。
 
-应用凭据、聊天记录、附件、生产 profile、本地安装备份和私有验收响应不属于公开源码。仓库导航只记录上述项目地址，不下载或内嵌私有内容。
+会话、凭据、附件、生产 profile、安装备份和私有验收响应不发布。源码发布、应用安装和真实模型验收是三个不同结果。
 
-## 仓库分工
+## Git 整理
 
-`cordis-repositories.json` 记录当前包与导入基线。四个旧插件仓库保留原提交历史和旧下载地址，迁移后作为只读历史入口；后续源码修改集中在本仓库。旧本地目录仍可能被已安装插件引用，不能因 Git 归档而删除或移动它们。
+项目统一 Missher 前缀。改名保留历史及原地址重定向；旧 Inter 工作树与未提交工作保留。旧产品使用 Missher-Archive 前缀，有未合并 PR 的仓库保持可写；不删除 PR、分支或历史。上游协作 fork 是 [Missher-DSH-Upstream](https://github.com/Missher12/Missher-DSH-Upstream)，插件目录 fork 是 [Missher-DSH-Plugin-Catalog](https://github.com/Missher12/Missher-DSH-Plugin-Catalog)。
 
-[deepseek-harness](https://github.com/Missher12/deepseek-harness) 保留为官方仓库 fork 和上游协作入口。[deepseek-harness-desktop](https://github.com/Missher12/deepseek-harness-desktop) 保存旧版跨平台桌面产品，并有尚未合并的工作；不将它的全部分支当作重复代码删除。旧增强包、记忆、飞书和项目管理插件有独立内容，未经过迁移验收的仓库继续保留。
+## 平台
 
-统一仓库保留宿主原有 Git 历史，四个插件的导入提交和历史仓库在清单中对应。原仓库与本地工作树都保留；不重写或强推它们的历史。
+macOS 和 Ubuntu 复用桌面源代码，分别生成本机二进制与原生依赖。Linux 构建由 Missher Ubuntu desktop 工作流执行，包含运行时 Host、Office 转换和 Xvfb 下的实际桌面窗口检查。只有通过该工作流并发布的安装包才属于可下载交付；工作流存在不代表包已发布。
 
-## 验证范围
-
-本次整理的业务源码来自已完成四项功能及 Intel DSH 安装验收的本地版本。整理检查覆盖文件导入、私有项目排除、凭据扫描和新目录下的构建检查；业务与安装验收的日期和层级分别记录，不能用源码发布代替新的原生安装或真实模型验收。
-
-当前安装过的 Intel 应用、插件 tarball 和日常 profile 不随 Git 整理替换。Windows、Linux 和真实供应商调用未因本次整理获得新的验收结论。导入的五份插件及研究 README 保留原语言，列在翻译配对清单的精确文件例外中；宿主和新导航页仍接受原有双语检查。历史兼容与验证记录允许保留精确提交号，例外限定在指定记录文件，普通源码和使用说明继续接受原有引用检查。各插件的历史验证文档保留原日期；其中的旧路径和旧阶段授权属于历史记录，当前源码归属以本页为准。
-
-许可证与作者归属保留在根 LICENSE、THIRD_PARTY_NOTICES.md 和各插件的许可证文件中。
-
-2026-09-28 的整合验证已在新目录完成宿主与 Client 类型检查、构建、本机原生依赖和 Web 构建。四个插件分别通过类型检查、构建及现有测试，共 149 项。使用统计的源码测试复用根 `vitest.shared.ts` 的装饰器转换器；先构建宿主原生依赖，才能运行需要真实会话文件锁的 Loader 测试。
-
-`Cordis repository inventory` 工作流检查公开包清单和私有目录排除，支持推送和手动触发，不代表完整平台 CI。真实 DeepSeek API 的 E2E 在本仓库仅允许手动触发，并要求 `CORDIS_RUN_LIVE_E2E=true`；Azure OpenAI/Anthropic E2E 沿用原来的手动入口。保留各自的凭据预检，不将跳过的线上测试声称为通过。本轮未配置供应商密钥或执行付费模型请求。
+根 LICENSE、THIRD_PARTY_NOTICES.md 与独立插件许可证继续保留。

@@ -3,7 +3,7 @@ name: Missher Ubuntu desktop
 on:
   workflow_dispatch:
   push:
-    branches: [codex/missher-dsh-inter]
+    branches: [main]
     paths:
       - apps/desktop/**
       - .github/workflows/missher-linux-desktop.yml
@@ -19,6 +19,8 @@ jobs:
   package:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    permissions:
+      contents: write
     env:
       DSH_TELEMETRY_DISABLED: '1'
       DSH_GATE_CONCURRENCY: '2'
@@ -42,15 +44,33 @@ jobs:
         run: |
           cp apps/desktop/.env.linux.example apps/desktop/.env.linux
           pnpm run package:desktop:linux:x64
-      - name: Verify packaged desktop under Xvfb
+      - name: Install Debian package and verify desktop under Xvfb
         run: |
-          app=apps/desktop/.desktop-build/targets/linux-x64/unsigned-artifacts/linux-unpacked
-          sudo chown root:root "$app/chrome-sandbox"
-          sudo chmod 4755 "$app/chrome-sandbox"
-          xvfb-run -a node apps/desktop/scripts/smoke-linux-shell.mjs "$app/deepseek-harness" linux-verification
+          artifacts=apps/desktop/.desktop-build/targets/linux-x64/unsigned-artifacts
+          deb=$(realpath "$artifacts/"*.deb)
+          sudo apt-get install -y "$deb"
+          package=$(dpkg-deb -f "$deb" Package)
+          executable=$(dpkg-query -L "$package" | awk '/\/deepseek-harness$/ { print; exit }')
+          test -x "$executable"
+          xvfb-run -a node apps/desktop/scripts/smoke-linux-shell.mjs "$executable" linux-verification
       - name: Record download checksums
         working-directory: apps/desktop/.desktop-build/targets/linux-x64/unsigned-artifacts
         run: sha256sum *.deb *.AppImage > SHA256SUMS
+      - name: Publish verified Ubuntu downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p 'require("./apps/desktop/package.json").version')
+          tag="inter-v${version}-ubuntu.${GITHUB_RUN_NUMBER}"
+          artifacts=apps/desktop/.desktop-build/targets/linux-x64/unsigned-artifacts
+          cat > ubuntu-release.md <<'NOTES'
+          Missher DSH Inter for Ubuntu x64. Reuses the current desktop source with Linux-native runtime dependencies.
+
+          Download the .deb for installation on Ubuntu, or the AppImage for portable use. Verify SHA256SUMS before installing. These are unsigned community builds; automatic installation updates are not configured.
+
+          Validation: native runtime and Host startup, Office conversion, packaged runtime, Debian package installation, and its real Electron renderer under Xvfb. No live model/provider call was made. Private plugins, credentials and personal sessions are not included.
+          NOTES
+          gh release create "$tag" "$artifacts/"*.deb "$artifacts/"*.AppImage "$artifacts/SHA256SUMS" --target "$GITHUB_SHA" --title "Missher DSH Inter ${version} · Ubuntu x64" --notes-file ubuntu-release.md --latest
       - uses: actions/upload-artifact@v4
         if: success()
         with:
