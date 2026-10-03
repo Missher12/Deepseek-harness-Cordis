@@ -50,8 +50,8 @@ jobs:
           artifacts=apps/desktop/.desktop-build/targets/linux-x64/unsigned-artifacts
           deb=$(realpath "$artifacts/"*.deb)
           sudo apt-get install -y "$deb"
-          package=$(dpkg-deb -f "$deb" Package)
-          executable=$(dpkg-query -L "$package" | awk '/\/deepseek-harness$/ { print; exit }')
+          executable=$(command -v deepseek-harness)
+          test -f "$executable"
           test -x "$executable"
           xvfb-run -a node apps/desktop/scripts/smoke-linux-shell.mjs "$executable" linux-verification
       - name: Record download checksums

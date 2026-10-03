@@ -1,7 +1,7 @@
 /** Launch the packaged Linux shell with an isolated profile and inspect its actual renderer. */
 import { spawn } from 'node:child_process'
 import { once } from 'node:events'
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
@@ -9,6 +9,8 @@ import { setTimeout as delay } from 'node:timers/promises'
 if (process.platform !== 'linux') throw new Error('Linux shell smoke requires Linux')
 const executable = resolve(process.argv[2])
 const output = resolve(process.argv[3])
+const executableStat = await stat(executable)
+if (!executableStat.isFile() || !(executableStat.mode & 0o111)) throw new Error('Desktop executable must be an executable file')
 await mkdir(output, { recursive: true })
 const root = await mkdtemp(join(tmpdir(), 'missher-desktop-smoke-'))
 const diagnostic = join(root, 'fatal.txt')
@@ -18,7 +20,8 @@ const child = spawn(executable, ['--remote-debugging-port=0'], {
     DSH_HOME: join(root, 'harness'), DSH_DESKTOP_DIAGNOSTIC_FILE: diagnostic, DSH_TELEMETRY_DISABLED: '1' },
   stdio: ['ignore', 'pipe', 'pipe'],
 })
-const closed = once(child, 'close')
+let spawnFailure
+const closed = once(child, 'close').catch(error => { spawnFailure = error })
 let log = ''
 child.stdout.on('data', data => { log += data })
 child.stderr.on('data', data => { log += data })
@@ -27,6 +30,7 @@ try {
   const deadline = Date.now() + 90_000
   let page
   while (Date.now() < deadline) {
+    if (spawnFailure) throw spawnFailure
     if (child.exitCode !== null || child.signalCode !== null) throw new Error(`Desktop exited: ${log}`)
     const endpoint = /DevTools listening on (ws:\/\/127\.0\.0\.1:\d+)\//u.exec(log)?.[1]
     if (endpoint) {
