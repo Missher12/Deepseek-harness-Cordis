@@ -7,6 +7,7 @@
   "type": "module",
   "main": "lib/main.js",
   "scripts": {
+    "package:linux:x64": "tsx scripts/package-target.ts linux-x64 --unsigned",
     "test:installer": "node scripts/test-windows-installer.mjs",
     "build": "tsc -b && pnpm run bundle",
     "bundle": "tsdown",

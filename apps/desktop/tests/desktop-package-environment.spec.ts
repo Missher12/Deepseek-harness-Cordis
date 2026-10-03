@@ -23,6 +23,16 @@ async function withDirectory(action: (directory: string) => Promise<void>): Prom
 }
 
 describe('Desktop local packaging configuration', () => {
+  it('isolates Linux download settings from signing and official feed credentials', async () => {
+    await withDirectory(async (directory) => {
+      await writeFile(join(directory, '.env.linux'), 'DSH_DESKTOP_APP_ID=com.missher.deepseek-harness\n')
+      const environment = loadDesktopPackageEnvironment('linux', { CSC_LINK: 'private-key', DOWNLOAD_TEST_ORIGIN: 'https://unused.example.com' }, directory)
+      expect(environment).toEqual({ DSH_DESKTOP_APP_ID: 'com.missher.deepseek-harness' })
+      expect(() => { validateDesktopPackageEnvironment(environment, { platform: 'linux', arch: 'x64' }, { unsigned: true }) }).not.toThrow()
+      expect(() => { validateDesktopPackageEnvironment(environment, { platform: 'linux', arch: 'x64' }) }).toThrow(/unsigned/u)
+    })
+  })
+
   it('takes cache concurrency from the Windows file and defaults to four without ambient overrides', async () => {
     await withDirectory(async (directory) => {
       const parent = { DSH_DESKTOP_WINDOWS_SIGNATURE_CACHE_CONCURRENCY: '8' }

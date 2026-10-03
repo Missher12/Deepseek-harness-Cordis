@@ -51,17 +51,19 @@ export function createElectronBuilderConfig(
   preparedRuntimeVersion = undefined,
 ) {
   const appId = resolveDesktopAppId(env)
-  const policy = resolveDesktopPolicyEnvironment(env)
   const targetPlatform = env.DSH_DESKTOP_TARGET_PLATFORM
   const resolvedPlatform = targetPlatform ?? hostPlatform
   const resolvedArch = env.DSH_DESKTOP_TARGET_ARCH ?? hostArch
+  // Community Linux downloads have no official policy or auto-install service.
+  const policy = resolvedPlatform === 'linux' ? undefined : resolveDesktopPolicyEnvironment(env)
   if (env.DSH_DESKTOP_UNSIGNED !== undefined && !['0', '1'].includes(env.DSH_DESKTOP_UNSIGNED)) {
     throw new Error('desktop package: DSH_DESKTOP_UNSIGNED must be 0 or 1')
   }
   const unsigned = env.DSH_DESKTOP_UNSIGNED === '1'
-  if (unsigned && resolvedPlatform !== 'win32' && !(resolvedPlatform === 'darwin' && resolvedArch === 'x64')) {
+  if (unsigned && resolvedPlatform !== 'linux' && resolvedPlatform !== 'win32' && !(resolvedPlatform === 'darwin' && resolvedArch === 'x64')) {
     throw new Error('desktop package: unsigned builds require Windows or Intel macOS')
   }
+  if (resolvedPlatform === 'linux' && !unsigned) throw new Error('desktop package: Linux downloads require unsigned packaging')
   const packagesMacOS = targetPlatform === 'darwin' || (targetPlatform === undefined && hostPlatform === 'darwin')
   const packagesWindows = resolvedPlatform === 'win32'
   if (resolvedPlatform === 'win32') installWindowsDirectoryInstaller()
@@ -234,7 +236,11 @@ export function createElectronBuilderConfig(
     },
     linux: {
       category: 'Development',
-      target: ['AppImage'],
+      executableName: 'deepseek-harness',
+      icon: fileURLToPath(new URL('../resources/icon-windows.png', import.meta.url)),
+      maintainer: 'Missher12',
+      synopsis: 'Missher DSH Inter desktop',
+      target: ['AppImage', 'deb'],
     },
     nsis: {
       installerSidebar: join(buildPaths.root, 'installer-ui', 'uninstaller-sidebar.bmp'),

@@ -1,0 +1,70 @@
+name: Missher Ubuntu desktop
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/missher-dsh-inter]
+    paths:
+      - apps/desktop/**
+      - .github/workflows/missher-linux-desktop.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: missher-linux-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      DSH_TELEMETRY_DISABLED: '1'
+      DSH_GATE_CONCURRENCY: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - name: Install Linux packaging dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-0t64 libnss3 libasound2t64 libgbm1 libfuse2t64 xvfb fakeroot
+      - run: pnpm install --frozen-lockfile
+      - name: Check platform selection and launcher
+        run: pnpm exec vitest run apps/desktop/tests/package-target.spec.ts apps/desktop/tests/desktop-build-paths.spec.ts apps/desktop/tests/desktop-package-environment.spec.ts apps/desktop/tests/cli-launcher.spec.ts --maxWorkers=2
+      - name: Build and verify Linux runtime
+        run: |
+          cp apps/desktop/.env.linux.example apps/desktop/.env.linux
+          pnpm run package:desktop:linux:x64
+      - name: Verify packaged desktop under Xvfb
+        run: |
+          app=apps/desktop/.desktop-build/targets/linux-x64/unsigned-artifacts/linux-unpacked
+          sudo chown root:root "$app/chrome-sandbox"
+          sudo chmod 4755 "$app/chrome-sandbox"
+          xvfb-run -a node apps/desktop/scripts/smoke-linux-shell.mjs "$app/deepseek-harness" linux-verification
+      - name: Record download checksums
+        working-directory: apps/desktop/.desktop-build/targets/linux-x64/unsigned-artifacts
+        run: sha256sum *.deb *.AppImage > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: missher-dsh-inter-ubuntu-x64
+          compression-level: 0
+          path: |
+            apps/desktop/.desktop-build/targets/linux-x64/unsigned-artifacts/*.deb
+            apps/desktop/.desktop-build/targets/linux-x64/unsigned-artifacts/*.AppImage
+            apps/desktop/.desktop-build/targets/linux-x64/unsigned-artifacts/SHA256SUMS
+            linux-verification/
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: missher-linux-build-diagnostics
+          path: |
+            apps/desktop/.desktop-build/packaging-runs/
+            linux-verification/

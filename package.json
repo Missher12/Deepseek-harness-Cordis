@@ -17,6 +17,7 @@
     "website"
   ],
   "scripts": {
+    "package:desktop:linux:x64": "pnpm --filter @deepseek-ai/dsh-desktop run package:linux:x64",
     "prepare:primary-runtime": "tsx scripts/primary-runtime/prepare.ts",
     "build": "tsx scripts/build.ts",
     "build:bench": "npm run build:native-system && npm run build:lib && tsdown --config benchmarks/tsdown.config.ts",

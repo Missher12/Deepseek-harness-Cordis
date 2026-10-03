@@ -21,12 +21,19 @@ describe('desktop package target', () => {
     })
   })
 
+  it('requires a native Linux host and unsigned download packaging', () => {
+    const invocation = parseDesktopPackageInvocation(['linux-x64', '--unsigned'], 'linux', 'x64')
+    expect(invocation.target).toMatchObject({ platform: 'linux', arch: 'x64', builderPlatform: '--linux' })
+    expect(() => resolveDesktopPackageTarget('linux-x64', 'darwin', 'x64')).toThrow(/Linux x64/u)
+    expect(() => parseDesktopPackageInvocation(['linux-x64'], 'linux', 'x64')).toThrow(/require --unsigned/u)
+  })
+
   it('allows an Apple Silicon host to build the Intel target through Rosetta', () => {
     expect(resolveDesktopPackageTarget('mac-x64', 'darwin', 'arm64').arch).toBe('x64')
   })
 
   it('rejects unsupported targets and hosts before building', () => {
-    expect(() => resolveDesktopPackageTarget('linux-x64', 'linux', 'x64')).toThrow(/unsupported target/u)
+    expect(() => resolveDesktopPackageTarget('linux-arm64', 'linux', 'arm64')).toThrow(/unsupported target/u)
     expect(() => resolveDesktopPackageTarget('win-x64', 'darwin', 'arm64')).toThrow(/Windows x64/u)
     expect(() => resolveDesktopPackageTarget('mac-arm64', 'darwin', 'x64')).toThrow(/Apple Silicon/u)
     expect(() => resolveDesktopPackageTarget('mac-arm64', 'linux', 'arm64')).toThrow(/macOS/u)
